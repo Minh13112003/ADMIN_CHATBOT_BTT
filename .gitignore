@@ -1,0 +1,19 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Prisma Client sinh ra bởi `prisma generate` (chạy tự động khi cài đặt)
+backend/src/generated/
+
+# Bí mật: chỉ commit file .env.example
+.env
+.env.*
+!.env.example
+
+.DS_Store
+Thumbs.db
+*.log

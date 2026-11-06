@@ -1,0 +1,17 @@
+{
+  "name": "btt-chat-admin",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "setup:env": "node scripts/make-env.mjs",
+    "dev:be": "pnpm --filter backend start:dev",
+    "dev:fe": "pnpm --filter frontend dev",
+    "db:deploy": "pnpm --filter backend db:deploy",
+    "db:seed": "pnpm --filter backend db:seed",
+    "simulate": "pnpm --filter backend simulate",
+    "smoke": "pnpm --filter backend smoke",
+    "test": "pnpm --filter backend test",
+    "typecheck": "pnpm -r typecheck",
+    "build": "pnpm -r build"
+  }
+}

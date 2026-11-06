@@ -1,0 +1,289 @@
+// Trang quản trị hội thoại chatbot. Xem docs/data-model.md.
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+// Prisma 7: địa chỉ database không nằm ở đây nữa.
+// Địa chỉ database là DATABASE_URL: migrate đọc ở prisma.config.ts, ứng dụng đọc ở src/prisma/prisma.service.ts.
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN // Chỉ tạo tài khoản
+  SALE // Nhắn tin với khách, xem thống kê
+}
+
+// ZALO và FACEBOOK để sẵn cho tích hợp sau, hiện chưa có dữ liệu đổ vào.
+enum Channel {
+  WEB
+  APP
+  ZALO
+  FACEBOOK
+}
+
+enum ConversationStatus {
+  CONTACT // Liên hệ: khách đòi gặp nhân viên, luôn ghim đầu
+  UNREAD // Chưa xem
+  READ // Đã xem
+  PENDING // Chờ xử lý
+  CLOSED // Đã chốt
+}
+
+enum ConversationMode {
+  BOT
+  STAFF
+}
+
+enum SenderType {
+  CUSTOMER
+  BOT
+  AUTO // Trả lời tự động theo quy tắc
+  STAFF
+  SYSTEM
+}
+
+// Đơn khách tự đặt qua chatbot là PENDING cho tới khi sale gọi xác nhận hoặc hệ thống đặt tour báo đã thanh toán.
+enum DealStatus {
+  PENDING // Chờ xác nhận
+  CONFIRMED // Đã chốt, tính doanh thu
+  CANCELLED // Khách huỷ, hoặc booking bị huỷ / hoàn tiền
+}
+
+enum DealSource {
+  CHATBOT // Khách tự đặt trong khung chat
+  STAFF // Sale nhập khi chốt
+}
+
+enum AutoReplyType {
+  FIRST_MESSAGE
+  KEYWORD
+  OFF_HOURS
+}
+
+model User {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  passwordHash   String
+  fullName       String
+  employeeCode   String?   @unique
+  position       String?
+  role           Role      @default(SALE)
+  onDuty         Boolean   @default(true)
+  isActive       Boolean   @default(true)
+  lastAssignedAt DateTime?
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  assigned  Conversation[]    @relation("Assignee")
+  helping   Conversation[]    @relation("Helper")
+  followUps Conversation[]    @relation("FollowUpBy")
+  responses ContactResponse[]
+  messages  Message[]
+  deals     Deal[]
+  templates QuickTemplate[]
+
+  @@map("users")
+}
+
+model Customer {
+  id            String   @id @default(uuid())
+  name          String
+  aliases       String[] @default([]) // Các cách viết tên khác khách từng nhập
+  phone         String?  @unique // Dạng số 0xxxxxxxxx
+  phoneVerified Boolean  @default(false) // App đã đăng nhập = true, web chưa có OTP = false
+  // Tên, các tên khác và SĐT viết thường, bỏ dấu. Trigger customers_search_text trong database tự điền, không ghi tay.
+  searchText    String   @default("")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  identities    CustomerIdentity[]
+  conversations Conversation[]
+  deals         Deal[]
+
+  // Tìm "chứa chuỗi" (LIKE '%...%') cần chỉ mục trigram, chỉ mục thường không dùng được.
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@map("customers")
+}
+
+// Một khách có thể có nhiều mã theo kênh: id tài khoản app, mã thiết bị web, sau này là Zalo user id, Facebook PSID.
+model CustomerIdentity {
+  id         String   @id @default(uuid())
+  channel    Channel
+  externalId String
+  customerId String
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([channel, externalId])
+  @@index([customerId])
+  @@map("customer_identities")
+}
+
+// Mỗi khách có đúng 1 hội thoại liên tục trên mỗi kênh, kể cả khi đổi máy hoặc xoá chat phía khách.
+model Conversation {
+  id                    String             @id @default(uuid())
+  customerId            String
+  channel               Channel
+  status                ConversationStatus @default(UNREAD)
+  mode                  ConversationMode   @default(BOT)
+  assigneeId            String?
+  helperId              String? // Không dùng nữa từ khi bỏ "Xử lý hộ" (2026-11-06), giữ cột để không mất dữ liệu cũ
+  lastHandlerId         String? // Người phụ trách gần nhất, dùng để chia khách cũ về người cũ
+  autoReplyOn           Boolean            @default(true)
+  interest              String?
+  tags                  String[]           @default([])
+  note                  String?
+  lastMessageAt         DateTime           @default(now())
+  lastMessagePreview    String?
+  // Tin gần nhất của khách. Trigger messages_last_customer tự điền, để thống kê không phải quét bảng tin nhắn.
+  lastCustomerMessageAt DateTime?
+  contactRequestedAt    DateTime?
+  contactAssignedAt     DateTime?
+  lastStaffActivityAt   DateTime? // Lần cuối người xử lý gõ hoặc gửi tin, quyết định khoá khung nhắn
+  lastStaffActivityBy   String?
+  followUpAt            DateTime? // Hẹn gọi lại / nhắn lại khách
+  followUpNote          String?
+  followUpById          String?
+  followUpNotifiedAt    DateTime? // Đã nhắc người hẹn, để không nhắc lặp
+  customerSeenAt        DateTime? // Lần cuối khung chat phía khách mở và lấy tin nhân viên
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  customer   Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignee   User?             @relation("Assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  helper     User?             @relation("Helper", fields: [helperId], references: [id], onDelete: SetNull)
+  followUpBy User?             @relation("FollowUpBy", fields: [followUpById], references: [id], onDelete: SetNull)
+  responses  ContactResponse[]
+  messages   Message[]
+  deals      Deal[]
+
+  @@unique([customerId, channel])
+  @@index([status, lastMessageAt])
+  @@index([lastMessageAt]) // Hộp thư: hội thoại mới nhất, trừ Liên hệ
+  @@index([lastCustomerMessageAt]) // Thống kê khách nhắn tin trong kỳ
+  @@index([assigneeId, status])
+  @@index([followUpAt])
+  @@index([tags], type: Gin) // Lọc theo nhãn
+  @@map("conversations")
+}
+
+model Message {
+  id                String     @id @default(uuid())
+  conversationId    String
+  senderType        SenderType
+  staffId           String?
+  staffLabel        String? // Ví dụ "Minh, xử lý hộ Thảo"
+  ruleName          String?
+  text              String
+  internal          Boolean    @default(false) // Log chỉ admin thấy, không bao giờ gửi cho khách
+  isTrigger         Boolean    @default(false) // Câu khách đòi gặp nhân viên
+  tours             Json? // Thẻ tour bot gửi kèm
+  externalMessageId String?    @unique // Chống ghi trùng khi chatbot gửi lại
+  replyToId         String? // Nhân viên trả lời trích một tin
+  attachmentPath    String? // Đường dẫn file trong Supabase Storage (bucket riêng tư), không phải link
+  attachmentType    String? // image/jpeg, image/png, image/webp, application/pdf
+  attachmentName    String?
+  attachmentSize    Int? // byte, sau khi đã thu nhỏ
+  createdAt         DateTime   @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  staff        User?        @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  replyTo      Message?     @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies      Message[]    @relation("ReplyTo")
+
+  @@index([conversationId, createdAt])
+  @@map("messages")
+}
+
+model QuickTemplate {
+  id          String   @id @default(uuid())
+  title       String
+  body        String
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@map("quick_templates")
+}
+
+model AutoReplyRule {
+  id        String        @id @default(uuid())
+  name      String
+  type      AutoReplyType
+  keywords  String[]      @default([])
+  body      String
+  channels  Channel[]     @default([WEB, APP, ZALO, FACEBOOK])
+  enabled   Boolean       @default(true)
+  sentCount Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@map("auto_reply_rules")
+}
+
+// Đơn chốt qua chatbot, nguồn của số doanh thu.
+model Deal {
+  id               String     @id @default(uuid())
+  conversationId   String
+  customerId       String
+  channel          Channel
+  closedById       String? // Sale chốt hoặc xác nhận đơn. null = chưa ai xác nhận, hoặc tự xác nhận khi booking đã thanh toán
+  status           DealStatus @default(PENDING) // Chatbot ghi thẳng database không đặt cột này, nên mặc định là đơn chờ xác nhận
+  source           DealSource @default(CHATBOT)
+  orderCode        String?    @unique // Mã booking bên hệ thống đặt tour
+  tourCode         String? // Mã đợt khởi hành trên benthanhtourist.com, ví dụ A06.FIT.TW.070227.A
+  tourName         String
+  guests           Int
+  amount           BigInt // VND
+  bookingStatus    String? // Trạng thái booking BE Mobile báo về: PENDING, CONFIRMED, PAID, ONGOING, COMPLETED, CANCELLED, REFUNDED
+  bookingUpdatedAt DateTime?
+  createdAt        DateTime   @default(now()) // Lúc khách đặt hoặc sale nhập
+  closedAt         DateTime   @default(now()) // Lúc chốt; đơn chờ xác nhận thì cập nhật khi xác nhận
+  voidedAt         DateTime? // Mở lại hội thoại thì đơn không còn tính doanh thu
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  closedBy     User?        @relation(fields: [closedById], references: [id], onDelete: SetNull)
+
+  @@index([closedAt])
+  @@index([conversationId])
+  @@index([customerId])
+  @@map("deals")
+}
+
+// Mỗi lần khách đòi gặp nhân viên và được trả lời: nguồn số "thời gian phản hồi".
+model ContactResponse {
+  id             String   @id @default(uuid())
+  conversationId String
+  staffId        String?
+  requestedAt    DateTime
+  respondedAt    DateTime @default(now())
+  seconds        Int
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  staff        User?        @relation(fields: [staffId], references: [id], onDelete: SetNull)
+
+  @@index([respondedAt])
+  @@index([conversationId])
+  @@map("contact_responses")
+}
+
+// Mỗi lần gọi Gemini ghi 1 dòng: Google không có API trả số tiền theo key.
+model AiUsage {
+  id             String   @id @default(uuid())
+  conversationId String?
+  model          String
+  inputTokens    Int
+  outputTokens   Int
+  createdAt      DateTime @default(now())
+
+  // Bảng chỉ ghi nối đuôi theo thời gian: BRIN nhỏ hơn B-tree hàng trăm lần mà vẫn lọc được theo kỳ.
+  @@index([createdAt], type: Brin)
+  @@map("ai_usage")
+}

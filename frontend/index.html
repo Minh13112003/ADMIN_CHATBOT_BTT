@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (() => {
+        let value = {};
+        try { value = JSON.parse(localStorage.getItem('btt_ui_settings') || '{}') || {}; } catch { /* Không thể đọc bộ nhớ cục bộ. */ }
+        const root = document.documentElement;
+        const mode = ['light', 'dark', 'system'].includes(value.mode) ? value.mode : 'system';
+        root.dataset.theme = mode === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : mode;
+        root.dataset.accent = ['red', 'blue', 'green', 'purple'].includes(value.accent) ? value.accent : 'red';
+        root.dataset.density = value.density === 'compact' ? 'compact' : 'comfortable';
+        root.dataset.reduceMotion = typeof value.reduceMotion === 'boolean' ? String(value.reduceMotion) : String(matchMedia('(prefers-reduced-motion: reduce)').matches);
+        root.style.fontSize = { small: '14px', medium: '16px', large: '18px' }[value.fontSize] || '16px';
+      })();
+    </script>
+    <meta name="description" content="Trang quản trị tin nhắn chatbot BenThanh Tourist" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <title>Quản trị hội thoại</title>
+  </head>
+  <body class="font-sans antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

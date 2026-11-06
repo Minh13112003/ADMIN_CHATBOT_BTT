@@ -1,0 +1,135 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: var(--font-app), system-ui, sans-serif;
+  --color-brand: #d0021b;
+  --color-brand-button: #d0021b;
+  --color-status-contact: #d0021b;
+  --color-brand-text: #b30118;
+  --color-brand-dark: #b30118;
+  --color-brand-soft: #fdecec;
+  --color-brand-faint: #fff7f7;
+  --color-ink: #1a1a2e;
+  --color-surface: #ffffff;
+  --color-strong: #1a1a2e;
+  --color-on-strong: #ffffff;
+  --color-body: #4a5260;
+  --color-muted: #5b6472;
+  --color-line: #e4e7ee;
+  --color-line-soft: #eef0f4;
+  --color-field: #d5d9e2;
+  --color-page: #f5f6fa;
+  --color-fill: #f1f3f7;
+  --color-auto: #fff1cc;
+  --color-auto-soft: #fff6dd;
+  --color-auto-ink: #5c3d00;
+  --color-on: #0e7a43;
+  --color-off: #8a93a3;
+  --color-neutral-soft: #e7eaf0;
+  --color-neutral-ink: #3f4754;
+  --color-blue-soft: #dbe7ff;
+  --color-blue-ink: #17357f;
+  --color-purple-soft: #e5e4fb;
+  --color-purple-ink: #2e2a7e;
+  --color-amber-soft: #fdebc0;
+  --color-amber-ink: #6b4100;
+  --color-green-soft: #d8f3e2;
+  --color-green-ink: #0e5530;
+  --color-alert-ink: #7f0d1c;
+  --color-alert-line: #f5c6cb;
+  --color-amber-line: #f3d89a;
+  --color-typing: #d79a00;
+  --color-series-contact: #1761b0;
+}
+
+:root {
+  --font-app: 'Be Vietnam Pro';
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-brand: #ff7a87;
+  --color-brand-text: #ff9aa4;
+  --color-brand-soft: #3b2027;
+  --color-brand-faint: #261b21;
+  --color-surface: #181b21;
+  --color-ink: #e8eaf0;
+  --color-strong: #353b47;
+  --color-on-strong: #f5f6fa;
+  --color-body: #b4bbc8;
+  --color-muted: #aab4c4;
+  --color-line: #2a2f39;
+  --color-line-soft: #252a34;
+  --color-field: #4a5260;
+  --color-page: #0f1115;
+  --color-fill: #242a34;
+  --color-auto: #3a2f10;
+  --color-auto-soft: #2c2410;
+  --color-auto-ink: #ffe19b;
+  --color-on: #80d6a5;
+  --color-off: #758198;
+  --color-neutral-soft: #303640;
+  --color-neutral-ink: #d7dce6;
+  --color-blue-soft: #1b3158;
+  --color-blue-ink: #b7d0ff;
+  --color-purple-soft: #332a50;
+  --color-purple-ink: #d6c6ff;
+  --color-amber-soft: #3b311d;
+  --color-amber-ink: #ffe1a3;
+  --color-green-soft: #1b3a2c;
+  --color-green-ink: #a8e6bd;
+  --color-alert-ink: #ffc0c6;
+  --color-alert-line: #6b3440;
+  --color-amber-line: #69522e;
+  --color-typing: #f6c866;
+  --color-series-contact: #94bdff;
+}
+
+:root[data-accent='blue'] { --color-brand-button: #185abc; --color-brand-dark: #16458d; --color-brand: #185abc; --color-brand-text: #16458d; --color-brand-soft: #e9f1ff; --color-brand-faint: #f5f8ff; }
+:root[data-accent='green'] { --color-brand-button: #14784d; --color-brand-dark: #105e3d; --color-brand: #14784d; --color-brand-text: #105e3d; --color-brand-soft: #e5f5ed; --color-brand-faint: #f4fbf7; }
+:root[data-accent='purple'] { --color-brand-button: #7044aa; --color-brand-dark: #58358a; --color-brand: #7044aa; --color-brand-text: #58358a; --color-brand-soft: #f1eafa; --color-brand-faint: #f9f6fd; }
+:root[data-theme='dark'][data-accent='blue'] { --color-brand: #93bdff; --color-brand-text: #a8caff; --color-brand-soft: #1a2b43; --color-brand-faint: #18212d; }
+:root[data-theme='dark'][data-accent='green'] { --color-brand: #82dcb1; --color-brand-text: #9de8c3; --color-brand-soft: #1b3329; --color-brand-faint: #182820; }
+:root[data-theme='dark'][data-accent='purple'] { --color-brand: #c5a6f4; --color-brand-text: #d4bafa; --color-brand-soft: #30243f; --color-brand-faint: #251f2d; }
+
+html,
+body,
+#root {
+  height: 100%;
+  background: var(--color-page);
+  color: var(--color-ink);
+}
+
+button:not(:disabled) {
+  cursor: pointer;
+}
+
+:is(button, a, input, textarea):focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
+
+@keyframes nhap {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-brand-button) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+}
+
+.ping {
+  animation: nhap 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ping {
+    animation: none;
+  }
+}
+
+:root[data-reduce-motion='true'] .ping { animation: none; }
+:root[data-reduce-motion='false'] .ping { animation: nhap 1.6s ease-in-out infinite; }
+:root[data-density='compact'] .conversation-row { padding-top: 0.4rem; padding-bottom: 0.4rem; }
