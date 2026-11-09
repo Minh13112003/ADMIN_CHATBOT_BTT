@@ -96,8 +96,8 @@ export default function AccountsPage() {
   if (!isAdmin) return <p className="p-6 text-sm text-muted">Đang tải...</p>;
 
   return (
-    <main className="page-layout">
-      <header className="page-heading">
+    <main className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 px-8 py-6 max-[1199px]:px-6 max-md:gap-5 max-md:px-4 max-md:py-5 [&_table_thead]:bg-fill [&_table_thead]:text-xs [&_table_th]:whitespace-nowrap [&_table_td]:py-[18px]">
+      <header className="flex flex-wrap items-center justify-between gap-5 [&_.eyebrow]:hidden [&_h1]:hidden [&_p]:mt-0 [&_p]:max-w-[660px] [&_p]:text-sm [&_p]:leading-[1.65] [&_p]:text-muted">
         <div>
           <p className="eyebrow">QUẢN TRỊ ĐỘI NGŨ</p>
           <h1>Tài khoản nhân viên</h1>
@@ -114,13 +114,13 @@ export default function AccountsPage() {
           + Tạo tài khoản
         </button>
       </header>
-      <div className="summary-grid">
+      <div className="grid grid-cols-3 gap-4 max-md:gap-2">
         {[
           { label: 'Tổng tài khoản', value: accounts?.length },
           { label: 'Đang hoạt động', value: accounts?.filter((a) => a.isActive).length },
           { label: 'Đã khoá', value: accounts?.filter((a) => !a.isActive).length },
         ].map((item) => (
-          <div className="summary-card" key={item.label}>
+          <div className="rounded-2xl border border-line bg-surface p-5 max-md:p-3 [&_span]:block [&_span]:text-[0.8rem] [&_span]:text-muted max-md:[&_span]:text-[0.7rem] [&_strong]:mt-2.5 [&_strong]:block [&_strong]:text-[1.8rem] [&_strong]:font-semibold [&_strong]:tabular-nums max-md:[&_strong]:text-[1.4rem]" key={item.label}>
             <span>{item.label}</span>
             <strong>{item.value ?? '—'}</strong>
           </div>
@@ -204,9 +204,9 @@ export default function AccountsPage() {
         </div>
         <div className="flex items-start gap-2 border-b border-amber-line bg-auto-soft px-4 py-2.5 text-xs text-amber-ink"><strong className="shrink-0">Quy tắc an toàn:</strong><span>Quản trị viên không thể tự khoá tài khoản của chính mình hoặc khoá quản trị viên cuối cùng.</span></div>
         <div className="hidden overflow-x-auto xl:block"><table className="w-full min-w-[1100px] border-collapse text-sm"><thead><tr className="bg-fill text-left text-body"><th className="whitespace-nowrap p-4">Nhân viên</th><th className="whitespace-nowrap p-4">Vai trò</th><th className="whitespace-nowrap p-4">Mã nhân viên</th><th className="whitespace-nowrap p-4">Vị trí</th><th className="whitespace-nowrap p-4">Đang giữ</th><th className="whitespace-nowrap p-4">Đăng nhập gần nhất</th><th className="whitespace-nowrap p-4">Trạng thái</th><th className="whitespace-nowrap p-4">Thao tác</th></tr></thead><tbody>{visibleAccounts?.map((a) => <tr key={a.id} className="border-t border-line-soft hover:bg-page"><td className="whitespace-nowrap p-4"><div className="flex items-center gap-3"><span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-xs font-bold text-brand-text">{a.fullName.split(' ').slice(-2).map((w) => w[0]).join('').toUpperCase()}</span><div><strong>{a.fullName}</strong>{a.id === me?.id && <span className="ml-1.5 rounded bg-brand-soft px-1.5 py-0.5 text-[0.6875rem] font-bold text-brand-text">Bạn</span>}<span className="block text-xs text-muted">{a.email}</span></div></div></td><td className="whitespace-nowrap p-4"><span className={`rounded px-2 py-0.5 text-xs font-bold ${a.role === 'ADMIN' ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>{a.role === 'ADMIN' ? 'Admin (Quản trị)' : 'Sale (Tư vấn)'}</span></td><td className="whitespace-nowrap p-4">{a.employeeCode ?? 'Chưa có'}</td><td className="whitespace-nowrap p-4">{a.position ?? 'Chưa có'}</td><td className="whitespace-nowrap p-4">{a.holding ? <span className="rounded-full bg-auto px-2.5 py-1 text-xs font-bold text-auto-ink">{a.holding} khách</span> : <span className="text-muted">0</span>}</td><td className="whitespace-nowrap p-4">{a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleString('vi-VN') : 'Chưa đăng nhập'}</td><td className="whitespace-nowrap p-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${a.isActive ? 'bg-green-soft text-green-ink' : 'bg-fill text-muted'}`}>{a.isActive ? 'Đang hoạt động' : 'Đã khoá'}</span></td><td className="whitespace-nowrap p-4"><div className="flex gap-2"><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" disabled={a.id === me?.id && a.isActive} onClick={() => openAction(a, 'active')}>{a.isActive ? 'Khoá' : 'Mở khoá'}</button><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" disabled={a.role === 'ADMIN' && a.id !== me?.id} onClick={() => openAction(a, 'password')}>Đặt lại mật khẩu</button></div></td></tr>)}</tbody></table></div>
-        <div className="account-grid xl:hidden">
+        <div className="grid grid-cols-2 max-[1199px]:grid-cols-1 xl:hidden">
           {visibleAccounts?.map((a) => (
-            <article key={a.id} className="account-card">
+            <article key={a.id} className="border-b border-line-soft p-6 max-md:p-[18px] odd:border-r odd:border-r-line-soft max-[1199px]:odd:border-r-0">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
                   <h3 className="font-semibold">{a.fullName}</h3>

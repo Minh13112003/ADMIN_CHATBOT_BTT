@@ -10,8 +10,8 @@ type Tab = 'auto' | 'quick';
 export default function TemplatesPage() {
   const [tab, setTab] = useState<Tab>('auto');
   return (
-    <section className="page-layout templates-page">
-      <header className="page-heading">
+    <section className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 px-8 py-6 max-[1199px]:px-6 max-md:gap-5 max-md:px-4 max-md:py-5 [&_table_thead]:bg-fill [&_table_thead]:text-xs [&_table_th]:whitespace-nowrap [&_table_td]:py-[18px] [&>div:not(.self-start)]:p-5">
+      <header className="flex flex-wrap items-center justify-between gap-5 [&_.eyebrow]:hidden [&_h1]:hidden [&_p]:mt-0 [&_p]:max-w-[660px] [&_p]:text-sm [&_p]:leading-[1.65] [&_p]:text-muted">
         <div>
           <p className="eyebrow">CÔNG CỤ TƯ VẤN</p>
           <h1>Thư viện trả lời</h1>
@@ -61,7 +61,7 @@ function QuickTemplates() {
   return (
     <>
       <p className="text-sm text-body">Nhân viên bấm để chèn vào khung nhắn, sửa rồi mới gửi.</p>
-      <details className="editor-disclosure">
+      <details className="overflow-hidden rounded-2xl border border-line bg-surface [&>summary]:px-5 [&>summary]:py-4 [&>summary]:text-sm [&>summary]:font-semibold [&>summary]:text-brand-text [&>form]:rounded-none [&>form]:border-x-0 [&>form]:border-b-0 [&>form]:border-t [&>form]:border-line [&>form]:p-5">
         <summary>+ Thêm mới</summary>
         <form onSubmit={them} className="flex flex-wrap gap-2 rounded-[14px] border border-line bg-surface p-3">
           <input
@@ -151,7 +151,7 @@ function AutoReplies() {
       <p className="text-sm text-body">
         Hệ thống tự gửi khi khớp điều kiện. Thứ tự ưu tiên: khách đòi gặp nhân viên, quy tắc tự động, rồi mới đến bot. Quy tắc tự dừng khi nhân viên đang nhắn.
       </p>
-      <details className="editor-disclosure">
+      <details className="overflow-hidden rounded-2xl border border-line bg-surface [&>summary]:px-5 [&>summary]:py-4 [&>summary]:text-sm [&>summary]:font-semibold [&>summary]:text-brand-text [&>form]:rounded-none [&>form]:border-x-0 [&>form]:border-b-0 [&>form]:border-t [&>form]:border-line [&>form]:p-5">
         <summary>+ Thêm mới</summary>
         <form onSubmit={them} className="flex flex-col gap-2 rounded-[14px] border border-line bg-surface p-3">
           <div className="text-[0.9375rem] font-semibold">Thêm quy tắc</div>

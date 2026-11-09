@@ -280,7 +280,7 @@ function Composer({
         : null;
 
   return (
-    <div className="chat-composer flex min-w-0 shrink-0 flex-col gap-2 border-t border-line bg-surface p-3 sm:p-4">
+    <div className="chat-composer max-h-[55%] overflow-y-auto max-md:max-h-1/2 max-md:pb-[max(12px,env(safe-area-inset-bottom))] flex min-w-0 shrink-0 flex-col gap-2 border-t border-line bg-surface p-3 sm:p-4">
       <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-fill py-1 pl-2.5 pr-2">
         <span className="min-w-0 flex-1 basis-40 text-[0.8125rem] text-body">
           <strong className="font-semibold">Trả lời tự động</strong> · {autoText}
@@ -403,7 +403,7 @@ function Composer({
           maxLength={4000}
           className="min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-sm leading-relaxed"
         />
-        <button type="button" title="Câu trả lời nhanh" aria-label="Câu trả lời nhanh" className="quick-reply-trigger" onClick={() => setQuickOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></button>
+        <button type="button" title="Câu trả lời nhanh" aria-label="Câu trả lời nhanh" className="grid size-11 shrink-0 place-items-center rounded-[10px] border border-line bg-surface text-brand-text hover:bg-brand-soft" onClick={() => setQuickOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></button>
         <button type="submit" disabled={dangGui || (!draft.trim() && !tep)} className={primaryClass}>
           {dangGui ? 'Đang gửi…' : 'Gửi'}
         </button>

@@ -35,14 +35,14 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
 
   return (
     <section aria-label="Danh sách hội thoại" className="flex h-full min-h-0 w-full flex-col border-r border-line bg-surface">
-      <div className="inbox-filters flex flex-col gap-3 px-4 pb-4 pt-5">
+      <div className="border-b border-line flex flex-col gap-3 px-4 pb-4 pt-5">
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-xl font-bold">
             Hộp thư <span className="ml-1 text-sm font-medium text-muted">{tong}</span>
           </h1>
           <button
             type="button"
-            className="filter-button"
+            className="flex min-h-11 items-center gap-[5px] rounded-[9px] border border-line px-2 text-xs text-body"
             aria-expanded={filtersOpen}
             aria-controls="inbox-advanced-filters"
             onClick={() => setFiltersOpen(!filtersOpen)}
@@ -119,7 +119,7 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
               ))}
             </div>
 
-            <div role="group" aria-label="Lọc theo trạng thái" className="inbox-filter-row flex flex-wrap gap-1.5 pb-1">
+            <div role="group" aria-label="Lọc theo trạng thái" className="[scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-wrap gap-1.5 pb-1">
               <button type="button" aria-pressed={!status} onClick={() => setStatus(null)} className={`min-h-11 shrink-0 rounded-lg px-3 text-xs font-semibold ${!status ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>Tất cả ({tong})</button>
               {STATUS_LIST.map((s) => <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)} className={`min-h-10 shrink-0 rounded-lg px-3 text-xs font-semibold ${status === s ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>{STATUS[s].label} ({data?.counts[s] ?? 0})</button>)}
             </div>
@@ -140,7 +140,7 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
                 type="button"
                 onClick={() => onSelect(c.id)}
                 aria-current={dangChon}
-                className={`conversation-row flex w-full gap-3 border-b border-line-soft px-4 py-4 text-left hover:bg-page ${dangChon ? 'bg-brand-soft' : lh ? 'bg-brand-faint' : 'bg-surface'}`}
+                className={`relative aria-[current=true]:shadow-[inset_3px_0_var(--color-brand)] [:root[data-density=compact]_&]:py-[0.4rem] flex w-full gap-3 border-b border-line-soft px-4 py-4 text-left hover:bg-page ${dangChon ? 'bg-brand-soft' : lh ? 'bg-brand-faint' : 'bg-surface'}`}
               >
                 <span
                   className={`flex size-11 shrink-0 items-center justify-center rounded-full font-semibold ${lh ? 'ping bg-status-contact text-white' : 'bg-neutral-soft text-neutral-ink'}`}

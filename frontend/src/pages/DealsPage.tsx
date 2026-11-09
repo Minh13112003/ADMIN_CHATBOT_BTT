@@ -67,8 +67,8 @@ export default function DealsPage() {
     }
   };
   return (
-    <main className="page-layout deals-page">
-      <header className="page-heading">
+    <main className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 px-8 py-6 max-[1199px]:px-6 max-md:gap-5 max-md:px-4 max-md:py-5 [&_table_thead]:bg-fill [&_table_thead]:text-xs [&_table_th]:whitespace-nowrap [&_table_td]:py-[18px] deals-page">
+      <header className="flex flex-wrap items-center justify-between gap-5 [&_.eyebrow]:hidden [&_h1]:hidden [&_p]:mt-0 [&_p]:max-w-[660px] [&_p]:text-sm [&_p]:leading-[1.65] [&_p]:text-muted">
         <div>
           <p className="eyebrow">HÀNH TRÌNH ĐẶT TOUR</p>
           <h1>Đơn đặt tour</h1>
@@ -86,11 +86,11 @@ export default function DealsPage() {
           ]}
         />
       </header>
-      <div className="deals-toolbar">
-        <label className="deals-search"><span className="sr-only">Tìm đơn đặt tour</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm theo tên khách, số điện thoại, mã tour..." /></label>
-        <label className="deals-source"><span className="sr-only">Lọc theo nguồn</span><select value={channel} onChange={(e) => setChannel(e.target.value as typeof channel)}><option value="ALL">Tất cả nguồn</option><option value="WEB">bttAI Web</option><option value="APP">bttAI App</option></select></label>
-        <div className="deals-summary"><span>Doanh thu đã chốt</span><strong>{vnd((data ?? []).filter((d) => d.status === "CONFIRMED" && !d.voidedAt).reduce((sum, d) => sum + d.amount, 0))}</strong></div>
-        <div className="deals-summary pending"><span>Chờ xác nhận</span><strong>{(data ?? []).filter((d) => d.status === "PENDING" && !d.voidedAt).length} đơn</strong></div>
+      <div className="grid grid-cols-[minmax(220px,1fr)_minmax(150px,180px)_auto_auto] items-stretch gap-3 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1">
+        <label className="flex min-h-16 items-center rounded-xl border border-line bg-surface px-4 py-3 max-[1100px]:col-span-full max-[700px]:col-auto [&_input]:w-full [&_input]:min-w-0 [&_input]:border-0 [&_input]:bg-transparent [&_input]:text-sm [&_input]:outline-0"><span className="sr-only">Tìm đơn đặt tour</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm theo tên khách, số điện thoại, mã tour..." /></label>
+        <label className="flex min-w-0 rounded-xl border border-line bg-surface p-3 [&_select]:w-full [&_select]:min-w-0 [&_select]:border-0 [&_select]:bg-transparent [&_select]:text-[0.82rem] [&_select]:outline-0"><span className="sr-only">Lọc theo nguồn</span><select value={channel} onChange={(e) => setChannel(e.target.value as typeof channel)}><option value="ALL">Tất cả nguồn</option><option value="WEB">bttAI Web</option><option value="APP">bttAI App</option></select></label>
+        <div className="flex min-h-16 min-w-[180px] flex-col items-start justify-center gap-[3px] rounded-xl border border-line bg-surface px-4 py-3 [&_span]:text-xs [&_span]:text-muted [&_strong]:text-[1.05rem] [&_strong]:text-green-ink [&.pending_strong]:text-brand-text"><span>Doanh thu đã chốt</span><strong>{vnd((data ?? []).filter((d) => d.status === "CONFIRMED" && !d.voidedAt).reduce((sum, d) => sum + d.amount, 0))}</strong></div>
+        <div className="flex min-h-16 min-w-[180px] flex-col items-start justify-center gap-[3px] rounded-xl border border-line bg-surface px-4 py-3 [&_span]:text-xs [&_span]:text-muted [&_strong]:text-[1.05rem] [&_strong]:text-green-ink [&.pending_strong]:text-brand-text pending"><span>Chờ xác nhận</span><strong>{(data ?? []).filter((d) => d.status === "PENDING" && !d.voidedAt).length} đơn</strong></div>
       </div>
       {isLoading && !data && <p role="status">Đang tải đơn đặt tour...</p>}
       {error && (
@@ -105,18 +105,18 @@ export default function DealsPage() {
         </div>
       )}
       {data && (
-        <div className="deals-board">
+        <div className="grid grid-cols-3 gap-4 max-[1100px]:grid-cols-1">
           {groups.map((g) => (
-            <section key={g.title} className={`deals-column deals-${g.tone}`}>
+            <section key={g.title} className={`min-w-0 overflow-hidden rounded-[14px] border [&>h2]:flex [&>h2]:justify-between [&>h2]:border-b [&>h2]:border-line [&>h2]:p-4 [&>h2]:font-bold [&>h2_span]:rounded-full [&>h2_span]:bg-surface [&>h2_span]:px-2 ${{"pending":"border-amber-line bg-auto-soft [&>h2]:text-amber-ink","confirmed":"border-green-soft bg-[color-mix(in_srgb,var(--color-green-soft)_35%,var(--color-surface))] [&>h2]:text-green-ink","cancelled":"border-line bg-fill"}[g.tone]}`}>
               <h2>
                 {g.title} <span>{g.rows.length} đơn · {vnd(g.rows.reduce((t, r) => t + r.amount, 0))}</span>
               </h2>
-              <div className="deals-column-body">
+              <div className="flex flex-col gap-3 p-3">
                 {g.rows.length === 0 && (
-                  <p className="deals-empty">{query ? "Không có đơn khớp tìm kiếm." : "Chưa có đơn trong kỳ này."}</p>
+                  <p className="grid min-h-[150px] place-items-center rounded-[10px] border border-dashed border-line bg-surface p-4 text-center text-sm text-muted">{query ? "Không có đơn khớp tìm kiếm." : "Chưa có đơn trong kỳ này."}</p>
                 )}
                 {g.rows.map((d) => (
-                  <article key={d.id} className="deals-card">
+                  <article key={d.id} className="min-w-0 rounded-xl border border-line bg-surface p-4 [&_strong]:[overflow-wrap:anywhere] [&_p]:[overflow-wrap:anywhere]">
                     <div className="flex items-center justify-between gap-2">
                       <strong className="min-w-0 flex-1">{d.customer.name}</strong>
                       <span className="shrink-0 rounded bg-blue-soft px-2 py-0.5 text-[0.6875rem] font-bold text-blue-ink">

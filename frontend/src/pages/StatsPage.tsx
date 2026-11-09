@@ -17,9 +17,9 @@ export default function StatsPage() {
   const { data: s, error } = useSWR<Stats>(`/stats?period=${period}`, fetcher, { refreshInterval: 5 * 60_000 });
 
   return (
-    <section className="page-layout stats-page">
+    <section className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 px-8 py-6 max-[1199px]:px-6 max-md:gap-5 max-md:px-4 max-md:py-5 [&_table_thead]:bg-fill [&_table_thead]:text-xs [&_table_th]:whitespace-nowrap [&_table_td]:py-[18px] stats-page">
       <div className="flex flex-wrap items-center gap-2.5">
-        <header className="page-heading min-w-48 flex-1">
+        <header className="flex flex-wrap items-center justify-between gap-5 [&_.eyebrow]:hidden [&_h1]:hidden [&_p]:mt-0 [&_p]:max-w-[660px] [&_p]:text-sm [&_p]:leading-[1.65] [&_p]:text-muted min-w-48 flex-1">
           <div>
             <p className="eyebrow">HIỆU QUẢ KINH DOANH</p>
             <h1>Báo cáo hiệu suất kinh doanh &amp; hội thoại đa kênh</h1>
@@ -43,7 +43,7 @@ export default function StatsPage() {
       {!s && !error && <p className="text-sm text-muted">Đang tải...</p>}
       {s && (
         <>
-          <div className="stats-kpis">
+          <div className="grid grid-cols-5 gap-3 max-[1250px]:grid-cols-3 max-md:grid-cols-2 max-md:gap-2.5">
             <Kpi label="Khách nhắn tin" value={so(s.customers)} sub={`${so(s.phones)} người để lại số`} />
             <Kpi label="Số điện thoại để lại" value={so(s.phones)} sub={`${pct(s.phones, s.customers)} khách nhắn tin`} />
             <Kpi label="Yêu cầu gặp nhân viên" value={so(s.contact)} sub={s.contact ? `Phản hồi trung vị ${thoiLuong(s.responseTime.medianSeconds)}` : 'Chưa có yêu cầu trong kỳ'} />
@@ -158,7 +158,7 @@ export default function StatsPage() {
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="kpi-card">
+    <div className="min-h-[152px] rounded-xl border border-line bg-surface p-[19px] max-md:p-3.5 last:border-l-4 last:border-l-brand [&>div:nth-child(2)]:mb-2 [&>div:nth-child(2)]:mt-3.5 [&>div:nth-child(2)]:text-[1.8rem] [&>div:nth-child(2)]:tracking-[-0.04em] max-md:[&>div:nth-child(2)]:text-[1.45rem]">
       <div className="text-[0.8125rem] text-body">{label}</div>
       <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
       <div className="mt-0.5 text-xs text-muted">{sub}</div>

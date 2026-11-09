@@ -114,8 +114,8 @@ export function Field({ label, children }: { label: string; children: ReactNode 
   );
 }
 
-export const inputClass = 'ui-input min-h-11 w-full rounded-[10px] border border-field bg-surface px-3 text-sm font-normal text-ink';
-export const primaryClass = 'ui-primary min-h-11 rounded-[10px] bg-brand-button px-4 font-semibold text-white hover:bg-brand-dark disabled:opacity-60';
+export const inputClass = 'transition-[border-color,box-shadow] duration-150 hover:border-muted min-h-11 w-full rounded-[10px] border border-field bg-surface px-3 text-sm font-normal text-ink';
+export const primaryClass = 'text-sm shadow-[0_2px_3px_#0000000d] min-h-11 rounded-[10px] bg-brand-button px-4 font-semibold text-white hover:bg-brand-dark disabled:opacity-60';
 export const secondaryClass = 'min-h-11 rounded-[10px] border border-field bg-surface px-4 font-medium text-ink hover:bg-fill disabled:opacity-60';
 export const chipClass = 'min-h-9 rounded-full border border-field bg-surface px-2.5 text-[0.8125rem] text-neutral-ink hover:bg-fill disabled:opacity-60';
 

@@ -81,7 +81,7 @@ export function QuickReplyPicker({
   }, [onClose, onChoose, preview, rows, selected]);
   return (
     <div
-      className="quick-reply-backdrop"
+      className="fixed inset-0 z-[70] grid place-items-center bg-[rgb(12_18_28/55%)] p-4 max-md:p-0"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -91,7 +91,7 @@ export function QuickReplyPicker({
         role="dialog"
         aria-modal="true"
         aria-label="Câu trả lời nhanh"
-        className="quick-reply-dialog"
+        className="flex max-h-[80dvh] w-[min(720px,100%)] flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_22px_80px_rgb(0_0_0/20%)] max-md:h-dvh max-md:max-h-none max-md:w-full max-md:rounded-none"
       >
         <header className="flex items-start gap-3 border-b border-line p-4">
           <span
@@ -134,8 +134,8 @@ export function QuickReplyPicker({
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <div className="quick-reply-rows">
-          <div className="quick-reply-head">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="sticky top-0 grid grid-cols-[1fr_2fr] bg-fill py-2.5 pl-5 pr-14 text-xs font-bold text-muted max-md:hidden">
             <span>Tiêu đề</span>
             <span>Nội dung mẫu</span>
           </div>
@@ -170,11 +170,11 @@ export function QuickReplyPicker({
           {rows.map((t, i) => (
             <div
               key={t.id}
-              className={`quick-reply-row ${selected === i ? "is-selected" : ""}`}
+              className={`flex min-h-16 items-stretch border-t border-line-soft hover:bg-brand-soft hover:shadow-[inset_4px_0_var(--color-brand)] max-md:min-h-[72px] ${selected === i ? "bg-brand-soft shadow-[inset_4px_0_var(--color-brand)]" : ""}`}
             >
               <button
                 type="button"
-                className="quick-reply-pick"
+                className="grid min-w-0 flex-1 grid-cols-[1fr_2fr] items-center gap-4 py-2.5 pl-5 pr-2 text-left text-[0.8125rem] max-md:flex max-md:flex-col max-md:items-start max-md:gap-[3px] [&>*]:min-w-0"
                 onMouseEnter={() => setSelected(i)}
                 onClick={() => dung(t)}
               >
@@ -184,7 +184,7 @@ export function QuickReplyPicker({
               <button
                 type="button"
                 aria-label={`Xem toàn bộ nội dung ${t.title}`}
-                className="quick-reply-eye"
+                className="grid w-12 shrink-0 place-items-center text-body"
                 onClick={() => setPreview(t)}
               >
                 <svg
@@ -211,7 +211,7 @@ export function QuickReplyPicker({
       </section>
       {preview && (
         <div
-          className="quick-preview-backdrop"
+          className="fixed inset-0 z-[75] grid place-items-center bg-[rgb(12_18_28/25%)] p-4 max-md:items-end max-md:p-0"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setPreview(null);
           }}
@@ -221,9 +221,9 @@ export function QuickReplyPicker({
             role="dialog"
             aria-modal="true"
             aria-label="Toàn bộ nội dung mẫu"
-            className="quick-preview"
+            className="flex max-h-[65dvh] w-[min(420px,100%)] flex-col overflow-hidden rounded-2xl border border-brand bg-surface shadow-[0_20px_70px_rgb(0_0_0/20%)] max-md:max-h-[50dvh] max-md:w-full max-md:rounded-b-none max-md:rounded-t-3xl max-md:border-line"
           >
-            <div className="quick-handle md:hidden" />
+            <div className="mx-auto mt-2.5 h-1 w-[42px] rounded bg-field md:hidden" />
             <header className="flex items-start justify-between gap-2 border-b border-line p-4">
               <div>
                 <h3 className="font-semibold">Toàn bộ nội dung mẫu</h3>

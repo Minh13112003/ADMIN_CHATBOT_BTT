@@ -165,12 +165,12 @@ export function Shell({ children }: { children: ReactNode }) {
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="workspace-header relative z-20 flex items-center gap-2 border-b border-line bg-surface px-4 py-2 md:px-6">
+        <header className="workspace-header min-h-[72px] max-md:min-h-16 relative z-20 flex items-center gap-2 border-b border-line bg-surface px-4 py-2 md:px-6">
           <div className="min-w-0 flex-1">
             <div className="text-base font-semibold md:text-xl">{NAV.find((n) => pathname.startsWith(n.href))?.label ?? 'BenThanh Tourist'}</div>
             {!connected && <p className="text-xs text-brand-text">Mất kết nối tức thời, tin mới có thể đến chậm</p>}
           </div>
-          {connected && <span className="hidden items-center gap-2 text-sm text-green-ink sm:flex"><span className="connection-dot bg-on" />Đang kết nối</span>}
+          {connected && <span className="hidden items-center gap-2 text-sm text-green-ink sm:flex"><span className="size-[7px] shrink-0 rounded-full bg-on" />Đang kết nối</span>}
 
           <div className="relative">
             <button
@@ -288,8 +288,8 @@ export function Shell({ children }: { children: ReactNode }) {
           {children}
         </div>
       </div>
-      <nav aria-label="Điều hướng điện thoại" className="mobile-tabs md:hidden">{NAV.slice(0, 4).map((n) => <Link key={n.href} to={n.href} aria-current={pathname.startsWith(n.href) ? 'page' : undefined}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.href === '/deals' ? 'Đơn tour' : n.href === '/reminders' ? 'Hẹn' : n.label}</span>{n.href === '/inbox' && soCho > 0 && <i>{soCho}</i>}</Link>)}<button type="button" aria-expanded={moreOpen} onClick={() => setMoreOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>Thêm</span></button></nav>
-      {moreOpen && <Dialog title="Thêm" variant="drawer" onClose={() => setMoreOpen(false)}><nav aria-label="Mục khác" className="workspace-nav">{NAV.slice(4).filter((n) => !n.admin || me.role === 'ADMIN').map((n) => <Link key={n.href} to={n.href} onClick={() => setMoreOpen(false)} aria-current={pathname.startsWith(n.href) ? 'page' : undefined} className="nav-link"><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.label}</span></Link>)}</nav></Dialog>}
+      <nav aria-label="Điều hướng điện thoại" className="z-25 flex h-[calc(56px+env(safe-area-inset-bottom))] shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden [&>a]:relative [&>a]:flex [&>a]:min-h-14 [&>a]:min-w-0 [&>a]:flex-1 [&>a]:flex-col [&>a]:items-center [&>a]:justify-center [&>a]:gap-px [&>a]:text-[0.6875rem] [&>a]:font-semibold [&>a]:text-muted [&>button]:relative [&>button]:flex [&>button]:min-h-14 [&>button]:min-w-0 [&>button]:flex-1 [&>button]:flex-col [&>button]:items-center [&>button]:justify-center [&>button]:gap-px [&>button]:text-[0.6875rem] [&>button]:font-semibold [&>button]:text-muted [&>a[aria-current=page]]:text-brand-text [&_i]:absolute [&_i]:right-[20%] [&_i]:top-px [&_i]:grid [&_i]:h-[17px] [&_i]:min-w-[17px] [&_i]:place-items-center [&_i]:rounded-[9px] [&_i]:bg-brand-button [&_i]:text-[0.6rem] [&_i]:not-italic [&_i]:text-white md:hidden">{NAV.slice(0, 4).map((n) => <Link key={n.href} to={n.href} aria-current={pathname.startsWith(n.href) ? 'page' : undefined}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.href === '/deals' ? 'Đơn tour' : n.href === '/reminders' ? 'Hẹn' : n.label}</span>{n.href === '/inbox' && soCho > 0 && <i>{soCho}</i>}</Link>)}<button type="button" aria-expanded={moreOpen} onClick={() => setMoreOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>Thêm</span></button></nav>
+      {moreOpen && <Dialog title="Thêm" variant="drawer" onClose={() => setMoreOpen(false)}><nav aria-label="Mục khác" className="flex flex-col gap-0.5">{NAV.slice(4).filter((n) => !n.admin || me.role === 'ADMIN').map((n) => <Link key={n.href} to={n.href} onClick={() => setMoreOpen(false)} aria-current={pathname.startsWith(n.href) ? 'page' : undefined} className="flex min-h-11 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text aria-[current=page]:shadow-[inset_3px_0_var(--color-brand)] [&_svg]:shrink-0"><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.label}</span></Link>)}</nav></Dialog>}
       {doiMk && <ChangePasswordDialog onClose={() => setDoiMk(false)} />}
     </div>
   );

@@ -23,8 +23,8 @@ const normalize = (s: string) =>
 export default function ReplyLibraryPage() {
   const [tab, setTab] = useState<"quick" | "auto">("quick");
   return (
-    <main className="page-layout">
-      <header className="page-heading">
+    <main className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 px-8 py-6 max-[1199px]:px-6 max-md:gap-5 max-md:px-4 max-md:py-5 [&_table_thead]:bg-fill [&_table_thead]:text-xs [&_table_th]:whitespace-nowrap [&_table_td]:py-[18px]">
+      <header className="flex flex-wrap items-center justify-between gap-5 [&_.eyebrow]:hidden [&_h1]:hidden [&_p]:mt-0 [&_p]:max-w-[660px] [&_p]:text-sm [&_p]:leading-[1.65] [&_p]:text-muted">
         <div>
           <p className="eyebrow">CÔNG CỤ TƯ VẤN</p>
           <h1>Thư viện trả lời</h1>

@@ -111,8 +111,8 @@ export default function RemindersPage() {
     finally { setBusy(null); }
   };
   return (
-    <main className="page-layout reminders-page">
-      <header className="page-heading">
+    <main className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 px-8 py-6 max-[1199px]:px-6 max-md:gap-5 max-md:px-4 max-md:py-5 [&_table_thead]:bg-fill [&_table_thead]:text-xs [&_table_th]:whitespace-nowrap [&_table_td]:py-[18px] reminders-page">
+      <header className="flex flex-wrap items-center justify-between gap-5 [&_.eyebrow]:hidden [&_h1]:hidden [&_p]:mt-0 [&_p]:max-w-[660px] [&_p]:text-sm [&_p]:leading-[1.65] [&_p]:text-muted">
         <div>
           <p className="eyebrow">CHĂM SÓC ĐÚNG HẸN</p>
           <h1>Lịch hẹn nhắc</h1>
@@ -120,8 +120,8 @@ export default function RemindersPage() {
         </div>
         <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => setNewOpen(true)}>+ Thêm lịch hẹn</button>
       </header>
-      <div className="reminder-overview"><div><span>Quá hạn cần xử lý</span><strong>{overdueCount}</strong></div><div><span>Lịch hẹn hôm nay</span><strong>{todayCount}</strong></div><div><span>Tổng lịch đang theo dõi</span><strong>{allItems.length}</strong></div></div>
-      <div className="reminder-layout">
+      <div className="grid grid-cols-3 gap-3 max-[700px]:grid-cols-1 [&>div]:flex [&>div]:items-center [&>div]:justify-between [&>div]:gap-3 [&>div]:rounded-[11px] [&>div]:border [&>div]:border-line [&>div]:bg-surface [&>div]:px-[18px] [&>div]:py-[15px] [&_span]:text-[0.82rem] [&_span]:text-muted [&_strong]:text-[1.35rem] [&_strong]:text-brand-text"><div><span>Quá hạn cần xử lý</span><strong>{overdueCount}</strong></div><div><span>Lịch hẹn hôm nay</span><strong>{todayCount}</strong></div><div><span>Tổng lịch đang theo dõi</span><strong>{allItems.length}</strong></div></div>
+      <div className="grid grid-cols-[minmax(0,1fr)_280px] gap-5 max-[1100px]:grid-cols-1">
         <div className="min-w-0">
           <div className="mb-4 flex gap-2 overflow-x-auto pb-1 md:hidden">
             <button
@@ -171,7 +171,7 @@ export default function RemindersPage() {
                 </h2>
                 <div className="space-y-3">
                   {g.rows.map((c) => (
-                    <article key={c.id} className="reminder-card">
+                    <article key={c.id} className="min-w-0 rounded-xl border border-line bg-surface p-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <strong>{c.customer.name}</strong>
@@ -211,7 +211,7 @@ export default function RemindersPage() {
               </section>
             ))}
         </div>
-        <aside className="reminder-week">
+        <aside className="min-w-0 self-start rounded-xl border border-line bg-surface p-4 max-[1100px]:hidden">
           <h2 className="mb-4 font-semibold">Lịch trong tuần</h2>
           {week.map((d) => (
             <button
@@ -244,7 +244,7 @@ export default function RemindersPage() {
               Xem tất cả
             </button>
           )}
-          <div className="reminder-agenda"><h3>Lịch theo giờ hôm nay</h3>{allItems.filter((c) => dayKey(new Date(c.followUp!.at)) === today).sort((a,b) => new Date(a.followUp!.at).getTime() - new Date(b.followUp!.at).getTime()).map((c) => <Link key={c.id} to={`/inbox?c=${c.id}`}><time>{gioTin(c.followUp!.at)}</time><span>{c.customer.name}<small>{c.followUp?.note || "Mở hội thoại để xem chi tiết"}</small></span></Link>)}{todayCount === 0 && <p>Chưa có lịch hẹn hôm nay.</p>}</div>
+          <div className="mt-4 border-t border-line pt-4 [&_h3]:mb-3 [&_h3]:text-[0.85rem] [&_h3]:font-bold [&>a]:flex [&>a]:gap-2.5 [&>a]:border-t [&>a]:border-line-soft [&>a]:py-[11px] [&>a]:text-[0.8rem] [&_time]:shrink-0 [&_time]:font-bold [&_time]:text-brand-text [&_small]:block [&_small]:leading-normal [&_small]:text-muted [&>p]:text-[0.8rem] [&>p]:text-muted"><h3>Lịch theo giờ hôm nay</h3>{allItems.filter((c) => dayKey(new Date(c.followUp!.at)) === today).sort((a,b) => new Date(a.followUp!.at).getTime() - new Date(b.followUp!.at).getTime()).map((c) => <Link key={c.id} to={`/inbox?c=${c.id}`}><time>{gioTin(c.followUp!.at)}</time><span>{c.customer.name}<small>{c.followUp?.note || "Mở hội thoại để xem chi tiết"}</small></span></Link>)}{todayCount === 0 && <p>Chưa có lịch hẹn hôm nay.</p>}</div>
         </aside>
       </div>
       {reschedule && <Dialog title="Dời hẹn nhắc" variant="drawer" onClose={() => setReschedule(null)}><div className="flex flex-col gap-2">{[{ label: '+30 phút', at: new Date(Date.now() + 30 * 60000) }, { label: '+2 giờ', at: new Date(Date.now() + 2 * 3600_000) }, { label: 'Sáng mai 09:00', at: nextMorning() }].map((option) => <button key={option.label} className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => { void update(reschedule, option.at); setReschedule(null); }}>{option.label}</button>)}</div></Dialog>}

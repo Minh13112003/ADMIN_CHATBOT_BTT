@@ -18,7 +18,7 @@ export function StatsCharts({ period }: { period: 'today' | 'week' | 'month' | '
 
   return <div className="grid min-w-0 gap-3.5">
     <div className="flex flex-wrap items-center gap-3"><div className="flex-1"><h3 className="font-semibold">Diễn biến theo thời gian</h3><p className="text-xs text-muted">Các mốc gần nhất; khoảng này có thể khác kỳ của thẻ tổng.</p></div><Segmented label="Mốc biểu đồ" value={granularity} onChange={setGranularity} items={[{ key: 'day', label: 'Ngày' }, { key: 'week', label: 'Tuần' }, { key: 'month', label: 'Tháng' }, { key: 'quarter', label: 'Quý' }]} /></div>
-    {series.error ? <p role="alert" className="text-sm text-brand-text">Không tải được biểu đồ theo thời gian.</p> : !series.data ? <p className="text-sm text-muted">Đang tải biểu đồ...</p> : <div className="stats-chart-grid">
+    {series.error ? <p role="alert" className="text-sm text-brand-text">Không tải được biểu đồ theo thời gian.</p> : !series.data ? <p className="text-sm text-muted">Đang tải biểu đồ...</p> : <div className="grid grid-cols-1 gap-3.5 min-[1350px]:grid-cols-2">
       <section className="min-w-0 rounded-2xl border border-line bg-surface p-3.5" aria-label="Biểu đồ doanh thu và số đơn">
         <div className="mb-3 flex flex-wrap items-center gap-2"><h4 className="flex-1 font-semibold">{metric === 'revenue' ? 'Doanh thu theo mốc' : 'Số đơn đã chốt theo mốc'}</h4><Segmented label="Số liệu biểu đồ cột" value={metric} onChange={setMetric} items={[{ key: 'revenue', label: 'Doanh thu' }, { key: 'deals', label: 'Số đơn' }]} /></div>
         <p className="mb-2 text-xs text-muted">{metric === 'revenue' ? 'Đơn vị: triệu đồng' : 'Đơn vị: đơn'}. Chỉ gồm đơn đã chốt, chưa bị huỷ.</p>

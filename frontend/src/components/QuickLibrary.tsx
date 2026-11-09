@@ -24,7 +24,7 @@ const BIEN = [
   "{số hotline}",
 ];
 const inputBox =
-  "ui-input min-h-11 w-full rounded-[10px] border border-field bg-surface px-3 text-sm text-ink";
+  "transition-[border-color,box-shadow] duration-150 hover:border-muted min-h-11 w-full rounded-[10px] border border-field bg-surface px-3 text-sm text-ink";
 
 export default function QuickLibrary() {
   const { data, error, mutate } = useSWR<Template[]>("/templates", fetcher);
@@ -136,8 +136,8 @@ export default function QuickLibrary() {
   const preview = prepareQuickReply(body, "anh Bách", "Mai Phương", { tourName: "Pháp - Thụy Sĩ - Ý 10N9Đ", tourCode: "EUR-PARIS-2025-02", amount: 69900000 });
 
   return (
-    <div className="reply-library">
-      <section className={`reply-library-list ${mobileEditor ? "hidden md:block" : ""}`}>
+    <div className="grid min-h-[540px] grid-cols-[360px_minmax(0,1fr)] overflow-hidden rounded-[14px] border border-line bg-surface max-md:grid-cols-[minmax(0,1fr)]">
+      <section className={`min-w-0 border-r border-line max-md:border-r-0 ${mobileEditor ? "hidden md:block" : ""}`}>
         <div className="flex items-center justify-between gap-2 p-4">
           <h2 className="text-sm font-semibold">Danh sách mẫu câu</h2>
           <button className="inline-flex min-h-11 items-center rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark" onClick={create}>
@@ -160,7 +160,7 @@ export default function QuickLibrary() {
             </button>
           ))}
         </div>
-        <div className="reply-list-scroll">
+        <div className="max-h-[620px] overflow-y-auto">
           {!data && !error && <p className="p-4 text-sm text-muted">Đang tải mẫu...</p>}
           {error && (
             <p className="p-4 text-sm text-brand-text">
@@ -190,7 +190,7 @@ export default function QuickLibrary() {
         </div>
       </section>
 
-      <section className={`reply-library-editor ${!mobileEditor && !showEditor ? "hidden md:block" : ""}`}>
+      <section className={`min-w-0 p-6 max-md:p-4 ${!mobileEditor && !showEditor ? "hidden md:block" : ""}`}>
         <button className="mb-4 text-sm text-brand-text md:hidden" onClick={() => setMobileEditor(false)}>← Danh sách mẫu</button>
         {showEditor ? (
           <form onSubmit={save} className="space-y-5">

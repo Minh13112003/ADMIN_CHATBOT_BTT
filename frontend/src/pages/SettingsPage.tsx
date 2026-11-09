@@ -43,16 +43,16 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="page-layout settings-page">
-      <header className="page-heading">
+    <main className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 px-8 py-6 max-[1199px]:px-6 max-md:gap-5 max-md:px-4 max-md:py-5 [&_table_thead]:bg-fill [&_table_thead]:text-xs [&_table_th]:whitespace-nowrap [&_table_td]:py-[18px] settings-page">
+      <header className="flex flex-wrap items-center justify-between gap-5 [&_.eyebrow]:hidden [&_h1]:hidden [&_p]:mt-0 [&_p]:max-w-[660px] [&_p]:text-sm [&_p]:leading-[1.65] [&_p]:text-muted">
         <div>
           <p className="eyebrow">KHÔNG GIAN CỦA BẠN</p>
           <h1>Cài đặt giao diện</h1>
           <p>Cá nhân hóa để làm việc thoải mái hơn. Các thay đổi được lưu tự động trên trình duyệt này.</p>
         </div>
       </header>
-      <div className="settings-layout">
-        <aside className="settings-index" aria-label="Mục cài đặt">
+      <div className="grid grid-cols-[200px_minmax(0,1fr)] items-start gap-5 max-[1199px]:grid-cols-1">
+        <aside className="sticky top-[18px] flex flex-col gap-[5px] rounded-[14px] border border-line bg-surface p-[15px] max-[1199px]:hidden [&_p]:px-2.5 [&_p]:py-[7px] [&_p]:text-[0.7rem] [&_p]:font-bold [&_p]:tracking-[0.08em] [&_p]:text-muted [&_a]:flex [&_a]:min-h-[42px] [&_a]:items-center [&_a]:rounded-[9px] [&_a]:px-2.5 [&_a]:py-2 [&_a]:text-[0.8rem] [&_a:hover]:bg-brand-soft [&_a:hover]:text-brand-text [&_a:focus-visible]:bg-brand-soft [&_a:focus-visible]:text-brand-text [&_small]:mx-2.5 [&_small]:mb-1 [&_small]:mt-[18px] [&_small]:text-[0.73rem] [&_small]:leading-normal [&_small]:text-muted" aria-label="Mục cài đặt">
           <p>MỤC CÀI ĐẶT</p>
           <a href="#settings-mode">Giao diện & hiển thị</a>
           <a href="#settings-accent">Chủ đề màu</a>
@@ -64,7 +64,7 @@ export default function SettingsPage() {
           <small>Thay đổi được lưu tự động trên trình duyệt này.</small>
         </aside>
         <div className="min-w-0 space-y-6">
-        <section className="settings-controls space-y-6 rounded-2xl border border-line bg-surface p-4 sm:p-6" aria-label="Tùy chọn hiển thị">
+        <section className="[&>div+div]:border-t [&>div+div]:border-line-soft [&>div+div]:pt-6 space-y-6 rounded-2xl border border-line bg-surface p-4 sm:p-6" aria-label="Tùy chọn hiển thị">
           <div id="settings-mode" className="space-y-4">
             <div><h2 className="font-semibold">1. Chế độ hiển thị</h2><p className="text-sm text-muted">Chọn giao diện phù hợp với ánh sáng nơi làm việc.</p></div>
             <Segmented
@@ -77,7 +77,7 @@ export default function SettingsPage() {
                 { key: 'system', label: 'Theo hệ thống' },
               ]}
             />
-            <div className="settings-preview-pair">
+            <div className="grid grid-cols-2 gap-3.5 max-[1199px]:grid-cols-1">
               <ThemePreview label="Giao diện sáng" dark={false} accent={settings.accent} active={settings.mode === 'light'} />
               <ThemePreview label="Giao diện tối" dark accent={settings.accent} active={settings.mode === 'dark'} />
             </div>
@@ -195,8 +195,19 @@ export default function SettingsPage() {
 
 function ThemePreview({ label, dark, accent, active }: { label: string; dark: boolean; accent: Accent; active: boolean }) {
   const color = ACCENTS.find((item) => item.key === accent)?.color ?? '#d0021b';
-  return <div className={`theme-preview ${dark ? 'theme-preview-dark' : 'theme-preview-light'} ${active ? 'is-active' : ''}`}>
-    <strong>{label}</strong><span>{active ? 'Đang áp dụng' : 'Xem trước'}</span>
-    <div className="theme-preview-chat"><div className="theme-preview-person">Khách hàng · 09:18</div><p>Chào bạn, tôi muốn tìm hiểu tour Châu Âu.</p><p style={{ backgroundColor: color, color: '#fff' }}>BenThanh Tourist sẵn sàng tư vấn cho bạn.</p><div className="theme-preview-input">Nhập nội dung phản hồi...</div></div>
-  </div>;
+  const vien = 'border-[rgb(120_130_145/25%)]';
+  return (
+    <div className={`min-w-0 rounded-xl p-3.5 text-[0.78rem] ${dark ? 'border border-[#343842] bg-[#17191f] text-[#e8eaf0]' : 'border border-line bg-[#f9f8f6] text-[#222733]'} ${active ? '!border-2 !border-brand-button' : ''}`}>
+      <div className="flex items-center justify-between">
+        <strong>{label}</strong>
+        <span className="text-[0.7rem] text-muted">{active ? 'Đang áp dụng' : 'Xem trước'}</span>
+      </div>
+      <div className={`mt-3 flex flex-col gap-2 rounded-[9px] border p-2.5 ${vien}`}>
+        <div className="font-bold">Khách hàng · 09:18</div>
+        <p className={`max-w-[85%] rounded-[10px] border bg-white/10 p-[9px] ${vien}`}>Chào bạn, tôi muốn tìm hiểu tour Châu Âu.</p>
+        <p className="max-w-[85%] self-end rounded-[10px] p-[9px]" style={{ backgroundColor: color, color: '#fff' }}>BenThanh Tourist sẵn sàng tư vấn cho bạn.</p>
+        <div className={`border-t px-0.5 pt-2 opacity-70 ${vien}`}>Nhập nội dung phản hồi...</div>
+      </div>
+    </div>
+  );
 }

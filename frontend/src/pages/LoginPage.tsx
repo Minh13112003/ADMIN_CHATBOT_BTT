@@ -22,8 +22,8 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="login-layout">
-      <aside className="login-story">
+    <main className="grid min-h-dvh grid-cols-2 bg-surface max-md:grid-cols-1">
+      <aside className="flex flex-col justify-center border-r border-line bg-brand-soft p-[clamp(32px,6vw,100px)] max-md:hidden [&_h2]:mb-5 [&_h2]:mt-8 [&_h2]:text-[clamp(2rem,3.3vw,3.5rem)] [&_h2]:font-bold [&_h2]:leading-[1.2] [&_h2]:tracking-[-0.055em] [&_p]:max-w-[400px] [&_p]:leading-[1.8] [&_p]:text-body">
         <img src="/logo.png" alt="BenThanh Tourist" width="64" height="64" className="rounded-2xl bg-white p-2" />
         <h2>
           Mỗi cuộc trò chuyện.
