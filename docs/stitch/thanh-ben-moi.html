@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kênh kết nối (Admin) - BenThanh Tourist</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              red: '#D0021B',
+              darkRed: '#B30118',
+              softRed: '#FDECEC',
+              hoverRed: '#FFF5F5'
+            },
+            surface: {
+              cream: '#FAF9F6',
+              border: '#E6E2DA',
+              panel: '#FFFFFF',
+              subtle: '#F4F3F0'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    body {
+      background-color: #FAF9F6;
+      color: #1E293B;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FAF9F6;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+</head>
+<body class="w-[1440px] max-w-[1440px] min-w-[1440px] h-screen overflow-hidden flex bg-[#FAF9F6] text-slate-800 antialiased mx-auto">
+<body class="h-screen flex bg-[#FAF9F6] text-slate-800 antialiased">
+<!-- THANH BÊN MỚI (tab mới). Chỉ là bản vẽ tham khảo, mục đang chọn ở đây là Kênh kết nối. -->
+  <aside class="w-[248px] min-w-[248px] max-w-[248px] h-full bg-white border-r border-[#E6E2DA] flex flex-col justify-between select-none z-20 flex-shrink-0">
+    <!-- Top Branding & Navigation -->
+    <div class="flex flex-col">
+      <!-- BenThanh Tourist Logo Header -->
+      <div class="h-[72px] px-4 flex items-center gap-3 border-b border-[#F1EFEA]">
+        <!-- 7-Petal Colorful Flower SVG Mark -->
+        <div class="w-9 h-9 min-w-9 min-h-9 flex items-center justify-center">
+          <svg viewBox="0 0 100 100" class="w-9 h-9" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(50,50)">
+              <!-- 7 Petals with BenThanh distinctive colors -->
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#D0021B" opacity="0.95" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#EA580C" opacity="0.95" transform="rotate(51.4)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#EAB308" opacity="0.95" transform="rotate(102.8)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#10B981" opacity="0.95" transform="rotate(154.2)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#06B6D4" opacity="0.95" transform="rotate(205.6)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#3B82F6" opacity="0.95" transform="rotate(257)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#8B5CF6" opacity="0.95" transform="rotate(308.4)" />
+              <!-- Center Core -->
+              <circle cx="0" cy="0" r="11" fill="#FFFFFF" />
+              <circle cx="0" cy="0" r="7" fill="#D0021B" />
+            </g>
+          </svg>
+        </div>
+        <div class="flex flex-col leading-tight">
+          <span class="font-extrabold text-[15px] tracking-tight text-slate-900">BENTHANH TOURIST</span>
+          <span class="text-[11px] font-medium text-slate-500">Quản trị hội thoại &amp; tour</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menus -->
+      <div class="px-3 pt-4 space-y-5">
+        <!-- Section 1: BẢNG ĐIỀU KHIỂN -->
+        <div>
+          <div class="px-3 pb-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            BẢNG ĐIỀU KHIỂN
+          </div>
+          <nav class="space-y-1">
+            <!-- 1. Hội thoại -->
+            <a href="#" class="h-[44px] px-3 flex items-center justify-between text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">chat</span>
+                <span class="text-[13px] font-medium whitespace-nowrap">Hội thoại</span>
+              </div>
+              <span class="px-1.5 py-0.5 text-[11px] font-bold text-white bg-[#D0021B] rounded-full min-w-[20px] text-center">12</span>
+            </a>
+            <!-- 2. Khách hàng -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">group</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Khách hàng</span>
+            </a>
+            <!-- 3. Đơn đặt tour -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">receipt_long</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Đơn đặt tour</span>
+            </a>
+            <!-- 4. Lịch hẹn nhắc -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">event_note</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Lịch hẹn nhắc</span>
+            </a>
+            <!-- 5. Thư viện trả lời -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">bolt</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Thư viện trả lời</span>
+            </a>
+            <!-- 6. Cài đặt hiển thị -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">tune</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Cài đặt hiển thị</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- Section 2: QUẢN TRỊ (ADMIN) -->
+        <div>
+          <div class="px-3 pb-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            QUẢN TRỊ (ADMIN)
+          </div>
+          <nav class="space-y-1">
+            <!-- 1. Thống kê -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">insights</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Thống kê</span>
+            </a>
+            <!-- 2. Hiệu suất sale -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">trending_up</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Hiệu suất sale</span>
+            </a>
+            <!-- 3. Kênh kết nối (ACTIVE) -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 bg-[#FDECEC] text-[#B30118] font-semibold rounded-lg border-l-[3px] border-[#D0021B] relative transition-all shadow-sm">
+              <span class="material-symbols-outlined text-[20px] text-[#B30118] fill">hub</span>
+              <span class="text-[13px] whitespace-nowrap">Kênh kết nối</span>
+            </a>
+            <!-- 4. Quản trị tài khoản -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">admin_panel_settings</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Quản trị tài khoản</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom System Status Card -->
+    <div class="p-3 m-3 bg-[#F8FAF7] border border-[#E2E8F0] rounded-xl flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <div class="text-[12px] font-bold text-slate-900 leading-tight truncate">Kênh bttAI</div>
+        <div class="text-[11px] font-medium text-emerald-600 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span>Hoạt động 99.8%</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+<main class="flex-1 p-8 text-slate-400 text-sm">Vùng nội dung (mỗi trang tự vẽ)</main>
+</body>
+</html>

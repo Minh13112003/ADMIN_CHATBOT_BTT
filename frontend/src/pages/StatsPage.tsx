@@ -17,9 +17,15 @@ export default function StatsPage() {
   const { data: s, error } = useSWR<Stats>(`/stats?period=${period}`, fetcher, { refreshInterval: 5 * 60_000 });
 
   return (
-    <section className="flex flex-col gap-3.5 p-4 sm:p-[18px]">
+    <section className="page-layout stats-page">
       <div className="flex flex-wrap items-center gap-2.5">
-        <h2 className="min-w-48 flex-1 text-lg font-semibold">Thống kê</h2>
+        <header className="page-heading min-w-48 flex-1">
+          <div>
+            <p className="eyebrow">HIỆU QUẢ KINH DOANH</p>
+            <h1>Báo cáo hiệu suất kinh doanh &amp; hội thoại đa kênh</h1>
+            <p>Theo dõi lượng khách, yêu cầu tư vấn, đơn tour và doanh thu trong kỳ.</p>
+          </div>
+        </header>
         <Segmented
           label="Khoảng thời gian"
           value={period}
@@ -37,17 +43,16 @@ export default function StatsPage() {
       {!s && !error && <p className="text-sm text-muted">Đang tải...</p>}
       {s && (
         <>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(170px,1fr))] gap-2.5">
-            <Kpi label="Doanh thu qua chatbot" value={trieu(s.totalRevenue)} sub={s.pending.count ? `Chưa gồm ${s.pending.count} đơn chờ xác nhận (${trieu(s.pending.amount)})` : 'Đơn đã chốt gắn với hội thoại'} />
-            <Kpi label="Đơn đã chốt" value={so(s.closed)} sub={`${so(s.guests)} khách đi tour`} />
+          <div className="stats-kpis">
             <Kpi label="Khách nhắn tin" value={so(s.customers)} sub={`${so(s.phones)} người để lại số`} />
-            <Kpi label="Tỷ lệ chốt" value={pct(s.closed, s.customers)} sub="Đơn chốt trên khách nhắn" />
+            <Kpi label="Số điện thoại để lại" value={so(s.phones)} sub={`${pct(s.phones, s.customers)} khách nhắn tin`} />
+            <Kpi label="Yêu cầu gặp nhân viên" value={so(s.contact)} sub={s.contact ? `Phản hồi trung vị ${thoiLuong(s.responseTime.medianSeconds)}` : 'Chưa có yêu cầu trong kỳ'} />
+            <Kpi label="Đơn đã chốt" value={so(s.closed)} sub={`${so(s.guests)} khách đi tour`} />
             <Kpi
-              label="Trả lời khách đòi gặp"
-              value={thoiLuong(s.responseTime.medianSeconds)}
-              sub={s.responseTime.count ? `Thường mất (trung vị), ${pct(Math.round((s.responseTime.within5MinRate ?? 0) * s.responseTime.count), s.responseTime.count)} trong 5 phút` : 'Chưa có lượt nào trong kỳ'}
+              label="Doanh thu đã chốt"
+              value={trieu(s.totalRevenue)}
+              sub={s.pending.count ? `Chưa gồm ${s.pending.count} đơn chờ xác nhận` : 'Từ đơn đã chốt gắn hội thoại'}
             />
-            <Kpi label="Chi phí Gemini" value={vnd(s.gemini.vnd)} sub={s.totalRevenue ? `Bằng ${pct(s.gemini.vnd, s.totalRevenue)} doanh thu` : 'Chưa có doanh thu'} />
           </div>
 
           <StatsCharts period={period} />
@@ -55,7 +60,14 @@ export default function StatsPage() {
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(340px,100%),1fr))] gap-2.5">
             <Card title="Doanh thu theo kênh">
               {CHANNEL_LIST.map((k) => (
-                <Bar key={k} label={CHANNEL[k].label} value={trieu(s.revenue[k])} ratio={s.revenue[k] / Math.max(...CHANNEL_LIST.map((c) => s.revenue[c]), 1)} tip={vnd(s.revenue[k])} color="bg-brand" />
+                <Bar
+                  key={k}
+                  label={CHANNEL[k].label}
+                  value={trieu(s.revenue[k])}
+                  ratio={s.revenue[k] / Math.max(...CHANNEL_LIST.map((c) => s.revenue[c]), 1)}
+                  tip={vnd(s.revenue[k])}
+                  color="bg-brand"
+                />
               ))}
             </Card>
             <Card title="Từ tin nhắn đến chốt tour">
@@ -74,7 +86,11 @@ export default function StatsPage() {
 
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(340px,100%),1fr))] gap-2.5">
             <Card title="Theo tour">
-              <Table heads={['Tour', 'Đơn', 'Khách', 'Doanh thu']} rows={s.tours.map((t) => [t.name, so(t.orders), so(t.guests), trieu(t.revenue)])} empty="Chưa có đơn nào trong kỳ này." />
+              <Table
+                heads={['Tour', 'Đơn', 'Khách', 'Doanh thu']}
+                rows={s.tours.map((t) => [t.name, so(t.orders), so(t.guests), trieu(t.revenue)])}
+                empty="Chưa có đơn nào trong kỳ này."
+              />
             </Card>
             <Card title="Theo người chốt">
               <Table
@@ -111,13 +127,17 @@ export default function StatsPage() {
             ) : (
               <p className="text-sm text-muted">Chưa có đơn nào trong kỳ này.</p>
             )}
-            <p className="text-xs text-muted">Cộng các đơn đã chốt ở mọi kênh, trừ đơn bị huỷ khi mở lại hội thoại. Chưa trừ đơn huỷ hoặc hoàn tiền bên hệ thống đặt tour.</p>
+            <p className="text-xs text-muted">
+              Cộng các đơn đã chốt ở mọi kênh, trừ đơn bị huỷ khi mở lại hội thoại. Chưa trừ đơn huỷ hoặc hoàn tiền bên hệ thống đặt tour.
+            </p>
           </Card>
 
           <div className="flex flex-col gap-2.5 rounded-[14px] border border-line bg-surface p-3.5">
             <div className="flex flex-wrap items-baseline gap-2">
               <h3 className="min-w-52 flex-1 text-[0.9375rem] font-semibold">Chi phí Gemini của bttAI</h3>
-              <span className="text-xs text-muted">Cập nhật lúc {new Date(s.updatedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · tự làm mới mỗi 5 phút</span>
+              <span className="text-xs text-muted">
+                Cập nhật lúc {new Date(s.updatedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · tự làm mới mỗi 5 phút
+              </span>
             </div>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5">
               <Mini label="Token vào" value={tok(s.gemini.inputTokens)} sub={`$${s.gemini.inputUsd.toFixed(2)}`} />
@@ -126,7 +146,8 @@ export default function StatsPage() {
               <Mini label="Chi phí mỗi đơn chốt" value={s.closed ? vnd(s.gemini.vnd / s.closed) : 'Chưa có đơn'} sub={`${so(s.closed)} đơn`} />
             </div>
             <p className="text-xs text-muted">
-              Số ước tính: token thật nhân giá ${s.gemini.priceInput} và ${s.gemini.priceOutput} mỗi 1 triệu token vào và ra, tỷ giá {so(s.gemini.usdVndRate)} đ/USD đặt trong cấu hình. Đối soát với hoá đơn Google cuối tháng.
+              Số ước tính: token thật nhân giá ${s.gemini.priceInput} và ${s.gemini.priceOutput} mỗi 1 triệu token vào và ra, tỷ giá {so(s.gemini.usdVndRate)}{' '}
+              đ/USD đặt trong cấu hình. Đối soát với hoá đơn Google cuối tháng.
             </p>
           </div>
         </>
@@ -137,7 +158,7 @@ export default function StatsPage() {
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="rounded-[14px] border border-line bg-surface p-3.5">
+    <div className="kpi-card">
       <div className="text-[0.8125rem] text-body">{label}</div>
       <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
       <div className="mt-0.5 text-xs text-muted">{sub}</div>
@@ -166,7 +187,10 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 
 function Bar({ label, value, ratio, tip, color, wide }: { label: string; value: string; ratio: number; tip: string; color: string; wide?: boolean }) {
   return (
-    <div title={tip} className={`grid items-center gap-2 text-[0.8125rem] ${wide ? 'grid-cols-[132px_minmax(0,1fr)_52px]' : 'grid-cols-[82px_minmax(0,1fr)_88px]'}`}>
+    <div
+      title={tip}
+      className={`grid items-center gap-2 text-[0.8125rem] ${wide ? 'grid-cols-[132px_minmax(0,1fr)_52px]' : 'grid-cols-[82px_minmax(0,1fr)_88px]'}`}
+    >
       <span className="text-body">{label}</span>
       <span className="h-3 overflow-hidden rounded-r bg-fill">
         <span className={`block h-3 rounded-r ${color}`} style={{ width: `${Math.round(ratio * 100)}%` }} />

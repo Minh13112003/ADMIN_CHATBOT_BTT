@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import useSWR from 'swr';
 import { fetcher, patch, post } from '@/lib/api';
@@ -6,16 +6,52 @@ import { CHANNEL } from '@/lib/labels';
 import { useRealtime, type Ping } from '@/lib/realtime';
 import type { Channel, ConversationList, Me } from '@/lib/types';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
-import { Switch } from './ui';
+import { Dialog, Switch } from './ui';
 
 const stroke = { fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' } as const;
 const NAV = [
   { href: '/inbox', label: 'Hội thoại', icon: <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
-  { href: '/customers', label: 'Khách hàng', icon: <><circle cx="9" cy="8" r="4" /><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1" /><path d="M17 4a4 4 0 0 1 0 8" /><path d="M22 21v-1a6 6 0 0 0-3-5" /></> },
-  { href: '/templates', label: 'Mẫu nhanh', icon: <path d="M13 2 4 14h7l-1 8 9-12h-7z" /> },
-  { href: '/stats', label: 'Thống kê', admin: true, icon: <><path d="M5 20V11" /><path d="M12 20V4" /><path d="M19 20v-6" /></> },
-  { href: '/accounts', label: 'Quản trị', admin: true, icon: <><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" /><path d="m9 12 2 2 4-4" /></> },
-  { href: '/settings', label: 'Cài đặt', icon: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-2.5V20a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1A1.7 1.7 0 0 0 8 15a1.7 1.7 0 0 0-1.6-1H6v-2.5h.4A1.7 1.7 0 0 0 8 10a1.7 1.7 0 0 0-.3-1.9L7.6 8l1.8-1.8.1.1A1.7 1.7 0 0 0 11.4 6a1.7 1.7 0 0 0 1-1.6V4h2.5v.4A1.7 1.7 0 0 0 16 6a1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 8l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v2.5H21a1.7 1.7 0 0 0-1.6 1.5z" /></> },
+  {
+    href: '/customers',
+    label: 'Khách hàng',
+    icon: (
+      <>
+        <circle cx="9" cy="8" r="4" />
+        <path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1" />
+        <path d="M17 4a4 4 0 0 1 0 8" />
+        <path d="M22 21v-1a6 6 0 0 0-3-5" />
+      </>
+    ),
+  },
+  { href: '/deals', label: 'Đơn đặt tour', icon: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></> },
+  { href: '/reminders', label: 'Lịch hẹn nhắc', icon: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18M8 15h8" /></> },
+  { href: '/templates', label: 'Thư viện trả lời', icon: <path d="M13 2 4 14h7l-1 8 9-12h-7z" /> },
+  { href: '/settings', label: 'Cài đặt hiển thị', icon: <><circle cx="12" cy="12" r="3" /><path d="M4 7h4M16 7h4M4 17h4M16 17h4" /></> },
+  {
+    href: '/stats',
+    label: 'Thống kê',
+    admin: true,
+    icon: (
+      <>
+        <path d="M5 20V11" />
+        <path d="M12 20V4" />
+        <path d="M19 20v-6" />
+      </>
+    ),
+  },
+  { href: '/performance', label: 'Hiệu suất sale', admin: true, icon: <><path d="M3 18 9 12l4 3 8-9" /><path d="M16 6h5v5" /></> },
+  { href: '/channels', label: 'Kênh kết nối', admin: true, icon: <><circle cx="12" cy="12" r="2" /><circle cx="4" cy="5" r="2" /><circle cx="20" cy="5" r="2" /><circle cx="12" cy="21" r="2" /><path d="m6 6 5 5m7-5-5 5m-1 3v5" /></> },
+  {
+    href: '/accounts',
+    label: 'Quản trị tài khoản',
+    admin: true,
+    icon: (
+      <>
+        <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" />
+        <path d="m9 12 2 2 4-4" />
+      </>
+    ),
+  },
 ] as { href: string; label: string; icon: ReactNode; admin?: boolean }[];
 
 function noiDungPing(p: Ping) {
@@ -43,8 +79,12 @@ export function Shell({ children }: { children: ReactNode }) {
   const { ping, clearPing, connected } = useRealtime();
   const [menu, setMenu] = useState<'bell' | 'me' | null>(null);
   const [doiMk, setDoiMk] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [thu, setThu] = useState(() => { try { return localStorage.getItem('btt-sidebar') === '1'; } catch { return false; } });
+  useEffect(() => { try { localStorage.setItem('btt-sidebar', thu ? '1' : '0'); } catch { /* bỏ qua */ } }, [thu]);
 
-  const soLienHe = contacts?.items.length ?? 0;
+  const soLienHe = contacts?.counts.CONTACT ?? contacts?.items.length ?? 0;
+  const soCho = soLienHe + (contacts?.counts.UNREAD ?? 0);
 
   const moHoiThoai = (id: string) => {
     setMenu(null);
@@ -60,38 +100,77 @@ export function Shell({ children }: { children: ReactNode }) {
   if (!me) return <p className="p-6 text-sm text-muted">Đang tải...</p>;
 
   return (
-    <div className="flex h-dvh min-w-0 flex-col md:flex-row">
-      <nav aria-label="Điều hướng" className="flex shrink-0 items-center justify-around gap-0 bg-brand-dark p-1 text-white md:w-[88px] md:flex-col md:justify-start md:gap-1.5 md:px-1.5 md:py-3.5">
-        <div className="mb-2.5 hidden size-12 shrink-0 items-center justify-center rounded-[14px] bg-white md:flex">
-          <img src="/logo.png" alt="BenThanh Tourist" width="36" height="36" className="size-9 object-contain" />
-        </div>
-        {NAV.filter((n) => !n.admin || me.role === 'ADMIN').map((n) => {
-          const dangO = pathname.startsWith(n.href);
-          return (
-            <Link
-              key={n.href}
-              to={n.href}
-              aria-current={dangO ? 'page' : undefined}
-              className={`relative flex min-h-[58px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl p-1 text-[0.625rem] font-medium leading-tight hover:bg-white/15 md:min-h-[60px] md:w-[76px] md:flex-none md:gap-1 md:whitespace-nowrap md:px-0.5 md:py-1.5 md:text-[0.71875rem] ${dangO ? 'bg-white/20' : ''}`}
-            >
-              <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" {...stroke}>
-                {n.icon}
-              </svg>
-              {n.label}
-              {n.href === '/inbox' && soLienHe > 0 && (
-                <span className="absolute right-2 top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-white px-1 text-xs font-bold text-brand-dark">{soLienHe}</span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
+    <div className="workspace flex h-dvh min-w-0 flex-col md:flex-row">
+      <div className="relative z-30 hidden h-full shrink-0 md:block">
+        <aside className={`flex h-full flex-col overflow-y-auto overflow-x-hidden border-r border-line bg-surface transition-[width] duration-200 ${thu ? 'w-[76px]' : 'w-[248px]'}`}>
+          <Link to="/inbox" title="BenThanh Tourist" className={`flex h-[72px] shrink-0 items-center gap-3 border-b border-line-soft ${thu ? 'justify-center px-0' : 'px-4'}`}>
+            <img src="/logo.png" alt="" width="36" height="36" className="size-9 shrink-0 object-contain" />
+            {!thu && (
+              <span className="min-w-0 leading-tight">
+                <strong className="block truncate text-[0.9375rem] font-extrabold tracking-tight text-ink">BENTHANH TOURIST</strong>
+                <small className="block truncate text-[0.6875rem] font-medium text-muted">Quản trị hội thoại &amp; tour</small>
+              </span>
+            )}
+          </Link>
+          {[{ caption: 'BẢNG ĐIỀU KHIỂN', label: 'Điều hướng', items: NAV.filter((n) => !n.admin) }, ...(me.role === 'ADMIN' ? [{ caption: 'QUẢN TRỊ (ADMIN)', label: 'Quản trị', items: NAV.filter((n) => n.admin) }] : [])].map((group) => (
+            <div key={group.caption} className="px-3 pt-4">
+              {thu ? <div className="mb-2 h-px bg-line-soft" /> : <p className="px-3 pb-2 text-[0.6875rem] font-bold uppercase tracking-wider text-muted">{group.caption}</p>}
+              <nav aria-label={group.label} className="space-y-1">
+                {group.items.map((n) => (
+                  <Link
+                    key={n.href}
+                    to={n.href}
+                    title={thu ? n.label : undefined}
+                    aria-current={pathname.startsWith(n.href) ? 'page' : undefined}
+                    className={`relative flex h-11 items-center gap-3 whitespace-nowrap rounded-lg border-l-[3px] border-transparent text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:border-brand aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text ${thu ? 'justify-center px-0' : 'px-3'}`}
+                  >
+                    <svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" className="shrink-0" {...stroke}>
+                      {n.icon}
+                    </svg>
+                    {!thu && <span className="flex-1">{n.label}</span>}
+                    {n.href === '/inbox' && soCho > 0 && (
+                      <span className={`flex h-[19px] min-w-[20px] items-center justify-center rounded-full bg-brand-button px-1.5 text-[0.6875rem] font-bold text-white ${thu ? 'absolute right-0.5 top-0.5' : ''}`}>{soCho}</span>
+                    )}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          ))}
+          <div className="mt-auto" />
+          <div className={`mx-3 mb-2 mt-4 flex items-center gap-2.5 rounded-xl border border-line bg-page p-2.5 text-xs ${thu ? 'justify-center' : ''}`} title={connected ? 'Kênh bttAI: Hoạt động' : 'Kênh bttAI: Mất kết nối'}>
+            <span className={`size-2.5 shrink-0 rounded-full ${connected ? 'bg-on' : 'bg-off'}`} />
+            {!thu && <span><strong className="block text-ink">Kênh bttAI</strong>{connected ? 'Hoạt động' : 'Mất kết nối'}</span>}
+          </div>
+          <div className={`flex items-center gap-2.5 border-t border-line-soft p-3 ${thu ? 'justify-center' : ''}`} title={me.fullName}>
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-bold text-brand-text">{me.fullName.trim().split(' ').pop()?.charAt(0)}</span>
+            {!thu && (
+              <div className="min-w-0">
+                <strong className="block truncate text-sm">{me.fullName}</strong>
+                <small className="text-xs text-muted">{me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</small>
+              </div>
+            )}
+          </div>
+        </aside>
+        <button
+          type="button"
+          onClick={() => setThu(!thu)}
+          aria-label={thu ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
+          aria-expanded={!thu}
+          className="absolute -right-3.5 top-1/2 z-10 grid size-7 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface text-body shadow-md hover:bg-fill"
+        >
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={thu ? 'rotate-180' : ''}>
+            <path d="m15 6-6 6 6 6" />
+          </svg>
+        </button>
+      </div>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="relative z-20 flex items-center gap-2 border-b border-line bg-surface px-4 py-1.5">
+        <header className="workspace-header relative z-20 flex items-center gap-2 border-b border-line bg-surface px-4 py-2 md:px-6">
           <div className="min-w-0 flex-1">
-            <h1 className="text-[1.0625rem] font-bold">Quản trị hội thoại</h1>
+            <div className="text-base font-semibold md:text-xl">{NAV.find((n) => pathname.startsWith(n.href))?.label ?? 'BenThanh Tourist'}</div>
             {!connected && <p className="text-xs text-brand-text">Mất kết nối tức thời, tin mới có thể đến chậm</p>}
           </div>
+          {connected && <span className="hidden items-center gap-2 text-sm text-green-ink sm:flex"><span className="connection-dot bg-on" />Đang kết nối</span>}
 
           <div className="relative">
             <button
@@ -105,13 +184,22 @@ export function Shell({ children }: { children: ReactNode }) {
                 <path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9" />
                 <path d="M10 20a2 2 0 0 0 4 0" />
               </svg>
-              {soLienHe > 0 && <span className="absolute right-0 top-0.5 flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-brand-button px-1 text-[0.6875rem] font-bold text-white">{soLienHe}</span>}
+              {soLienHe > 0 && (
+                <span className="absolute right-0 top-0.5 flex h-[19px] min-w-[19px] items-center justify-center rounded-full bg-brand-button px-1 text-[0.6875rem] font-bold text-white">
+                  {soLienHe}
+                </span>
+              )}
             </button>
             {menu === 'bell' && (
-              <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-32px)] rounded-2xl border border-line bg-surface p-2 shadow-xl">
+              <div className="fixed right-4 top-20 w-80 max-w-[calc(100vw-32px)] sm:absolute sm:right-0 sm:top-12 rounded-2xl border border-line bg-surface p-2 shadow-xl">
                 <div className="px-2 py-1.5 text-sm font-semibold">Khách đang chờ nhân viên</div>
                 {contacts?.items.map((c) => (
-                  <button key={c.id} type="button" onClick={() => moHoiThoai(c.id)} className="block min-h-12 w-full rounded-[10px] px-2 py-1.5 text-left hover:bg-page">
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => moHoiThoai(c.id)}
+                    className="block min-h-12 w-full rounded-[10px] px-2 py-1.5 text-left hover:bg-page"
+                  >
                     <div className="text-sm font-semibold">{c.customer.name}</div>
                     <div className="text-xs text-muted">
                       {CHANNEL[c.channel].label} · Phụ trách: {c.assignee?.fullName ?? 'Chưa có'}
@@ -145,21 +233,34 @@ export function Shell({ children }: { children: ReactNode }) {
                   <dd>{me.load} khách</dd>
                 </dl>
                 {me.role === 'SALE' && (
-                <div className="flex items-center gap-2.5 border-t border-line-soft pt-2.5">
-                  <span className="flex-1 text-sm">Đang trực (nhận khách tự động)</span>
-                  <Switch
-                    checked={me.onDuty}
-                    label="Đang trực"
-                    onChange={async (v) => {
-                      await patch('/users/me/duty', { onDuty: v });
-                      await mutateMe();
-                    }}
-                  />
-                </div>
+                  <div className="flex items-center gap-2.5 border-t border-line-soft pt-2.5">
+                    <span className="flex-1 text-sm">Đang trực (nhận khách tự động)</span>
+                    <Switch
+                      checked={me.onDuty}
+                      label="Đang trực"
+                      onChange={async (v) => {
+                        await patch('/users/me/duty', { onDuty: v });
+                        await mutateMe();
+                      }}
+                    />
+                  </div>
                 )}
                 <div className="flex gap-2 border-t border-line-soft pt-2.5">
-                  <Link to="/settings" onClick={() => setMenu(null)} className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-field text-[0.8125rem] hover:bg-fill">Cài đặt</Link>
-                  <button type="button" onClick={() => { setMenu(null); setDoiMk(true); }} className="min-h-9 flex-1 rounded-lg border border-field text-[0.8125rem] hover:bg-fill">
+                  <Link
+                    to="/settings"
+                    onClick={() => setMenu(null)}
+                    className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-field text-[0.8125rem] hover:bg-fill"
+                  >
+                    Cài đặt
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenu(null);
+                      setDoiMk(true);
+                    }}
+                    className="min-h-9 flex-1 rounded-lg border border-field text-[0.8125rem] hover:bg-fill"
+                  >
                     Đổi mật khẩu
                   </button>
                   <button type="button" onClick={dangXuat} className="min-h-9 flex-1 rounded-lg border border-field text-[0.8125rem] hover:bg-fill">
@@ -183,8 +284,12 @@ export function Shell({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        <div className="min-h-0 min-w-0 flex-1 overflow-auto">{children}</div>
+        <div id="workspace-content" className="min-h-0 min-w-0 flex-1 overflow-auto">
+          {children}
+        </div>
       </div>
+      <nav aria-label="Điều hướng điện thoại" className="mobile-tabs md:hidden">{NAV.slice(0, 4).map((n) => <Link key={n.href} to={n.href} aria-current={pathname.startsWith(n.href) ? 'page' : undefined}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.href === '/deals' ? 'Đơn tour' : n.href === '/reminders' ? 'Hẹn' : n.label}</span>{n.href === '/inbox' && soCho > 0 && <i>{soCho}</i>}</Link>)}<button type="button" aria-expanded={moreOpen} onClick={() => setMoreOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>Thêm</span></button></nav>
+      {moreOpen && <Dialog title="Thêm" variant="drawer" onClose={() => setMoreOpen(false)}><nav aria-label="Mục khác" className="workspace-nav">{NAV.slice(4).filter((n) => !n.admin || me.role === 'ADMIN').map((n) => <Link key={n.href} to={n.href} onClick={() => setMoreOpen(false)} aria-current={pathname.startsWith(n.href) ? 'page' : undefined} className="nav-link"><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.label}</span></Link>)}</nav></Dialog>}
       {doiMk && <ChangePasswordDialog onClose={() => setDoiMk(false)} />}
     </div>
   );

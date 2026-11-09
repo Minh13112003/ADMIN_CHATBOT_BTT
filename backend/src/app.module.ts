@@ -8,6 +8,7 @@ import { AuthController } from './auth/auth.controller';
 import { AuthGuard } from './auth/auth.guard';
 import { AssignmentService } from './conversations/assignment.service';
 import { ConversationsController, CustomersController, MessagesController } from './conversations/conversations.controller';
+import { DealsController } from './conversations/deals.controller';
 import { ConversationsService } from './conversations/conversations.service';
 import { HealthController } from './health.controller';
 import { IngestController, IngestKeyGuard } from './ingest/ingest.controller';
@@ -43,6 +44,7 @@ import { UsersController } from './users/users.controller';
     UsersController,
     ConversationsController,
     CustomersController,
+    DealsController,
     MessagesController,
     TemplatesController,
     AutoRepliesController,

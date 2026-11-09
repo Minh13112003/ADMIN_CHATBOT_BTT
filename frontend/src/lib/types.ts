@@ -80,7 +80,7 @@ export type Deal = {
 
 export type MessageHit = { id: string; conversationId: string; senderType: Message['senderType']; text: string; internal: boolean; createdAt: string; channel: Channel; name: string; phone: string | null };
 
-export type Template = { id: string; title: string; body: string };
+export type Template = { id: string; title: string; body: string; shortcut?: string | null; category?: string | null; useCount?: number };
 
 export type Rule = {
   id: string;
@@ -110,7 +110,7 @@ export type Stats = {
   revenue: Record<Channel, number>;
   totalRevenue: number;
   tours: { name: string; orders: number; guests: number; revenue: number }[];
-  staff: { name: string; contact: number; closed: number; revenue: number; responses: number; avgSeconds: number | null }[];
+  staff: { name: string; contact: number; closed: number; revenue: number; responses: number; avgSeconds: number | null; medianSeconds: number | null; within5MinRate: number | null; onDuty: boolean; load: number; isSale: boolean }[];
   pending: { count: number; amount: number };
   responseTime: { count: number; avgSeconds: number | null; medianSeconds: number | null; within5MinRate: number | null };
   topCustomers: { id: string; name: string; phone: string | null; orders: number; guests: number; revenue: number; lastClosedAt: string; channels: { channel: Channel; revenue: number }[] }[];
@@ -129,4 +129,5 @@ export type Account = {
   role: 'ADMIN' | 'SALE';
   isActive: boolean;
   lastLoginAt: string | null;
+  holding?: number;
 };

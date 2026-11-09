@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BenThanh Tourist - CRM &amp; Điều phối</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #faf9f6;
+      color: #1c1b1f;
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d4d2cc;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-[#faf9f6] text-[#1c1b1f] antialiased">
+<!-- Outer 1440px max-width container -->
+<div class="w-full min-h-screen max-w-[1440px] mx-auto overflow-x-hidden flex flex-col bg-[#faf9f6]">
+<!-- Global Topbar: 56px height -->
+<header class="h-14 w-full bg-white border-b border-[#e6e4df] px-4 flex items-center justify-between shrink-0 sticky top-0 z-50 shadow-sm">
+<!-- Left: Logo & Brand -->
+<div class="flex items-center gap-3">
+<!-- SVG 7-petal colorful flower icon -->
+<div class="w-9 h-9 rounded-lg bg-white shadow-xs border border-[#eee] flex items-center justify-center p-1 shrink-0">
+<svg class="w-full h-full" viewbox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(50,50)">
+<!-- 7 petals around center -->
+<ellipse cx="0" cy="-28" fill="#E51937" rx="9" ry="17"></ellipse>
+<ellipse cx="0" cy="-28" fill="#FF7A00" rx="9" ry="17" transform="rotate(51.4)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#FFC800" rx="9" ry="17" transform="rotate(102.8)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#00A859" rx="9" ry="17" transform="rotate(154.2)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#00AEEF" rx="9" ry="17" transform="rotate(205.6)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#1C4F9C" rx="9" ry="17" transform="rotate(257)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#8E44AD" rx="9" ry="17" transform="rotate(308.4)"></ellipse>
+<!-- Center circle -->
+<circle cx="0" cy="0" fill="#FFD200" r="11" stroke="#FFFFFF" stroke-width="2"></circle>
+</g>
+</svg>
+</div>
+<div class="flex flex-col">
+<span class="text-[14px] font-bold tracking-tight text-[#1c1b1f] leading-tight">BENTHANH TOURIST</span>
+<span class="text-[11px] text-[#6b6965] font-medium leading-none">Quản trị hội thoại &amp; tour</span>
+</div>
+</div>
+<!-- Right Topbar Controls -->
+<div class="flex items-center gap-3">
+<!-- Connection status -->
+<div class="hidden lg:flex items-center gap-2 px-2.5 py-1 bg-[#f4f3f0] rounded-full border border-[#e6e4df]">
+<span class="w-2 h-2 rounded-full bg-[#00875a] animate-pulse"></span>
+<span class="text-[12px] font-medium text-[#1c1b1f]">Kết nối ổn định <span class="text-[#6b6965] font-normal">(bttAI Web, bttAI App)</span></span>
+</div>
+<!-- Alert pill -->
+<div class="flex items-center gap-1.5 px-3 py-1 bg-[#ffdad6] text-[#93000a] rounded-full text-[12px] font-semibold border border-[#ffb3ac]">
+<span class="material-symbols-outlined text-[16px] text-[#ba1a1a]">warning</span>
+<span>3 khách cần tư vấn viên</span>
+</div>
+<!-- Time -->
+<div class="hidden xl:flex items-center gap-1 text-[12px] text-[#555] font-medium">
+<span class="material-symbols-outlined text-[16px] text-[#777]">schedule</span>
+<span>GMT+7 14:32</span>
+</div>
+<!-- Notification Bell -->
+<button class="relative w-9 h-9 flex items-center justify-center rounded-lg text-[#555] hover:bg-[#f4f3f0] transition-colors" title="Thông báo">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#B30118]"></span>
+</button>
+<div class="h-6 w-px bg-[#e6e4df]"></div>
+<!-- User Info Pill -->
+<div class="flex items-center gap-2 pl-1 pr-2 py-1 rounded-full bg-[#f4f3f0] border border-[#e6e4df]">
+<div class="relative w-8 h-8 rounded-full overflow-hidden shrink-0 border border-white">
+<img alt="Nguyễn Mai Phương" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCibBRRV-Hs8Mg1CdEdb9ay0aIbHiw8V3R-sHK7fgnxJhPLnph3bBOul0PuH4fePIzjP3skFxRjvaUqnY0THHipfZ4M4e0DcklpmPJp-etcH5NjlUWMvObwWuimMRvZA4bMUSZfjrA7j7jHsUVYxrBMXFMh7ZeeYnXe4gqQWw_jHDJxT_DOu2sOnYGXtCIefIReaqD-xiur1kvhFeofKOv4ipFIvy9UrPuuul1DBg8"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#00875a] border-2 border-white rounded-full"></span>
+</div>
+<div class="flex flex-col text-left">
+<div class="flex items-center gap-1.5">
+<span class="text-[12px] font-bold text-[#1c1b1f] leading-tight">Nguyễn Mai Phương</span>
+<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-[#00875a] bg-[#e3fcef] px-1.5 py-0.2 rounded">
+                Đang trực ca
+              </span>
+</div>
+<span class="text-[11px] text-[#6b6965] leading-none">BTT-SALE-104</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Body Layout: Flex Container (Sidebar + Main Area) -->
+<div class="flex flex-1 min-h-[calc(100vh-56px)]">
+<!-- Left Sidebar: exact 88px, bg-[#B30118], text-white -->
+<aside class="w-[88px] min-w-[88px] max-w-[88px] bg-[#B30118] text-white flex flex-col justify-between py-4 items-center shrink-0 min-h-[calc(100vh-56px)] shadow-md select-none">
+<!-- Navigation Menu -->
+<nav class="flex flex-col items-center gap-2 w-full px-1.5">
+<!-- 1. Hội thoại -->
+<a class="relative w-full min-h-[52px] py-1.5 flex flex-col items-center justify-center rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors group" href="#">
+<span class="material-symbols-outlined text-[24px] mb-0.5">chat</span>
+<span class="text-[11px] font-medium leading-tight whitespace-nowrap text-center">Hội thoại</span>
+<span class="absolute top-1 right-2 bg-white text-[#B30118] text-[10px] font-bold px-1.5 py-0.2 rounded-full leading-tight shadow-xs">12</span>
+</a>
+<!-- 2. Khách hàng (Active) -->
+<a class="relative w-full min-h-[52px] py-1.5 flex flex-col items-center justify-center rounded-lg bg-white/20 text-white font-semibold transition-colors shadow-xs" href="#">
+<span class="material-symbols-outlined text-[24px] mb-0.5 text-white">groups</span>
+<span class="text-[11px] font-semibold leading-tight whitespace-nowrap text-center">Khách hàng</span>
+</a>
+<!-- 3. Mẫu nhanh -->
+<a class="relative w-full min-h-[52px] py-1.5 flex flex-col items-center justify-center rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px] mb-0.5">quickreply</span>
+<span class="text-[11px] font-medium leading-tight whitespace-nowrap text-center">Mẫu nhanh</span>
+</a>
+<!-- 4. Thống kê -->
+<a class="relative w-full min-h-[52px] py-1.5 flex flex-col items-center justify-center rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px] mb-0.5">analytics</span>
+<span class="text-[11px] font-medium leading-tight whitespace-nowrap text-center">Thống kê</span>
+</a>
+<!-- 5. Quản trị -->
+<a class="relative w-full min-h-[52px] py-1.5 flex flex-col items-center justify-center rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px] mb-0.5">manage_accounts</span>
+<span class="text-[11px] font-medium leading-tight whitespace-nowrap text-center">Quản trị</span>
+</a>
+</nav>
+<!-- Bottom Status -->
+<div class="w-full px-1 text-center flex flex-col items-center">
+<div class="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center mb-1 text-white/90">
+<span class="material-symbols-outlined text-[16px]">verified</span>
+</div>
+<span class="text-[10px] text-white/80 leading-tight font-medium">Kênh bttAI</span>
+<span class="text-[9px] text-white font-bold leading-tight mt-0.5 bg-black/20 px-1 py-0.5 rounded">99.8% OK</span>
+</div>
+</aside>
+<!-- Main Content Area: flex-1 p-6 space-y-5 overflow-hidden max-w-[calc(1440px-88px)] -->
+<main class="flex-1 p-6 space-y-5 overflow-hidden max-w-[calc(1440px-88px)] bg-[#faf9f6]">
+<!-- Page Title Bar -->
+<div class="bg-white p-4 rounded-xl border border-[#e6e4df] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-[11px] font-bold uppercase tracking-wider text-[#B30118]">HỆ THỐNG CRM &amp; ĐIỀU PHỐI</span>
+<span class="text-[#ccc]">•</span>
+<span class="text-[12px] text-[#6b6965]">Cập nhật thời gian thực</span>
+</div>
+<div class="flex items-baseline gap-3 mt-1">
+<h1 class="text-[20px] font-bold text-[#1c1b1f] tracking-tight">Danh Bạ &amp; Phễu Khách Hàng</h1>
+<span class="text-[13px] text-[#6b6965]">Phân loại dữ liệu đa kênh bttAI</span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-2 flex-wrap">
+<button class="min-h-[44px] px-3.5 py-2 bg-[#f4f3f0] hover:bg-[#eae8e4] text-[#1c1b1f] text-[13px] font-semibold rounded-lg flex items-center gap-1.5 transition-colors border border-[#e6e4df]">
+<span class="material-symbols-outlined text-[18px] text-[#555]">file_download</span>
+<span>Xuất Excel</span>
+</button>
+<button class="min-h-[44px] px-3.5 py-2 bg-[#f4f3f0] hover:bg-[#eae8e4] text-[#1c1b1f] text-[13px] font-semibold rounded-lg flex items-center gap-1.5 transition-colors border border-[#e6e4df]">
+<span class="material-symbols-outlined text-[18px] text-[#555]">assignment_ind</span>
+<span>Phân công hàng loạt</span>
+</button>
+<button class="min-h-[44px] px-4 py-2 bg-[#B30118] hover:bg-[#990014] text-white text-[13px] font-semibold rounded-lg flex items-center gap-1.5 shadow-sm transition-colors">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+<span>+ Thêm khách mới</span>
+</button>
+</div>
+</div>
+<!-- KPI Metrics 4-card row (grid-cols-4 gap-4) -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Card 1 -->
+<div class="p-4 bg-white rounded-xl border border-[#e6e4df] shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[13px] font-medium text-[#6b6965]">Tổng khách lưu trữ</span>
+<div class="w-8 h-8 rounded-lg bg-[#f4f3f0] flex items-center justify-center text-[#555]">
+<span class="material-symbols-outlined text-[18px]">groups</span>
+</div>
+</div>
+<div class="mt-3 flex items-baseline justify-between">
+<span class="text-[28px] font-bold text-[#1c1b1f] leading-none">1,428</span>
+<span class="text-[12px] font-semibold text-[#00875a] flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +12% tháng
+              </span>
+</div>
+<div class="mt-2.5 h-1.5 w-full bg-[#f0eee9] rounded-full overflow-hidden">
+<div class="h-full bg-[#555] w-3/4 rounded-full"></div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="p-4 bg-white rounded-xl border border-[#e6e4df] shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[13px] font-medium text-[#6b6965]">Hội thoại mở đồng thời</span>
+<div class="w-8 h-8 rounded-lg bg-[#e3e8ee] flex items-center justify-center text-[#2b4c7e]">
+<span class="material-symbols-outlined text-[18px]">chat_bubble</span>
+</div>
+</div>
+<div class="mt-3 flex items-baseline justify-between">
+<span class="text-[28px] font-bold text-[#1c1b1f] leading-none">86</span>
+<span class="text-[12px] font-medium text-[#6b6965]">62 Web • 24 App</span>
+</div>
+<div class="mt-2.5 h-1.5 w-full bg-[#f0eee9] rounded-full overflow-hidden">
+<div class="h-full bg-[#2b4c7e] w-3/5 rounded-full"></div>
+</div>
+</div>
+<!-- Card 3: Urgent Alert -->
+<div class="p-4 bg-white rounded-xl border border-[#ffdad6] shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#B30118] animate-ping"></span>
+<span class="text-[13px] font-bold text-[#B30118]">Cần tư vấn viên gấp</span>
+</div>
+<div class="w-8 h-8 rounded-lg bg-[#ffdad6] flex items-center justify-center text-[#93000a]">
+<span class="material-symbols-outlined text-[18px]">emergency_home</span>
+</div>
+</div>
+<div class="mt-3 flex items-baseline justify-between">
+<span class="text-[28px] font-bold text-[#B30118] leading-none">14</span>
+<span class="text-[12px] font-semibold text-[#93000a] bg-[#ffdad6] px-2 py-0.5 rounded">Thời gian chờ &gt; 3p</span>
+</div>
+<div class="mt-2.5 h-1.5 w-full bg-[#ffdad6] rounded-full overflow-hidden">
+<div class="h-full bg-[#B30118] w-4/5 rounded-full"></div>
+</div>
+</div>
+<!-- Card 4: Chốt tour -->
+<div class="p-4 bg-white rounded-xl border border-[#e6e4df] shadow-xs flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-[13px] font-semibold text-[#00875a]">Đã chốt tour (Tháng này)</span>
+<div class="w-8 h-8 rounded-lg bg-[#e3fcef] flex items-center justify-center text-[#00875a]">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+</div>
+<div class="mt-3 flex items-baseline justify-between">
+<span class="text-[28px] font-bold text-[#1c1b1f] leading-none">42</span>
+<span class="text-[12px] font-bold text-[#00875a]">1.84 Tỷ VNĐ</span>
+</div>
+<div class="mt-2.5 h-1.5 w-full bg-[#f0eee9] rounded-full overflow-hidden">
+<div class="h-full bg-[#00875a] w-2/3 rounded-full"></div>
+</div>
+</div>
+</div>
+<!-- Filter & Search Toolbar -->
+<div class="p-4 bg-white rounded-xl border border-[#e6e4df] shadow-xs flex flex-col gap-3">
+<!-- Main Controls -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+<!-- Search -->
+<div class="md:col-span-4 relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#777] text-[18px]">search</span>
+<input class="w-full pl-9 pr-3 py-2 bg-[#f4f3f0] border border-[#e6e4df] text-[#1c1b1f] rounded-lg text-[13px] focus:outline-none focus:border-[#B30118] focus:bg-white placeholder:text-[#888] min-h-[44px]" placeholder="Tìm kiếm họ tên, SĐT (VD: Nguyễn Văn, 0918...)" type="text"/>
+</div>
+<!-- Channel Dropdown -->
+<div class="md:col-span-3 relative">
+<select class="w-full appearance-none pl-3 pr-8 py-2 bg-[#f4f3f0] border border-[#e6e4df] text-[#1c1b1f] rounded-lg text-[13px] focus:outline-none focus:border-[#B30118] focus:bg-white cursor-pointer min-h-[44px]">
+<option value="all">Tất cả nguồn</option>
+<option value="web">bttAI Web</option>
+<option value="app">bttAI App</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[#777] text-[18px] pointer-events-none">expand_more</span>
+</div>
+<!-- Status Dropdown -->
+<div class="md:col-span-3 relative">
+<select class="w-full appearance-none pl-3 pr-8 py-2 bg-[#f4f3f0] border border-[#e6e4df] text-[#1c1b1f] rounded-lg text-[13px] focus:outline-none focus:border-[#B30118] focus:bg-white cursor-pointer min-h-[44px]">
+<option value="all">Tất cả trạng thái hội thoại</option>
+<option value="urgent">Khách chờ NV (Cần xử lý)</option>
+<option value="pending">Chờ xác nhận / Chờ xử lý</option>
+<option value="booked">Đã chốt tour</option>
+<option value="unviewed">Chưa xem</option>
+<option value="viewed">Đã xem</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[#777] text-[18px] pointer-events-none">expand_more</span>
+</div>
+<!-- Staff Dropdown -->
+<div class="md:col-span-2 relative">
+<select class="w-full appearance-none pl-3 pr-8 py-2 bg-[#f4f3f0] border border-[#e6e4df] text-[#1c1b1f] rounded-lg text-[13px] focus:outline-none focus:border-[#B30118] focus:bg-white cursor-pointer min-h-[44px]">
+<option value="all">Tất cả nhân sự</option>
+<option value="phuong">Nguyễn Mai Phương</option>
+<option value="khoi">Trần Đình Khôi</option>
+<option value="hung">Lê Văn Hùng</option>
+<option value="anh">Phạm Quỳnh Anh</option>
+<option value="unassigned">Chưa phân công</option>
+</select>
+<span class="material-symbols-outlined absolute right-2.5 top-1/2 -translate-y-1/2 text-[#777] text-[18px] pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Quick Filter Chips -->
+<div class="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-[#f0eee9]">
+<div class="flex items-center gap-2 flex-wrap">
+<span class="text-[12px] font-semibold text-[#6b6965] mr-1">Bộ lọc nhanh:</span>
+<button class="px-2.5 py-1 rounded-full bg-[#ffdad6] text-[#93000a] text-[12px] font-semibold flex items-center gap-1 hover:bg-[#ffb3ac] transition-colors min-h-[32px]">
+<span class="material-symbols-outlined text-[14px]">priority_high</span> 14 Cần hỗ trợ ngay
+              </button>
+<button class="px-2.5 py-1 rounded-full bg-[#f4f3f0] hover:bg-[#eae8e4] text-[#1c1b1f] text-[12px] font-medium border border-[#e6e4df] min-h-[32px]">
+                VIP Diamond / Gold
+              </button>
+<button class="px-2.5 py-1 rounded-full bg-[#f4f3f0] hover:bg-[#eae8e4] text-[#1c1b1f] text-[12px] font-medium border border-[#e6e4df] min-h-[32px]">
+                Có lịch hẹn hôm nay (4)
+              </button>
+<button class="px-2.5 py-1 rounded-full bg-[#f4f3f0] hover:bg-[#eae8e4] text-[#1c1b1f] text-[12px] font-medium border border-[#e6e4df] min-h-[32px]">
+                Tour Châu Âu &amp; Nhật Bản
+              </button>
+</div>
+<div class="flex items-center gap-1 text-[12px] text-[#6b6965]">
+<span>Dữ liệu thực tế: <strong class="text-[#1c1b1f]">7 khách hàng</strong></span>
+</div>
+</div>
+</div>
+<!-- Customer Table -->
+<div class="bg-white rounded-xl border border-[#e6e4df] shadow-xs overflow-hidden flex flex-col">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse text-[13px]">
+<thead>
+<tr class="bg-[#f8f7f4] text-[#6b6965] text-[11px] font-bold tracking-wider uppercase border-b border-[#e6e4df] select-none">
+<th class="py-3.5 px-4 w-64">KHÁCH HÀNG</th>
+<th class="py-3.5 px-3 w-52">NGUỒN &amp; TIẾP CẬN</th>
+<th class="py-3.5 px-3 w-64">TOUR QUAN TÂM / GẦN NHẤT</th>
+<th class="py-3.5 px-3 w-44">TRẠNG THÁI HỘI THOẠI</th>
+<th class="py-3.5 px-3 w-48">NHÂN VIÊN PHỤ TRÁCH</th>
+<th class="py-3.5 px-3 w-44">LỊCH NHẮC HẸN</th>
+<th class="py-3.5 px-4 text-right w-36">THAO TÁC</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#f0eee9]">
+<!-- Row 1: Trần Hoàng Bách -->
+<tr class="hover:bg-[#faf9f6] transition-colors bg-[#fff5f5]">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-[#ffdad6] text-[#93000a] flex items-center justify-center font-bold text-[13px] shrink-0">
+                        TB
+                      </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-[#1c1b1f] truncate">Trần Hoàng Bách</span>
+<span class="px-1.5 py-0.2 bg-[#B30118] text-white rounded text-[10px] font-bold shrink-0">VIP GOLD</span>
+</div>
+<span class="text-[12px] font-semibold text-[#B30118]">0918.423.889</span>
+<span class="text-[11px] text-[#6b6965] truncate">bach.tran@asiatech.vn</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-1 font-semibold text-[#1c1b1f]">
+<span class="material-symbols-outlined text-[16px] text-[#555]">desktop_windows</span>
+<span>bttAI Web</span>
+</div>
+<span class="text-[11px] text-[#6b6965] truncate">benthanhtourist.com/tours/chau-au...</span>
+<span class="text-[11px] text-[#888]">Thiết bị: Safari MacOS</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] line-clamp-1">Pháp - Thụy Sĩ - Ý 10N9Đ</span>
+<div class="flex items-center gap-1 text-[11px] text-[#6b6965] mt-0.5">
+<span class="bg-[#f0eee9] px-1 py-0.2 rounded font-mono">BTT-EU-2411</span>
+<span>•</span>
+<span>KH: 15/12/2024</span>
+</div>
+<span class="text-[11px] text-[#00875a] font-medium mt-0.5">2 người lớn • KS 4 sao</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#ffdad6] text-[#93000a] rounded-full text-[12px] font-bold">
+<span class="w-2 h-2 rounded-full bg-[#B30118] animate-ping"></span>
+<span>Khách chờ NV (3p)</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-2">
+<img alt="Sale" class="w-7 h-7 rounded-full object-cover shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCibBRRV-Hs8Mg1CdEdb9ay0aIbHiw8V3R-sHK7fgnxJhPLnph3bBOul0PuH4fePIzjP3skFxRjvaUqnY0THHipfZ4M4e0DcklpmPJp-etcH5NjlUWMvObwWuimMRvZA4bMUSZfjrA7j7jHsUVYxrBMXFMh7ZeeYnXe4gqQWw_jHDJxT_DOu2sOnYGXtCIefIReaqD-xiur1kvhFeofKOv4ipFIvy9UrPuuul1DBg8"/>
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] text-[12px]">Nguyễn Mai Phương</span>
+<span class="text-[11px] text-[#6b6965]">BTT-SALE-104</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-1 text-[#B30118] font-semibold text-[12px]">
+<span class="material-symbols-outlined text-[15px]">schedule</span>
+<span>Hôm nay 15:30</span>
+</div>
+<span class="text-[11px] text-[#6b6965]">Gọi chốt cọc Visa</span>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="min-w-[36px] min-h-[36px] bg-[#B30118] text-white hover:bg-[#990014] rounded-lg flex items-center justify-center transition-colors shadow-xs" title="Chat khẩn cấp">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:bg-[#eae8e4] hover:text-[#1c1b1f] rounded-lg flex items-center justify-center transition-colors" title="Gọi">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</button>
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:bg-[#eae8e4] hover:text-[#1c1b1f] rounded-lg flex items-center justify-center transition-colors" title="Chi tiết">
+<span class="material-symbols-outlined text-[18px]">badge</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Lê Thị Thu Hằng -->
+<tr class="hover:bg-[#faf9f6] transition-colors">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-[#cfe2f9] text-[#1c4f9c] flex items-center justify-center font-bold text-[13px] shrink-0">
+                        LH
+                      </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-[#1c1b1f] truncate">Lê Thị Thu Hằng</span>
+<span class="px-1.5 py-0.2 bg-[#f0eee9] text-[#555] rounded text-[10px] font-semibold shrink-0">Thân thiết</span>
+</div>
+<span class="text-[12px] font-medium text-[#1c1b1f]">0903.884.112</span>
+<span class="text-[11px] text-[#6b6965] truncate">thuhang.le@gmail.com</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-1 font-semibold text-[#1c1b1f]">
+<span class="material-symbols-outlined text-[16px] text-[#00875a]">smartphone</span>
+<span>bttAI App</span>
+</div>
+<span class="text-[11px] text-[#6b6965] truncate">App://tour/da-nang-ba-na</span>
+<span class="text-[11px] text-[#888]">iOS 17 • v2.4.1</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] line-clamp-1">Đà Nẵng - Bà Nà 4N3Đ</span>
+<div class="flex items-center gap-1 text-[11px] text-[#6b6965] mt-0.5">
+<span class="bg-[#f0eee9] px-1 py-0.2 rounded font-mono">BTT-DOM-512</span>
+<span>•</span>
+<span>KH: 02/01/2025</span>
+</div>
+<span class="text-[11px] text-[#6b6965] mt-0.5">4 khách gia đình</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0eee9] text-[#1c1b1f] rounded-full text-[12px] font-semibold">
+<span class="w-2 h-2 rounded-full bg-[#6b6965]"></span>
+<span>Chờ xác nhận tour</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-2">
+<img alt="Sale" class="w-7 h-7 rounded-full object-cover shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCibBRRV-Hs8Mg1CdEdb9ay0aIbHiw8V3R-sHK7fgnxJhPLnph3bBOul0PuH4fePIzjP3skFxRjvaUqnY0THHipfZ4M4e0DcklpmPJp-etcH5NjlUWMvObwWuimMRvZA4bMUSZfjrA7j7jHsUVYxrBMXFMh7ZeeYnXe4gqQWw_jHDJxT_DOu2sOnYGXtCIefIReaqD-xiur1kvhFeofKOv4ipFIvy9UrPuuul1DBg8"/>
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] text-[12px]">Nguyễn Mai Phương</span>
+<span class="text-[11px] text-[#6b6965]">BTT-SALE-104</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-1 text-[#1c1b1f] font-semibold text-[12px]">
+<span class="material-symbols-outlined text-[15px] text-[#6b6965]">schedule</span>
+<span>Hôm nay 16:00</span>
+</div>
+<span class="text-[11px] text-[#6b6965]">Gửi hợp đồng ký điện tử</span>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:text-[#B30118] hover:bg-[#eae8e4] rounded-lg flex items-center justify-center transition-colors" title="Chat">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:bg-[#eae8e4] hover:text-[#1c1b1f] rounded-lg flex items-center justify-center transition-colors" title="Gọi">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</button>
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:bg-[#eae8e4] hover:text-[#1c1b1f] rounded-lg flex items-center justify-center transition-colors" title="Chi tiết">
+<span class="material-symbols-outlined text-[18px]">badge</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Đặng Quốc Bảo -->
+<tr class="hover:bg-[#faf9f6] transition-colors bg-[#f5fbf7]">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-[#e3fcef] text-[#00875a] flex items-center justify-center font-bold text-[13px] shrink-0">
+                        ĐB
+                      </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-[#1c1b1f] truncate">Đặng Quốc Bảo</span>
+<span class="px-1.5 py-0.2 bg-[#00875a] text-white rounded text-[10px] font-bold shrink-0">ĐÃ CỌC</span>
+</div>
+<span class="text-[12px] font-medium text-[#1c1b1f]">0938.229.441</span>
+<span class="text-[11px] text-[#6b6965] truncate">bao.dang@vietinbank.com.vn</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-1 font-semibold text-[#1c1b1f]">
+<span class="material-symbols-outlined text-[16px] text-[#555]">desktop_windows</span>
+<span>bttAI Web</span>
+</div>
+<span class="text-[11px] text-[#6b6965] truncate">benthanhtourist.com/tours/nhat-ban</span>
+<span class="text-[11px] text-[#888]">Google Ads Campaign</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] line-clamp-1">Nhật Bản Mùa Tuyết 6N5Đ</span>
+<div class="flex items-center gap-1 text-[11px] text-[#6b6965] mt-0.5">
+<span class="bg-[#f0eee9] px-1 py-0.2 rounded font-mono">BTT-JP-889</span>
+<span>•</span>
+<span>KH: 22/11/2024</span>
+</div>
+<span class="text-[11px] text-[#00875a] font-bold mt-0.5">52.900.000 VNĐ (Đã TT 100%)</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#e3fcef] text-[#00875a] rounded-full text-[12px] font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+<span>Đã chốt tour</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-[#cfe2f9] text-[#1c4f9c] flex items-center justify-center font-bold text-[11px] shrink-0">
+                        TK
+                      </div>
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] text-[12px]">Trần Đình Khôi</span>
+<span class="text-[11px] text-[#6b6965]">BTT-SALE-088</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-1 text-[#00875a] font-semibold text-[12px]">
+<span class="material-symbols-outlined text-[15px]">event_available</span>
+<span>Đã hoàn thành</span>
+</div>
+<span class="text-[11px] text-[#6b6965]">Chờ xuất vé máy bay</span>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:text-[#B30118] hover:bg-[#eae8e4] rounded-lg flex items-center justify-center transition-colors" title="Chat">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:bg-[#eae8e4] hover:text-[#1c1b1f] rounded-lg flex items-center justify-center transition-colors" title="Đơn hàng">
+<span class="material-symbols-outlined text-[18px]">receipt_long</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Hoàng Minh Châu -->
+<tr class="hover:bg-[#faf9f6] transition-colors">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-[#f0eee9] text-[#555] flex items-center justify-center font-bold text-[13px] shrink-0">
+                        HC
+                      </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-[#1c1b1f] truncate">Hoàng Minh Châu</span>
+<span class="px-1.5 py-0.2 bg-[#f0eee9] text-[#555] rounded text-[10px] font-semibold shrink-0">Mới</span>
+</div>
+<span class="text-[12px] font-medium text-[#1c1b1f]">0912.776.321</span>
+<span class="text-[11px] text-[#6b6965] truncate">chau.hoang@fpt.com</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-1 font-semibold text-[#1c1b1f]">
+<span class="material-symbols-outlined text-[16px] text-[#555]">desktop_windows</span>
+<span>bttAI Web</span>
+</div>
+<span class="text-[11px] text-[#6b6965] truncate">benthanhtourist.com/tours/han-quoc</span>
+<span class="text-[11px] text-[#888]">Zalo chat widget</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] line-clamp-1">Hàn Quốc Seoul - Nami 5N4Đ</span>
+<div class="flex items-center gap-1 text-[11px] text-[#6b6965] mt-0.5">
+<span class="bg-[#f0eee9] px-1 py-0.2 rounded font-mono">BTT-KR-104</span>
+<span>•</span>
+<span>KH: 08/12/2024</span>
+</div>
+<span class="text-[11px] text-[#6b6965] mt-0.5">Cần visa C-3-9</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0eee9] text-[#555] rounded-full text-[12px] font-semibold">
+<span class="w-2 h-2 rounded-full bg-[#888]"></span>
+<span>Chờ xử lý</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-[#cfe2f9] text-[#1c4f9c] flex items-center justify-center font-bold text-[11px] shrink-0">
+                        LH
+                      </div>
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] text-[12px]">Lê Văn Hùng</span>
+<span class="text-[11px] text-[#6b6965]">BTT-SALE-115</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-1 text-[#1c1b1f] font-semibold text-[12px]">
+<span class="material-symbols-outlined text-[15px] text-[#6b6965]">schedule</span>
+<span>Ngày mai 09:30</span>
+</div>
+<span class="text-[11px] text-[#6b6965]">Hỗ trợ chứng minh tài chính</span>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:text-[#B30118] hover:bg-[#eae8e4] rounded-lg flex items-center justify-center transition-colors" title="Chat">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:bg-[#eae8e4] hover:text-[#1c1b1f] rounded-lg flex items-center justify-center transition-colors" title="Gọi">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 5: Bùi Thị Ánh Tuyết -->
+<tr class="hover:bg-[#faf9f6] transition-colors bg-[#fcfbfa]">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-[#f0eee9] text-[#555] flex items-center justify-center font-bold text-[13px] shrink-0">
+                        BT
+                      </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-[#1c1b1f] truncate">Bùi Thị Ánh Tuyết</span>
+<span class="px-1.5 py-0.2 bg-[#f0eee9] text-[#555] rounded text-[10px] font-semibold shrink-0">Vãng lai</span>
+</div>
+<span class="text-[12px] font-medium text-[#1c1b1f]">0988.334.992</span>
+<span class="text-[11px] text-[#6b6965] truncate">tuyet.bui@hotmail.com</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-1 font-semibold text-[#1c1b1f]">
+<span class="material-symbols-outlined text-[16px] text-[#00875a]">smartphone</span>
+<span>bttAI App</span>
+</div>
+<span class="text-[11px] text-[#6b6965] truncate">App://tour/phu-quoc-resort</span>
+<span class="text-[11px] text-[#888]">Android 14 • v2.4.0</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] line-clamp-1">Phú Quốc 3N2Đ Nghỉ Dưỡng</span>
+<div class="flex items-center gap-1 text-[11px] text-[#6b6965] mt-0.5">
+<span class="bg-[#f0eee9] px-1 py-0.2 rounded font-mono">BTT-PQ-330</span>
+<span>•</span>
+<span>KH: 20/01/2025</span>
+</div>
+<span class="text-[11px] text-[#6b6965] mt-0.5">Combo Vé + Vinpearl</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0eee9] text-[#555] rounded-full text-[12px] font-semibold">
+<span class="w-1.5 h-1.5 rounded-full bg-[#888]"></span>
+<span>Chưa xem</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-1 text-[#B30118] font-bold text-[12px]">
+<span class="material-symbols-outlined text-[16px]">person_search</span>
+<span class="underline cursor-pointer hover:opacity-80">Phân công ngay</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="text-[12px] text-[#888] italic">Chưa đặt lịch hẹn</span>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="min-w-[36px] min-h-[36px] bg-[#B30118] text-white hover:bg-[#990014] rounded-lg flex items-center justify-center transition-colors shadow-xs" title="Phân công &amp; Nhận">
+<span class="material-symbols-outlined text-[18px]">call_received</span>
+</button>
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:bg-[#eae8e4] hover:text-[#1c1b1f] rounded-lg flex items-center justify-center transition-colors" title="Gọi ngay">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 6: Trịnh Công Minh -->
+<tr class="hover:bg-[#faf9f6] transition-colors">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-[#cfe2f9] text-[#1c4f9c] flex items-center justify-center font-bold text-[13px] shrink-0">
+                        TM
+                      </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-[#1c1b1f] truncate">Trịnh Công Minh</span>
+<span class="px-1.5 py-0.2 bg-[#f0eee9] text-[#555] rounded text-[10px] font-semibold shrink-0">Thân thiết</span>
+</div>
+<span class="text-[12px] font-medium text-[#1c1b1f]">0909.112.445</span>
+<span class="text-[11px] text-[#6b6965] truncate">thanh.trinh@vingroup.net</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-1 font-semibold text-[#1c1b1f]">
+<span class="material-symbols-outlined text-[16px] text-[#555]">desktop_windows</span>
+<span>bttAI Web</span>
+</div>
+<span class="text-[11px] text-[#6b6965] truncate">benthanhtourist.com/tours/uc-sydney</span>
+<span class="text-[11px] text-[#888]">Newsletter link</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] line-clamp-1">Úc Sydney - Melbourne 7N6Đ</span>
+<div class="flex items-center gap-1 text-[11px] text-[#6b6965] mt-0.5">
+<span class="bg-[#f0eee9] px-1 py-0.2 rounded font-mono">BTT-AU-992</span>
+<span>•</span>
+<span>KH: 10/02/2025</span>
+</div>
+<span class="text-[11px] text-[#6b6965] mt-0.5">3 người lớn</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0eee9] text-[#555] rounded-full text-[12px] font-semibold">
+<span class="w-2 h-2 rounded-full bg-[#888]"></span>
+<span>Chờ xử lý</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-2">
+<img alt="Sale" class="w-7 h-7 rounded-full object-cover shrink-0" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCibBRRV-Hs8Mg1CdEdb9ay0aIbHiw8V3R-sHK7fgnxJhPLnph3bBOul0PuH4fePIzjP3skFxRjvaUqnY0THHipfZ4M4e0DcklpmPJp-etcH5NjlUWMvObwWuimMRvZA4bMUSZfjrA7j7jHsUVYxrBMXFMh7ZeeYnXe4gqQWw_jHDJxT_DOu2sOnYGXtCIefIReaqD-xiur1kvhFeofKOv4ipFIvy9UrPuuul1DBg8"/>
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] text-[12px]">Nguyễn Mai Phương</span>
+<span class="text-[11px] text-[#6b6965]">BTT-SALE-104</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-1 text-[#1c1b1f] font-semibold text-[12px]">
+<span class="material-symbols-outlined text-[15px] text-[#6b6965]">event</span>
+<span>25/12/2024</span>
+</div>
+<span class="text-[11px] text-[#6b6965]">Xác nhận hồ sơ ĐSQ</span>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:text-[#B30118] hover:bg-[#eae8e4] rounded-lg flex items-center justify-center transition-colors" title="Chat">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:bg-[#eae8e4] hover:text-[#1c1b1f] rounded-lg flex items-center justify-center transition-colors" title="Gọi">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 7: Vũ Hoài Nam -->
+<tr class="hover:bg-[#faf9f6] transition-colors">
+<td class="py-3 px-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-[#f0eee9] text-[#555] flex items-center justify-center font-bold text-[13px] shrink-0">
+                        VN
+                      </div>
+<div class="flex flex-col min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-bold text-[#1c1b1f] truncate">Vũ Hoài Nam</span>
+<span class="px-1.5 py-0.2 bg-[#f0eee9] text-[#555] rounded text-[10px] font-semibold shrink-0">Thân thiết</span>
+</div>
+<span class="text-[12px] font-medium text-[#1c1b1f]">0977.889.001</span>
+<span class="text-[11px] text-[#6b6965] truncate">nam.vu@gmail.com</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-1 font-semibold text-[#1c1b1f]">
+<span class="material-symbols-outlined text-[16px] text-[#00875a]">smartphone</span>
+<span>bttAI App</span>
+</div>
+<span class="text-[11px] text-[#6b6965] truncate">App://tour/thai-lan-bangkok</span>
+<span class="text-[11px] text-[#888]">Đăng nhập Apple ID</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] line-clamp-1">Thái Lan Bangkok - Pattaya 5N4Đ</span>
+<div class="flex items-center gap-1 text-[11px] text-[#6b6965] mt-0.5">
+<span class="bg-[#f0eee9] px-1 py-0.2 rounded font-mono">BTT-TH-120</span>
+<span>•</span>
+<span>KH: 14/01/2025</span>
+</div>
+<span class="text-[11px] text-[#6b6965] mt-0.5">Khách sạn 5 sao</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0eee9] text-[#1c1b1f] rounded-full text-[12px] font-semibold">
+<span class="w-2 h-2 rounded-full bg-[#6b6965]"></span>
+<span>Đã xem</span>
+</div>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center gap-2">
+<div class="w-7 h-7 rounded-full bg-[#cfe2f9] text-[#1c4f9c] flex items-center justify-center font-bold text-[11px] shrink-0">
+                        QA
+                      </div>
+<div class="flex flex-col">
+<span class="font-semibold text-[#1c1b1f] text-[12px]">Phạm Quỳnh Anh</span>
+<span class="text-[11px] text-[#6b6965]">BTT-SALE-120</span>
+</div>
+</div>
+</td>
+<td class="py-3 px-3">
+<span class="text-[12px] text-[#6b6965]">Không có lịch</span>
+</td>
+<td class="py-3 px-4 text-right">
+<div class="flex items-center justify-end gap-1.5">
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:text-[#B30118] hover:bg-[#eae8e4] rounded-lg flex items-center justify-center transition-colors" title="Chat">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</button>
+<button class="min-w-[36px] min-h-[36px] bg-[#f4f3f0] text-[#555] hover:bg-[#eae8e4] hover:text-[#1c1b1f] rounded-lg flex items-center justify-center transition-colors" title="Gọi">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Bar -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-3 p-3 bg-[#f8f7f4] border-t border-[#e6e4df]">
+<div class="flex items-center gap-3">
+<span class="text-[12px] text-[#6b6965]">
+                Hiển thị <span class="font-bold text-[#1c1b1f]">1 - 7</span> trên tổng số <span class="font-bold text-[#1c1b1f]">1,428</span> khách hàng
+              </span>
+<div class="flex items-center gap-1.5">
+<span class="text-[11px] text-[#6b6965]">Số dòng:</span>
+<select class="bg-white border border-[#e6e4df] text-[#1c1b1f] text-[11px] font-medium py-1 px-2 rounded focus:outline-none cursor-pointer">
+<option>10 / trang</option>
+<option>20 / trang</option>
+<option>50 / trang</option>
+</select>
+</div>
+</div>
+<!-- Page switchers -->
+<div class="flex items-center gap-1">
+<span class="text-[12px] text-[#6b6965] mr-2">Trang 1 / 72</span>
+<button class="w-8 h-8 rounded border border-[#e6e4df] bg-white text-[#888] flex items-center justify-center disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-[16px]">first_page</span>
+</button>
+<button class="w-8 h-8 rounded border border-[#e6e4df] bg-white text-[#888] flex items-center justify-center disabled:opacity-40" disabled="">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded bg-[#B30118] text-white text-[12px] font-bold flex items-center justify-center shadow-xs">1</button>
+<button class="w-8 h-8 rounded border border-[#e6e4df] bg-white text-[#1c1b1f] hover:bg-[#f4f3f0] text-[12px] font-medium flex items-center justify-center">2</button>
+<button class="w-8 h-8 rounded border border-[#e6e4df] bg-white text-[#1c1b1f] hover:bg-[#f4f3f0] text-[12px] font-medium flex items-center justify-center">3</button>
+<span class="px-1 text-[#888] text-[12px]">...</span>
+<button class="w-8 h-8 rounded border border-[#e6e4df] bg-white text-[#1c1b1f] hover:bg-[#f4f3f0] text-[12px] font-medium flex items-center justify-center">72</button>
+<button class="w-8 h-8 rounded border border-[#e6e4df] bg-white text-[#555] hover:bg-[#f4f3f0] flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+<button class="w-8 h-8 rounded border border-[#e6e4df] bg-white text-[#555] hover:bg-[#f4f3f0] flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">last_page</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Bottom Operational Cards (3 columns) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 pb-2">
+<!-- Card 1: Điều phối tư vấn thông minh (bttAI) -->
+<div class="p-4 bg-white rounded-xl border border-[#e6e4df] shadow-xs flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[#B30118] text-[20px]">bolt</span>
+<div>
+<h4 class="text-[14px] font-bold text-[#1c1b1f]">Điều phối tư vấn thông minh (bttAI)</h4>
+<p class="text-[12px] text-[#6b6965]">Tự động gắn sale phù hợp chuyên tuyến</p>
+</div>
+</div>
+<div class="space-y-2 mt-3">
+<div class="flex items-center justify-between p-2.5 bg-[#f4f3f0] rounded-lg border border-[#e6e4df]/60">
+<span class="text-[12px] font-medium text-[#1c1b1f]">Tuyến Châu Âu / Mỹ / Úc</span>
+<span class="text-[11px] font-semibold bg-[#cfe2f9] text-[#1c4f9c] px-2 py-0.5 rounded">Nguyễn Mai Phương (Đạt 95% tải)</span>
+</div>
+<div class="flex items-center justify-between p-2.5 bg-[#f4f3f0] rounded-lg border border-[#e6e4df]/60">
+<span class="text-[12px] font-medium text-[#1c1b1f]">Tuyến Đông Bắc Á (Nhật, Hàn)</span>
+<span class="text-[11px] font-semibold bg-[#e3fcef] text-[#00875a] px-2 py-0.5 rounded">Trần Đình Khôi (Còn trống 6 ca)</span>
+</div>
+</div>
+</div>
+<button class="mt-3.5 w-full py-2 text-center text-[12px] font-semibold text-[#555] hover:text-[#1c1b1f] bg-[#f4f3f0] hover:bg-[#eae8e4] rounded-lg transition-colors border border-[#e6e4df] min-h-[38px]">
+              Xem cấu hình thuật toán chia lead
+            </button>
+</div>
+<!-- Card 2: Tình trạng cổng kết nối bttAI -->
+<div class="p-4 bg-white rounded-xl border border-[#e6e4df] shadow-xs flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[#00875a] text-[20px]">hub</span>
+<div>
+<h4 class="text-[14px] font-bold text-[#1c1b1f]">Tình trạng cổng kết nối bttAI</h4>
+<p class="text-[12px] text-[#6b6965]">Hạ tầng đồng bộ tin nhắn đa nền tảng</p>
+</div>
+</div>
+<div class="space-y-2 mt-3 text-[12px]">
+<div class="flex items-center justify-between py-1 border-b border-[#f0eee9]">
+<span class="text-[#6b6965]">bttAI Web LiveChat (Socket)</span>
+<span class="text-[#00875a] font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#00875a]"></span> 18ms • Bình thường
+                  </span>
+</div>
+<div class="flex items-center justify-between py-1 border-b border-[#f0eee9]">
+<span class="text-[#6b6965]">bttAI Mobile Push (Firebase)</span>
+<span class="text-[#00875a] font-semibold flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-[#00875a]"></span> Đang trực tuyến
+                  </span>
+</div>
+<div class="flex items-center justify-between py-1">
+<span class="text-[#6b6965]">Zalo OA &amp; Fanpage Messenger</span>
+<span class="text-[#888] font-medium">Chờ phân quyền quản trị</span>
+</div>
+</div>
+</div>
+<div class="mt-3 flex items-center justify-between text-[#6b6965] text-[12px] bg-[#f4f3f0] px-3 py-2 rounded-lg border border-[#e6e4df]">
+<span>Thời gian kiểm tra: 14:32:10</span>
+<span class="text-[#00875a] font-bold">Tất cả thông suốt</span>
+</div>
+</div>
+<!-- Card 3: Chùm Tour Đang Mở Bán Trọng Điểm -->
+<div class="p-4 bg-white rounded-xl border border-[#e6e4df] shadow-xs flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-[#B30118] text-[20px]">tour</span>
+<div>
+<h4 class="text-[14px] font-bold text-[#1c1b1f]">Chùm Tour Đang Mở Bán Trọng Điểm</h4>
+<p class="text-[12px] text-[#6b6965]">Tỷ lệ khách hỏi và tỷ lệ giữ chỗ cao</p>
+</div>
+</div>
+<div class="mt-3 flex items-center gap-3 p-2.5 bg-[#f4f3f0] rounded-lg border border-[#e6e4df]/60">
+<div class="w-14 h-14 rounded-lg bg-cover bg-center shrink-0 border border-[#ddd]" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuB8aPyDrvZHLC-s0C0eGvc9UOwEm7f45b_s3wYO2uMUpoQLH4A7fxpGWC8Rq-yfLilQHtqfNfWMS9fZYtUKsVtWL94Ko5e_qlNeYPGzuVQU4p_eNNUEOyJqdcWYku0jY2CEqJ2GEwCrsuiHvZYriYLyixPdfaoDMH9bFg_mwANOiB4d3kbhfjhgC-NGpeHiOlmwcCoR-hj688gkn69JdxMsEAhkO3IcCrRy1m1D3dc')"></div>
+<div class="flex flex-col min-w-0">
+<span class="text-[13px] font-bold text-[#1c1b1f] truncate">Chùm Tour Tết Ất Tỵ 2025</span>
+<span class="text-[11px] text-[#6b6965]">Châu Âu - Nhật Bản - Đài Loan</span>
+<span class="text-[11px] text-[#B30118] font-bold mt-0.5">Còn lại 18 chỗ giữ vé máy bay</span>
+</div>
+</div>
+</div>
+<div class="mt-3 flex items-center justify-between text-[12px]">
+<span class="text-[#6b6965]">Cập nhật: Phòng Sản Phẩm</span>
+<button class="text-[#B30118] hover:underline font-bold flex items-center gap-0.5">
+                Bảng giá nội bộ <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

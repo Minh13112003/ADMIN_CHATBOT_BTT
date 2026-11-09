@@ -12,7 +12,11 @@ import InboxPage from '@/pages/InboxPage';
 import LoginPage from '@/pages/LoginPage';
 import StatsPage from '@/pages/StatsPage';
 import SettingsPage from '@/pages/SettingsPage';
-import TemplatesPage from '@/pages/TemplatesPage';
+import ReplyLibraryPage from '@/pages/ReplyLibraryPage';
+import DealsPage from '@/pages/DealsPage';
+import RemindersPage from '@/pages/RemindersPage';
+import PerformancePage from '@/pages/PerformancePage';
+import ChannelsPage from '@/pages/ChannelsPage';
 
 /** Sale không thấy trang này. Chỉ để dễ dùng, quyền thật do backend kiểm tra. */
 function AdminOnly({ children }: { children: ReactNode }) {
@@ -40,9 +44,13 @@ export function App() {
       <Route element={<WorkspaceLayout />}>
         <Route path="/inbox" element={<InboxPage />} />
         <Route path="/customers" element={<CustomersPage />} />
-        <Route path="/templates" element={<TemplatesPage />} />
+        <Route path="/deals" element={<DealsPage />} />
+        <Route path="/reminders" element={<RemindersPage />} />
+        <Route path="/templates" element={<ReplyLibraryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/stats" element={<AdminOnly><StatsPage /></AdminOnly>} />
+        <Route path="/performance" element={<AdminOnly><PerformancePage /></AdminOnly>} />
+        <Route path="/channels" element={<AdminOnly><ChannelsPage /></AdminOnly>} />
         <Route path="/accounts" element={<AdminOnly><AccountsPage /></AdminOnly>} />
       </Route>
       <Route path="*" element={<Navigate to="/inbox" replace />} />

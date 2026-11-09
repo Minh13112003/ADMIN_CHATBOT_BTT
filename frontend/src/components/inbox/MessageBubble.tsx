@@ -18,10 +18,14 @@ function thongTinThe(t: TourCard) {
   const ngay = typeof ngayGoc === 'string' ? ngayGoc.slice(0, 10).replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$3/$2/$1') : ngayGoc;
   return {
     ten: String(chu('ten_tour', 'ten', 'name') ?? 'Tour'),
-    meta:
-      [soNgay ? `${soNgay} ngày` : null, ngay ? `khởi hành ${ngay}` : null, typeof gia === 'number' ? `${gia.toLocaleString('vi-VN')} đ` : gia, chu('mo_ta')]
-        .filter(Boolean)
-        .join(' · '),
+    meta: [
+      soNgay ? `${soNgay} ngày` : null,
+      ngay ? `khởi hành ${ngay}` : null,
+      typeof gia === 'number' ? `${gia.toLocaleString('vi-VN')} đ` : gia,
+      chu('mo_ta'),
+    ]
+      .filter(Boolean)
+      .join(' · '),
   };
 }
 
@@ -49,8 +53,24 @@ function DinhKem({ a, tren }: { a: Attachment; tren?: boolean }) {
     );
   }
   return (
-    <a href={href} target="_blank" rel="noreferrer" className={`flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-[10px] bg-surface px-2.5 py-1.5 text-ink ${tren ? 'mb-1.5' : ''}`}>
-      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-brand">
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className={`flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-[10px] bg-surface px-2.5 py-1.5 text-ink ${tren ? 'mb-1.5' : ''}`}
+    >
+      <svg
+        aria-hidden="true"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="shrink-0 text-brand"
+      >
         <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
         <path d="M14 3v5h5" />
       </svg>
@@ -64,7 +84,11 @@ function DinhKem({ a, tren }: { a: Attachment; tren?: boolean }) {
 
 function NutTraLoi({ onClick, align }: { onClick: () => void; align: 'left' | 'right' }) {
   return (
-    <button type="button" onClick={onClick} className={`min-h-7 px-1 text-[0.6875rem] font-medium text-body underline-offset-2 hover:underline ${align === 'right' ? 'ml-1' : 'mr-1'}`}>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`min-h-9 px-2 text-[0.6875rem] font-medium text-body underline-offset-2 hover:underline ${align === 'right' ? 'ml-1' : 'mr-1'}`}
+    >
       Trả lời
     </button>
   );
@@ -72,13 +96,21 @@ function NutTraLoi({ onClick, align }: { onClick: () => void; align: 'left' | 'r
 
 export function MessageBubble({ message: m, onReply, seen }: { message: Message; onReply?: (m: Message) => void; seen?: boolean }) {
   if (m.senderType === 'SYSTEM') {
-    return <div className={`max-w-[90%] self-center rounded-xl px-3 py-[5px] text-center text-xs ${m.internal ? 'bg-auto text-auto-ink' : 'bg-line text-neutral-ink'}`}>{m.text}</div>;
+    return (
+      <div
+        className={`max-w-[90%] self-center rounded-xl px-3 py-[5px] text-center text-xs ${m.internal ? 'bg-auto text-auto-ink' : 'bg-line text-neutral-ink'}`}
+      >
+        {m.text}
+      </div>
+    );
   }
   if (m.senderType === 'CUSTOMER') {
     return (
       <div className="min-w-0 max-w-[88%] self-start sm:max-w-[72%]">
         {m.isTrigger && <div className="mb-[3px] text-xs font-semibold text-brand-text">Yêu cầu gặp nhân viên</div>}
-        <div className={`whitespace-pre-line break-words rounded-[14px_14px_14px_4px] bg-surface px-[13px] py-[9px] text-sm leading-[1.45] ${m.isTrigger ? 'border-2 border-brand' : 'border border-line'}`}>
+        <div
+          className={`whitespace-pre-line break-words rounded-[14px_14px_14px_4px] bg-surface px-4 py-3 text-sm leading-relaxed ${m.isTrigger ? 'border-2 border-brand' : 'border border-line'}`}
+        >
           {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} />}
           {m.text}
         </div>
@@ -89,11 +121,11 @@ export function MessageBubble({ message: m, onReply, seen }: { message: Message;
       </div>
     );
   }
-  const mau = m.senderType === 'STAFF' ? 'bg-status-contact text-white' : m.senderType === 'AUTO' ? 'bg-auto text-auto-ink' : 'bg-neutral-soft text-ink';
+  const mau = m.senderType === 'STAFF' ? 'bg-brand-button text-white' : m.senderType === 'AUTO' ? 'bg-auto text-auto-ink' : 'bg-neutral-soft text-ink';
   const ai = m.senderType === 'STAFF' ? (m.staffLabel ?? 'Nhân viên') : m.senderType === 'AUTO' ? `Tự động · ${m.ruleName}` : CHANNEL.WEB.bot;
   return (
     <div className="min-w-0 max-w-[88%] self-end sm:max-w-[72%]">
-      <div className={`whitespace-pre-line break-words rounded-[14px_14px_4px_14px] px-[13px] py-[9px] text-sm leading-[1.45] ${mau}`}>
+      <div className={`whitespace-pre-line break-words rounded-[14px_14px_4px_14px] px-4 py-3 text-sm leading-relaxed ${mau}`}>
         {m.replyTo && <Trich m={m.replyTo} light={m.senderType === 'STAFF'} />}
         {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} />}
         {m.text}

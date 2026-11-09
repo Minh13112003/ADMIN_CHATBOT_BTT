@@ -4,24 +4,41 @@ import { ChatPane } from '@/components/inbox/ChatPane';
 import { ConversationList } from '@/components/inbox/ConversationList';
 
 export default function InboxPage() {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const tuUrl = params.get('c');
   const [selected, setSelected] = useState<string | null>(tuUrl);
 
   useEffect(() => {
-    if (tuUrl) setSelected(tuUrl);
+    setSelected(tuUrl);
   }, [tuUrl]);
+  const selectConversation = (id: string | null) => {
+    setSelected(id);
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      if (id) next.set('c', id);
+      else next.delete('c');
+      return next;
+    }, { replace: true });
+  };
 
   return (
-    <div className="flex h-full min-h-0 flex-col md:flex-row">
-      <div className={`min-h-0 min-w-0 flex-col md:flex md:w-[340px] md:flex-none md:shrink-0 ${selected ? 'hidden' : 'flex flex-1'}`}>
-        <ConversationList selected={selected} onSelect={setSelected} />
+    <div className="flex h-full min-h-0 flex-col lg:flex-row">
+      <div className={`min-h-0 min-w-0 flex-col lg:flex lg:w-[340px] lg:flex-none lg:shrink-0 ${selected ? 'hidden' : 'flex flex-1'}`}>
+        <ConversationList selected={selected} onSelect={selectConversation} />
       </div>
-      <div className={`min-h-0 min-w-0 flex-1 ${selected ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`min-h-0 min-w-0 flex-1 ${selected ? 'flex' : 'hidden lg:flex'}`}>
         {selected ? (
-          <ChatPane key={selected} id={selected} onBack={() => setSelected(null)} />
+          <ChatPane key={selected} id={selected} onBack={() => selectConversation(null)} />
         ) : (
-          <p className="m-auto p-6 text-center text-sm text-muted">Chọn một hội thoại ở bên trái để xem nội dung.</p>
+          <div className="m-auto max-w-sm p-8 text-center">
+            <span className="empty-inbox-icon">
+              <svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
+                <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM7 8h10M7 12h6" />
+              </svg>
+            </span>
+            <h2 className="mt-6 text-xl font-semibold">Bắt đầu một cuộc trò chuyện</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted">Chọn khách hàng trong hộp thư để xem lịch sử, tư vấn và theo dõi hành trình đặt tour.</p>
+          </div>
         )}
       </div>
     </div>

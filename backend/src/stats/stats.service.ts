@@ -113,6 +113,25 @@ export class StatsService {
     return data;
   }
 
+  async getChannels() {
+    const from = dauKy('today');
+    const conversations = await this.prisma.conversation.groupBy({
+      by: ['channel'], where: { lastCustomerMessageAt: { gte: from } }, _count: { _all: true },
+    });
+    const responseRows = await this.prisma.$queryRaw<{ channel: string; seconds: number }[]>`
+      SELECT c.channel, r.seconds FROM contact_responses r
+      JOIN conversations c ON c.id = r."conversationId"
+      WHERE r."respondedAt" >= ${from}`;
+    const ganNhat = await this.prisma.conversation.groupBy({ by: ['channel'], _max: { lastCustomerMessageAt: true } });
+    return ['WEB', 'APP', 'ZALO', 'FACEBOOK'].map((channel) => ({
+      channel,
+      lastCustomerMessageAt: ganNhat.find((c) => c.channel === channel)?._max.lastCustomerMessageAt ?? null,
+      conversationsToday: conversations.find((c) => c.channel === channel)?._count._all ?? 0,
+      medianSeconds: tomTatPhanHoi(responseRows.filter((r) => r.channel === channel).map((r) => r.seconds)).medianSeconds,
+      connected: channel === 'WEB' || channel === 'APP',
+    }));
+  }
+
   /**
    * 10 khách có tổng tiền đơn đã chốt lớn nhất trong kỳ, mọi kênh. Chỉ tính đơn CONFIRMED (sale xác nhận hoặc booking đã thanh toán);
    * đơn chờ xác nhận, đã huỷ, hoặc bị huỷ khi mở lại hội thoại (voidedAt) không tính.
@@ -169,7 +188,7 @@ export class StatsService {
         select: { channel: true, tourName: true, guests: true, amount: true, closedById: true },
       }),
       this.prisma.aiUsage.aggregate({ where, _sum: { inputTokens: true, outputTokens: true } }),
-      this.prisma.user.findMany({ where: { role: 'SALE' }, select: { id: true, fullName: true } }),
+      this.prisma.user.findMany({ where: { role: 'SALE' }, select: { id: true, fullName: true, onDuty: true, _count: { select: { assigned: { where: { status: { in: ['CONTACT', 'PENDING'] } } } } } } }),
       this.khachChiNhieuNhat(from),
       // Đơn đang chờ xác nhận: tính mọi lúc, không theo kỳ, vì đây là việc sale còn phải làm.
       this.prisma.deal.aggregate({ where: { status: 'PENDING', voidedAt: null }, _count: { _all: true }, _sum: { amount: true } }),
@@ -178,19 +197,19 @@ export class StatsService {
 
     const revenue = { WEB: 0, APP: 0, ZALO: 0, FACEBOOK: 0 };
     const tours = new Map<string, { name: string; orders: number; guests: number; revenue: number }>();
-    const staff = new Map<string, { name: string; contact: number; closed: number; revenue: number; responses: number; avgSeconds: number | null }>();
-    for (const s of sales) staff.set(s.id, { name: s.fullName, contact: 0, closed: 0, revenue: 0, responses: 0, avgSeconds: null });
+    const staff = new Map<string, { name: string; contact: number; closed: number; revenue: number; responses: number; avgSeconds: number | null; medianSeconds: number | null; within5MinRate: number | null; onDuty: boolean; load: number; isSale: boolean }>();
+    for (const s of sales) staff.set(s.id, { name: s.fullName, contact: 0, closed: 0, revenue: 0, responses: 0, avgSeconds: null, medianSeconds: null, within5MinRate: null, onDuty: s.onDuty, load: s._count.assigned, isSale: true });
     const TU_DAT = 'self';
     const nhomStaff = (id: string | null) => {
       const key = id ?? TU_DAT;
-      if (!staff.has(key)) staff.set(key, { name: id ? 'Tài khoản khác' : 'Booking tự thanh toán', contact: 0, closed: 0, revenue: 0, responses: 0, avgSeconds: null });
+      if (!staff.has(key)) staff.set(key, { name: id ? 'Tài khoản khác' : 'Booking tự thanh toán', contact: 0, closed: 0, revenue: 0, responses: 0, avgSeconds: null, medianSeconds: null, within5MinRate: null, onDuty: false, load: 0, isSale: false });
       return staff.get(key)!;
     };
     const theoNguoi = new Map<string, number[]>();
     for (const r of responses) if (r.staffId) theoNguoi.set(r.staffId, [...(theoNguoi.get(r.staffId) ?? []), r.seconds]);
     for (const [id, giay] of theoNguoi) {
       const t = tomTatPhanHoi(giay);
-      Object.assign(nhomStaff(id), { responses: t.count, avgSeconds: t.avgSeconds });
+      Object.assign(nhomStaff(id), { responses: t.count, avgSeconds: t.avgSeconds, medianSeconds: t.medianSeconds, within5MinRate: t.within5MinRate });
     }
 
     for (const c of contact) if (c.lastHandlerId) nhomStaff(c.lastHandlerId).contact += 1;
@@ -230,7 +249,7 @@ export class StatsService {
       revenue,
       totalRevenue: Object.values(revenue).reduce((a, b) => a + b, 0),
       tours: [...tours.values()].sort((a, b) => b.revenue - a.revenue),
-      staff: [...staff.values()].filter((s) => s.contact || s.closed || s.responses).sort((a, b) => b.revenue - a.revenue),
+      staff: [...staff.values()].sort((a, b) => b.revenue - a.revenue),
       pending: { count: pending._count._all, amount: Number(pending._sum.amount ?? 0) },
       responseTime: tomTatPhanHoi(responses.map((r) => r.seconds)),
       topCustomers,

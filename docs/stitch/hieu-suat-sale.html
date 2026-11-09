@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hiệu suất sale - Báo cáo & Xếp hạng tư vấn viên (Admin) - BenThanh Tourist</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              red: '#D0021B',
+              darkred: '#B30118',
+              hover: '#b50217',
+              tint: '#FDECEC',
+              muted: '#71717A',
+            },
+            surface: {
+              bg: '#FAF9F6',
+              card: '#FFFFFF',
+              border: '#E6E2DA',
+              hover: '#F4F3F0',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #FAF9F6;
+      color: #18181B;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    /* Custom subtle scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F4F3F0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D4D0C8;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #A8A29E;
+    }
+  </style>
+</head>
+<body class="w-[1440px] max-w-[1440px] h-screen max-h-screen overflow-hidden mx-auto bg-[#FAF9F6] text-[#18181B] flex">
+
+  <!-- ========================================================================= -->
+  <!-- LEFT SIDEBAR: LIGHT EXPANDED (248px, White, Hairline Border #E6E2DA)     -->
+  <!-- ========================================================================= -->
+  <aside class="w-[248px] min-w-[248px] max-w-[248px] h-full bg-white border-r border-[#E6E2DA] flex flex-col justify-between select-none z-20">
+    
+    <!-- Top Header & Navigation -->
+    <div class="flex flex-col flex-1 overflow-y-auto">
+      <!-- BenThanh Tourist Logo Header -->
+      <div class="px-5 py-4 border-b border-[#F4F3F0] flex items-center gap-3">
+        <!-- 7-Petal Colorful Flower SVG -->
+        <svg class="w-9 h-9 flex-shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="50" cy="22" r="16" fill="#D0021B" fill-opacity="0.95" />
+          <circle cx="74" cy="33" r="16" fill="#E65100" fill-opacity="0.95" />
+          <circle cx="79" cy="60" r="16" fill="#FBC02D" fill-opacity="0.95" />
+          <circle cx="61" cy="81" r="16" fill="#2E7D32" fill-opacity="0.95" />
+          <circle cx="35" cy="80" r="16" fill="#0288D1" fill-opacity="0.95" />
+          <circle cx="21" cy="57" r="16" fill="#3949AB" fill-opacity="0.95" />
+          <circle cx="27" cy="31" r="16" fill="#8E24AA" fill-opacity="0.95" />
+          <circle cx="50" cy="50" r="9" fill="#FFFFFF" />
+        </svg>
+        <div class="flex flex-col min-w-0">
+          <span class="text-[13px] font-bold tracking-tight text-neutral-900 leading-tight truncate">BENTHANH TOURIST</span>
+          <span class="text-[11px] text-neutral-500 leading-tight truncate">Quản trị hội thoại & tour</span>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="px-3 py-3 space-y-4">
+        
+        <!-- SECTION 1: BẢNG ĐIỀU KHIỂN -->
+        <div>
+          <div class="px-3 pb-1 text-[11px] font-semibold text-neutral-400 tracking-wider uppercase">
+            BẢNG ĐIỀU KHIỂN
+          </div>
+          <nav class="space-y-0.5">
+            <!-- Hội thoại (red badge 12) -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center justify-between text-[13px] font-medium text-neutral-700 hover:bg-[#F4F3F0] transition-colors">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-[20px] text-neutral-500">chat</span>
+                <span class="truncate">Hội thoại</span>
+              </div>
+              <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-[#D0021B] text-white">12</span>
+            </a>
+            <!-- Khách hàng -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center gap-3 text-[13px] font-medium text-neutral-700 hover:bg-[#F4F3F0] transition-colors">
+              <span class="material-symbols-outlined text-[20px] text-neutral-500">group</span>
+              <span class="truncate">Khách hàng</span>
+            </a>
+            <!-- Đơn đặt tour -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center gap-3 text-[13px] font-medium text-neutral-700 hover:bg-[#F4F3F0] transition-colors">
+              <span class="material-symbols-outlined text-[20px] text-neutral-500">receipt_long</span>
+              <span class="truncate">Đơn đặt tour</span>
+            </a>
+            <!-- Lịch hẹn nhắc -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center gap-3 text-[13px] font-medium text-neutral-700 hover:bg-[#F4F3F0] transition-colors">
+              <span class="material-symbols-outlined text-[20px] text-neutral-500">calendar_month</span>
+              <span class="truncate">Lịch hẹn nhắc</span>
+            </a>
+            <!-- Thư viện trả lời -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center gap-3 text-[13px] font-medium text-neutral-700 hover:bg-[#F4F3F0] transition-colors">
+              <span class="material-symbols-outlined text-[20px] text-neutral-500">bolt</span>
+              <span class="truncate">Thư viện trả lời</span>
+            </a>
+            <!-- Cài đặt hiển thị -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center gap-3 text-[13px] font-medium text-neutral-700 hover:bg-[#F4F3F0] transition-colors">
+              <span class="material-symbols-outlined text-[20px] text-neutral-500">tune</span>
+              <span class="truncate">Cài đặt hiển thị</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- SECTION 2: QUẢN TRỊ (ADMIN) -->
+        <div>
+          <div class="px-3 pb-1 text-[11px] font-semibold text-neutral-400 tracking-wider uppercase">
+            QUẢN TRỊ (ADMIN)
+          </div>
+          <nav class="space-y-0.5">
+            <!-- Thống kê -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center gap-3 text-[13px] font-medium text-neutral-700 hover:bg-[#F4F3F0] transition-colors">
+              <span class="material-symbols-outlined text-[20px] text-neutral-500">insights</span>
+              <span class="truncate">Thống kê</span>
+            </a>
+            <!-- Hiệu suất sale (ACTIVE) -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center gap-3 text-[13px] font-semibold text-[#B30118] bg-[#FDECEC] border-l-[3px] border-[#D0021B] transition-colors shadow-sm">
+              <span class="material-symbols-outlined text-[20px] text-[#B30118] fill">trending_up</span>
+              <span class="truncate">Hiệu suất sale</span>
+            </a>
+            <!-- Kênh kết nối -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center gap-3 text-[13px] font-medium text-neutral-700 hover:bg-[#F4F3F0] transition-colors">
+              <span class="material-symbols-outlined text-[20px] text-neutral-500">hub</span>
+              <span class="truncate">Kênh kết nối</span>
+            </a>
+            <!-- Quản trị tài khoản -->
+            <a href="#" class="h-11 px-3 rounded-lg flex items-center gap-3 text-[13px] font-medium text-neutral-700 hover:bg-[#F4F3F0] transition-colors">
+              <span class="material-symbols-outlined text-[20px] text-neutral-500">admin_panel_settings</span>
+              <span class="truncate">Quản trị tài khoản</span>
+            </a>
+          </nav>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Bottom System Status Card -->
+    <div class="p-3 border-t border-[#F4F3F0]">
+      <div class="bg-[#FAF9F6] border border-[#E6E2DA] rounded-xl p-3 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 text-emerald-600">
+          <span class="material-symbols-outlined text-[18px] fill">check_circle</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-[12px] font-semibold text-neutral-800 leading-tight">Kênh bttAI</span>
+          <span class="text-[11px] text-emerald-700 font-medium leading-tight">Hoạt động 99.8%</span>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN WORKSPACE COLUMN (1192px width, full height scrollable)             -->
+  <!-- ========================================================================= -->
+  <main class="w-[1192px] min-w-[1192px] max-w-[1192px] h-full flex flex-col overflow-hidden bg-[#FAF9F6]">
+
+    <!-- TOP HEADER BAR (h-16 / 64px, White, Hairline Bottom Border) -->
+    <header class="h-16 min-h-[64px] bg-white border-b border-[#E6E2DA] px-6 flex items-center justify-between flex-shrink-0">
+      
+      <!-- Left: Title & System Live Status Tag -->
+      <div class="flex items-center gap-4">
+        <h1 class="text-[18px] font-bold text-neutral-900 tracking-tight">Hiệu suất sale</h1>
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[12px] font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>SLA phản hồi đạt 87%</span>
+        </div>
+      </div>
+
+      <!-- Center: Time Period Segmented Control -->
+      <div class="bg-[#F4F3F0] p-1 rounded-lg border border-[#E6E2DA] flex items-center gap-1">
+        <button class="px-3.5 py-1.5 rounded-md text-[13px] font-medium text-neutral-600 hover:text-neutral-900 transition-colors">
+          Hôm nay
+        </button>
+        <button class="px-3.5 py-1.5 rounded-md text-[13px] font-medium text-neutral-600 hover:text-neutral-900 transition-colors">
+          7 ngày
+        </button>
+        <button class="px-3.5 py-1.5 rounded-md text-[13px] font-bold text-[#B30118] bg-white shadow-sm transition-all border border-[#E6E2DA]">
+          Tháng này
+        </button>
+        <button class="px-3.5 py-1.5 rounded-md text-[13px] font-medium text-neutral-600 hover:text-neutral-900 transition-colors">
+          Quý
+        </button>
+      </div>
+
+      <!-- Right: Actions & User Info -->
+      <div class="flex items-center gap-3">
+        <!-- Export / Sync Button -->
+        <button class="h-9 px-3 rounded-lg border border-[#E6E2DA] bg-white text-neutral-700 text-[13px] font-medium hover:bg-neutral-50 flex items-center gap-1.5 transition-colors">
+          <span class="material-symbols-outlined text-[18px]">download</span>
+          <span>Xuất báo cáo</span>
+        </button>
+
+        <!-- Notification Bell -->
+        <button class="relative w-9 h-9 rounded-lg border border-[#E6E2DA] bg-white text-neutral-700 flex items-center justify-center hover:bg-neutral-50 transition-colors">
+          <span class="material-symbols-outlined text-[20px]">notifications</span>
+          <span class="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#D0021B]"></span>
+        </button>
+
+        <!-- User Profile Pill -->
+        <div class="pl-2 border-l border-[#E6E2DA] flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-[#B30118] text-white flex items-center justify-center font-bold text-[12px] ring-2 ring-red-100">
+            MP
+          </div>
+          <div class="flex flex-col text-left">
+            <span class="text-[13px] font-semibold text-neutral-900 leading-tight">Nguyễn Mai Phương</span>
+            <span class="text-[11px] text-neutral-500 leading-tight">BTT-ADMIN-01 • Quản trị viên</span>
+          </div>
+        </div>
+      </div>
+
+    </header>
+
+    <!-- CONTENT BODY: Scrollable Viewport with Padding -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+
+      <!-- ===================================================================== -->
+      <!-- ROW 1: 4 TOP KPI METRIC CARDS                                         -->
+      <!-- ===================================================================== -->
+      <div class="grid grid-cols-4 gap-4">
+        
+        <!-- KPI 1: Thời gian trả lời trung vị -->
+        <div class="bg-white border border-[#E6E2DA] rounded-xl p-4 shadow-sm flex flex-col justify-between hover:border-neutral-300 transition-colors">
+          <div class="flex items-start justify-between">
+            <span class="text-[13px] font-medium text-neutral-500">Thời gian trả lời trung vị</span>
+            <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">schedule</span>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span class="text-[26px] font-bold text-neutral-900 tabular-nums">2p 10s</span>
+              <span class="text-[12px] font-semibold text-emerald-600 flex items-center">
+                <span class="material-symbols-outlined text-[14px]">arrow_downward</span> 22s
+              </span>
+            </div>
+            <p class="text-[12px] text-neutral-500 mt-1 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span>Mục tiêu SLA: &lt; 3 phút (Đạt)</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- KPI 2: Tỷ lệ trong 5 phút -->
+        <div class="bg-white border border-[#E6E2DA] rounded-xl p-4 shadow-sm flex flex-col justify-between hover:border-neutral-300 transition-colors">
+          <div class="flex items-start justify-between">
+            <span class="text-[13px] font-medium text-neutral-500">Tỷ lệ trả lời &lt; 5 phút</span>
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">verified</span>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span class="text-[26px] font-bold text-neutral-900 tabular-nums">87.4%</span>
+              <span class="text-[12px] font-semibold text-emerald-600 flex items-center">
+                <span class="material-symbols-outlined text-[14px]">trending_up</span> +3.8%
+              </span>
+            </div>
+            <p class="text-[12px] text-neutral-500 mt-1 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span>Chuẩn cam kết: &ge; 85%</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- KPI 3: Khách đang chờ -->
+        <div class="bg-white border border-[#E6E2DA] rounded-xl p-4 shadow-sm flex flex-col justify-between hover:border-neutral-300 transition-colors">
+          <div class="flex items-start justify-between">
+            <span class="text-[13px] font-medium text-neutral-500">Khách đang chờ tư vấn</span>
+            <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">support_agent</span>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-2">
+              <span class="text-[26px] font-bold text-neutral-900 tabular-nums">14 <span class="text-[15px] font-normal text-neutral-500">khách</span></span>
+              <span class="text-[11px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                3 khách &gt; 3p
+              </span>
+            </div>
+            <p class="text-[12px] text-neutral-500 mt-1 flex items-center gap-1">
+              <span>Đang phân bổ cho 6 tư vấn viên</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- KPI 4: Doanh thu đã chốt -->
+        <div class="bg-white border border-[#E6E2DA] rounded-xl p-4 shadow-sm flex flex-col justify-between hover:border-neutral-300 transition-colors">
+          <div class="flex items-start justify-between">
+            <span class="text-[13px] font-medium text-neutral-500">Doanh thu chốt qua chat</span>
+            <div class="w-8 h-8 rounded-lg bg-red-50 text-[#B30118] flex items-center justify-center">
+              <span class="material-symbols-outlined text-[20px]">payments</span>
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="flex items-baseline gap-1.5">
+              <span class="text-[26px] font-bold text-[#D0021B] tabular-nums">1.842.000.000</span>
+              <span class="text-[14px] font-semibold text-neutral-700">đ</span>
+            </div>
+            <p class="text-[12px] text-neutral-500 mt-1 flex items-center justify-between">
+              <span>Tổng 42 tour đã thanh toán cọc</span>
+              <span class="text-neutral-400 font-medium tabular-nums">TB: 43.8Tr/đơn</span>
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- ROW 2: MAIN LEADERBOARD TABLE (770px) + RIGHT ANALYTICS (374px)       -->
+      <!-- ===================================================================== -->
+      <div class="grid grid-cols-12 gap-6 items-start">
+        
+        <!-- =================================================================== -->
+        <!-- LEFT 8 COLS: LEADERBOARD TABLE OF 6 SALES CONSULTANTS               -->
+        <!-- =================================================================== -->
+        <div class="col-span-8 bg-white border border-[#E6E2DA] rounded-xl shadow-sm overflow-hidden flex flex-col">
+          
+          <!-- Table Header Card Top -->
+          <div class="px-5 py-4 border-b border-[#F4F3F0] flex items-center justify-between bg-white">
+            <div class="flex items-center gap-3">
+              <h2 class="text-[15px] font-bold text-neutral-900 tracking-tight">Bảng xếp hạng hiệu suất tư vấn</h2>
+              <span class="px-2 py-0.5 rounded-full bg-[#FAF9F6] border border-[#E6E2DA] text-[12px] font-medium text-neutral-600">
+                6 nhân sự trực ca
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="relative">
+                <input type="text" placeholder="Tìm tư vấn viên..." class="w-48 h-8 pl-8 pr-3 text-[12px] rounded-lg border border-[#E6E2DA] bg-[#FAF9F6] focus:bg-white focus:outline-none focus:border-[#D0021B]">
+                <span class="material-symbols-outlined text-[16px] text-neutral-400 absolute left-2.5 top-2">search</span>
+              </div>
+              <button class="h-8 px-2.5 rounded-lg border border-[#E6E2DA] bg-white text-neutral-600 text-[12px] font-medium hover:bg-neutral-50 flex items-center gap-1">
+                <span class="material-symbols-outlined text-[16px]">filter_list</span>
+                <span>Bộ lọc</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- The Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-[13px]">
+              
+              <!-- Sortable Headers -->
+              <thead>
+                <tr class="bg-[#FAF9F6] border-b border-[#E6E2DA] text-[12px] font-semibold text-neutral-500 uppercase tracking-wider select-none">
+                  <th class="py-3 pl-5 pr-2 w-10 text-center">#</th>
+                  <th class="py-3 px-3 cursor-pointer hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center gap-1">
+                      <span>Tư vấn viên</span>
+                      <span class="material-symbols-outlined text-[14px]">unfold_more</span>
+                    </div>
+                  </th>
+                  <th class="py-3 px-3 text-center cursor-pointer hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center justify-center gap-1">
+                      <span>Giữ khách</span>
+                      <span class="material-symbols-outlined text-[14px]">unfold_more</span>
+                    </div>
+                  </th>
+                  <th class="py-3 px-3 text-center cursor-pointer hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center justify-center gap-1">
+                      <span>Lần trả lời</span>
+                      <span class="material-symbols-outlined text-[14px]">unfold_more</span>
+                    </div>
+                  </th>
+                  <th class="py-3 px-3 text-center cursor-pointer hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center justify-center gap-1">
+                      <span>Thời gian TB</span>
+                      <span class="material-symbols-outlined text-[14px]">unfold_more</span>
+                    </div>
+                  </th>
+                  <th class="py-3 px-3 w-40 cursor-pointer hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center gap-1">
+                      <span>&lt; 5 phút (SLA)</span>
+                      <span class="material-symbols-outlined text-[14px]">unfold_more</span>
+                    </div>
+                  </th>
+                  <th class="py-3 px-3 text-center cursor-pointer hover:text-neutral-900 transition-colors">
+                    <div class="flex items-center justify-center gap-1">
+                      <span>Đã chốt</span>
+                      <span class="material-symbols-outlined text-[14px]">unfold_more</span>
+                    </div>
+                  </th>
+                  <th class="py-3 pl-3 pr-5 text-right cursor-pointer text-[#B30118] hover:text-[#D0021B] transition-colors">
+                    <div class="flex items-center justify-end gap-1">
+                      <span>Doanh thu</span>
+                      <span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+
+              <!-- Table Body (6 Sales) -->
+              <tbody class="divide-y divide-[#F4F3F0]">
+                
+                <!-- SALE 1: Nguyễn Mai Phương (Top 1) -->
+                <tr class="hover:bg-amber-50/30 transition-colors group">
+                  <td class="py-3.5 pl-5 pr-2 text-center">
+                    <span class="w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-bold text-[12px] flex items-center justify-center mx-auto ring-1 ring-amber-300">1</span>
+                  </td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex items-center gap-2.5">
+                      <div class="relative">
+                        <div class="w-8 h-8 rounded-full bg-[#B30118] text-white flex items-center justify-center font-bold text-[12px]">
+                          MP
+                        </div>
+                        <!-- 'Đang trực' dot -->
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Đang trực ca"></span>
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <div class="flex items-center gap-1.5">
+                          <span class="font-bold text-neutral-900 truncate">Nguyễn Mai Phương</span>
+                          <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-red-100 text-[#B30118]">Trưởng ca</span>
+                        </div>
+                        <span class="text-[11px] text-neutral-500">BTT-SALE-104 • Tour Châu Âu/Mỹ</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-medium text-[12px] tabular-nums">
+                      4 khách
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-medium text-neutral-700">112</td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-semibold text-emerald-700">1m 45s</td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex justify-between text-[11px] tabular-nums font-medium">
+                        <span class="text-neutral-700">94.2%</span>
+                        <span class="text-neutral-400">105/112</span>
+                      </div>
+                      <div class="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-500 rounded-full" style="width: 94.2%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold tabular-nums">14 tour</span>
+                  </td>
+                  <td class="py-3.5 pl-3 pr-5 text-right font-bold tabular-nums text-neutral-900">
+                    684.000.000 đ
+                  </td>
+                </tr>
+
+                <!-- SALE 2: Trần Đình Khôi (Top 2) -->
+                <tr class="hover:bg-neutral-50 transition-colors group">
+                  <td class="py-3.5 pl-5 pr-2 text-center">
+                    <span class="w-6 h-6 rounded-full bg-slate-100 text-slate-700 font-bold text-[12px] flex items-center justify-center mx-auto ring-1 ring-slate-300">2</span>
+                  </td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex items-center gap-2.5">
+                      <div class="relative">
+                        <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-[12px]">
+                          TK
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Đang trực ca"></span>
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-bold text-neutral-900 truncate">Trần Đình Khôi</span>
+                        <span class="text-[11px] text-neutral-500">BTT-SALE-088 • Tour Nhật/Hàn</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-medium text-[12px] tabular-nums">
+                      3 khách
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-medium text-neutral-700">98</td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-semibold text-emerald-700">2m 15s</td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex justify-between text-[11px] tabular-nums font-medium">
+                        <span class="text-neutral-700">88.5%</span>
+                        <span class="text-neutral-400">87/98</span>
+                      </div>
+                      <div class="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-500 rounded-full" style="width: 88.5%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold tabular-nums">9 tour</span>
+                  </td>
+                  <td class="py-3.5 pl-3 pr-5 text-right font-bold tabular-nums text-neutral-900">
+                    412.500.000 đ
+                  </td>
+                </tr>
+
+                <!-- SALE 3: Lê Văn Hùng (Top 3) -->
+                <tr class="hover:bg-neutral-50 transition-colors group">
+                  <td class="py-3.5 pl-5 pr-2 text-center">
+                    <span class="w-6 h-6 rounded-full bg-amber-50 text-amber-900 font-bold text-[12px] flex items-center justify-center mx-auto ring-1 ring-amber-200">3</span>
+                  </td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex items-center gap-2.5">
+                      <div class="relative">
+                        <div class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-[12px]">
+                          LH
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Đang trực ca"></span>
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-bold text-neutral-900 truncate">Lê Văn Hùng</span>
+                        <span class="text-[11px] text-neutral-500">BTT-SALE-115 • Tour Úc/NZ</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 font-medium text-[12px] tabular-nums border border-amber-200">
+                      3 khách
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-medium text-neutral-700">64</td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-semibold text-neutral-700">2m 30s</td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex justify-between text-[11px] tabular-nums font-medium">
+                        <span class="text-neutral-700">83.1%</span>
+                        <span class="text-neutral-400">53/64</span>
+                      </div>
+                      <div class="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-amber-500 rounded-full" style="width: 83.1%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold tabular-nums">7 tour</span>
+                  </td>
+                  <td class="py-3.5 pl-3 pr-5 text-right font-bold tabular-nums text-neutral-900">
+                    326.000.000 đ
+                  </td>
+                </tr>
+
+                <!-- SALE 4: Phạm Quỳnh Anh -->
+                <tr class="hover:bg-neutral-50 transition-colors group">
+                  <td class="py-3.5 pl-5 pr-2 text-center text-neutral-400 font-semibold tabular-nums">4</td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex items-center gap-2.5">
+                      <div class="relative">
+                        <div class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-[12px]">
+                          QA
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Đang trực ca"></span>
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-bold text-neutral-900 truncate">Phạm Quỳnh Anh</span>
+                        <span class="text-[11px] text-neutral-500">BTT-SALE-120 • Tour Đông Nam Á</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-medium text-[12px] tabular-nums">
+                      2 khách
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-medium text-neutral-700">52</td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-semibold text-emerald-700">2m 05s</td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex justify-between text-[11px] tabular-nums font-medium">
+                        <span class="text-neutral-700">89.0%</span>
+                        <span class="text-neutral-400">46/52</span>
+                      </div>
+                      <div class="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-emerald-500 rounded-full" style="width: 89.0%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold tabular-nums">5 tour</span>
+                  </td>
+                  <td class="py-3.5 pl-3 pr-5 text-right font-bold tabular-nums text-neutral-900">
+                    218.500.000 đ
+                  </td>
+                </tr>
+
+                <!-- SALE 5: Đặng Minh Tuấn -->
+                <tr class="hover:bg-neutral-50 transition-colors group">
+                  <td class="py-3.5 pl-5 pr-2 text-center text-neutral-400 font-semibold tabular-nums">5</td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex items-center gap-2.5">
+                      <div class="relative">
+                        <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-[12px]">
+                          MT
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Đang trực ca"></span>
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-bold text-neutral-900 truncate">Đặng Minh Tuấn</span>
+                        <span class="text-[11px] text-neutral-500">BTT-SALE-132 • Tour Nội Địa & Resort</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-medium text-[12px] tabular-nums">
+                      1 khách
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-medium text-neutral-700">41</td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-semibold text-neutral-700">2m 45s</td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex justify-between text-[11px] tabular-nums font-medium">
+                        <span class="text-neutral-700">81.5%</span>
+                        <span class="text-neutral-400">33/41</span>
+                      </div>
+                      <div class="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-amber-500 rounded-full" style="width: 81.5%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold tabular-nums">4 tour</span>
+                  </td>
+                  <td class="py-3.5 pl-3 pr-5 text-right font-bold tabular-nums text-neutral-900">
+                    124.000.000 đ
+                  </td>
+                </tr>
+
+                <!-- SALE 6: Hoàng Bảo Trâm -->
+                <tr class="hover:bg-neutral-50 transition-colors group">
+                  <td class="py-3.5 pl-5 pr-2 text-center text-neutral-400 font-semibold tabular-nums">6</td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex items-center gap-2.5">
+                      <div class="relative">
+                        <div class="w-8 h-8 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-[12px]">
+                          BT
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white" title="Đang trực ca"></span>
+                      </div>
+                      <div class="flex flex-col min-w-0">
+                        <span class="font-bold text-neutral-900 truncate">Hoàng Bảo Trâm</span>
+                        <span class="text-[11px] text-neutral-500">BTT-SALE-128 • Vé & Combo Golf</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-800 font-medium text-[12px] tabular-nums">
+                      1 khách
+                    </span>
+                  </td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-medium text-neutral-700">35</td>
+                  <td class="py-3.5 px-3 text-center tabular-nums font-semibold text-neutral-700">2m 55s</td>
+                  <td class="py-3.5 px-3">
+                    <div class="flex flex-col gap-1">
+                      <div class="flex justify-between text-[11px] tabular-nums font-medium">
+                        <span class="text-neutral-700">80.0%</span>
+                        <span class="text-neutral-400">28/35</span>
+                      </div>
+                      <div class="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                        <div class="h-full bg-amber-500 rounded-full" style="width: 80.0%"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="py-3.5 px-3 text-center">
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-bold tabular-nums">3 tour</span>
+                  </td>
+                  <td class="py-3.5 pl-3 pr-5 text-right font-bold tabular-nums text-neutral-900">
+                    77.000.000 đ
+                  </td>
+                </tr>
+
+              </tbody>
+
+              <!-- Table Summary Footer -->
+              <tfoot>
+                <tr class="bg-[#FAF9F6] border-t border-[#E6E2DA] font-bold text-neutral-900">
+                  <td colspan="2" class="py-3 pl-5 pr-2">Tổng cộng (6 tư vấn viên)</td>
+                  <td class="py-3 px-3 text-center tabular-nums">14 khách</td>
+                  <td class="py-3 px-3 text-center tabular-nums">402</td>
+                  <td class="py-3 px-3 text-center tabular-nums text-emerald-700">2m 10s (TV)</td>
+                  <td class="py-3 px-3 tabular-nums text-neutral-700">87.4% Đạt chuẩn</td>
+                  <td class="py-3 px-3 text-center tabular-nums text-emerald-700">42 tour</td>
+                  <td class="py-3 pl-3 pr-5 text-right tabular-nums text-[#D0021B]">1.842.000.000 đ</td>
+                </tr>
+              </tfoot>
+
+            </table>
+          </div>
+
+          <!-- Bottom pagination / helper info -->
+          <div class="px-5 py-3 border-t border-[#F4F3F0] flex items-center justify-between text-[12px] text-neutral-500 bg-white">
+            <span>Hiển thị 6 / 6 nhân sự trực ca hôm nay</span>
+            <div class="flex items-center gap-2 text-[12px]">
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>Thời gian phản hồi cập nhật real-time từ Webhook bttAI</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- RIGHT 4 COLS: CHARTS & KHÁCH CHỜ LÂU NHẤT                           -->
+        <!-- =================================================================== -->
+        <div class="col-span-4 space-y-6">
+
+          <!-- CARD 1: VERTICAL BAR CHART "Doanh thu theo sale" -->
+          <div class="bg-white border border-[#E6E2DA] rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-[14px] font-bold text-neutral-900 tracking-tight">Doanh thu theo sale</h3>
+                <span class="text-[11px] text-neutral-500">Phân bổ đóng góp 42 đơn chốt</span>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-red-50 text-[#B30118] text-[11px] font-bold">1.842 Tỷ</span>
+            </div>
+
+            <!-- Vertical Bar Chart Visual -->
+            <div class="h-48 flex items-end justify-between gap-3 pt-6 pb-2 border-b border-[#F4F3F0] px-2">
+              
+              <!-- Bar 1: Mai Phương (684M) -->
+              <div class="flex-1 flex flex-col items-center h-full justify-end group">
+                <span class="text-[10px] font-bold text-neutral-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">684Tr</span>
+                <div class="w-full bg-[#D0021B] rounded-t-md hover:bg-[#b50217] transition-all relative flex justify-center" style="height: 100%;">
+                  <span class="text-[10px] text-white font-bold absolute top-1.5">37%</span>
+                </div>
+                <span class="text-[11px] font-medium text-neutral-700 mt-2 truncate max-w-[42px]">Phương</span>
+              </div>
+
+              <!-- Bar 2: Đình Khôi (412M) -->
+              <div class="flex-1 flex flex-col items-center h-full justify-end group">
+                <span class="text-[10px] font-bold text-neutral-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">412Tr</span>
+                <div class="w-full bg-red-400 rounded-t-md hover:bg-red-500 transition-all relative flex justify-center" style="height: 60%;">
+                  <span class="text-[10px] text-white font-bold absolute top-1.5">22%</span>
+                </div>
+                <span class="text-[11px] font-medium text-neutral-700 mt-2 truncate max-w-[42px]">Khôi</span>
+              </div>
+
+              <!-- Bar 3: Văn Hùng (326M) -->
+              <div class="flex-1 flex flex-col items-center h-full justify-end group">
+                <span class="text-[10px] font-bold text-neutral-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">326Tr</span>
+                <div class="w-full bg-amber-500 rounded-t-md hover:bg-amber-600 transition-all relative flex justify-center" style="height: 48%;">
+                  <span class="text-[10px] text-white font-bold absolute top-1.5">18%</span>
+                </div>
+                <span class="text-[11px] font-medium text-neutral-700 mt-2 truncate max-w-[42px]">Hùng</span>
+              </div>
+
+              <!-- Bar 4: Quỳnh Anh (218M) -->
+              <div class="flex-1 flex flex-col items-center h-full justify-end group">
+                <span class="text-[10px] font-bold text-neutral-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">218Tr</span>
+                <div class="w-full bg-slate-400 rounded-t-md hover:bg-slate-500 transition-all relative flex justify-center" style="height: 32%;">
+                  <span class="text-[10px] text-white font-bold absolute top-1">12%</span>
+                </div>
+                <span class="text-[11px] font-medium text-neutral-700 mt-2 truncate max-w-[42px]">Q.Anh</span>
+              </div>
+
+              <!-- Bar 5: Minh Tuấn (124M) -->
+              <div class="flex-1 flex flex-col items-center h-full justify-end group">
+                <span class="text-[10px] font-bold text-neutral-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">124Tr</span>
+                <div class="w-full bg-slate-300 rounded-t-md hover:bg-slate-400 transition-all relative flex justify-center" style="height: 18%;">
+                  <span class="text-[9px] text-neutral-800 font-bold absolute -top-4">7%</span>
+                </div>
+                <span class="text-[11px] font-medium text-neutral-700 mt-2 truncate max-w-[42px]">Tuấn</span>
+              </div>
+
+              <!-- Bar 6: Bảo Trâm (77M) -->
+              <div class="flex-1 flex flex-col items-center h-full justify-end group">
+                <span class="text-[10px] font-bold text-neutral-600 mb-1 opacity-0 group-hover:opacity-100 transition-opacity tabular-nums">77Tr</span>
+                <div class="w-full bg-slate-200 rounded-t-md hover:bg-slate-300 transition-all relative flex justify-center" style="height: 11%;">
+                  <span class="text-[9px] text-neutral-800 font-bold absolute -top-4">4%</span>
+                </div>
+                <span class="text-[11px] font-medium text-neutral-700 mt-2 truncate max-w-[42px]">Trâm</span>
+              </div>
+
+            </div>
+
+            <div class="mt-3 flex items-center justify-between text-[11px] text-neutral-500">
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-sm bg-[#D0021B]"></span> Top 1 Doanh thu
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="w-2.5 h-2.5 rounded-sm bg-amber-500"></span> Đạt chỉ tiêu KPI
+              </span>
+            </div>
+          </div>
+
+          <!-- CARD 2: CẢNH BÁO "Khách chờ lâu nhất" (> 3 phút) & THAO TÁC "Chia lại" -->
+          <div class="bg-white border border-[#E6E2DA] rounded-xl p-5 shadow-sm">
+            <div class="flex items-center justify-between pb-3 border-b border-[#F4F3F0]">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-md bg-red-100 text-[#B30118] flex items-center justify-center">
+                  <span class="material-symbols-outlined text-[16px]">timer</span>
+                </div>
+                <div>
+                  <h3 class="text-[14px] font-bold text-neutral-900 tracking-tight">Khách chờ lâu nhất</h3>
+                  <span class="text-[11px] text-red-600 font-semibold">Cảnh báo SLA: 3 khách &gt; 3 phút</span>
+                </div>
+              </div>
+              <button class="text-[12px] font-semibold text-[#B30118] hover:underline flex items-center gap-0.5">
+                <span>Chia lại tất cả</span>
+                <span class="material-symbols-outlined text-[14px]">sync_alt</span>
+              </button>
+            </div>
+
+            <!-- List of 3 Customers Waiting > 3 mins -->
+            <div class="divide-y divide-[#F4F3F0] mt-1">
+              
+              <!-- Customer 1 -->
+              <div class="py-3 flex items-center justify-between gap-2">
+                <div class="flex items-start gap-2.5 min-w-0">
+                  <div class="w-7 h-7 rounded-full bg-neutral-200 text-neutral-700 flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">
+                    CB
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[13px] font-bold text-neutral-900 truncate">Chu Gia Bảo</span>
+                      <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-red-100 text-red-700 tabular-nums">4m 18s</span>
+                    </div>
+                    <span class="text-[11px] text-neutral-500 truncate">Tour Úc Sydney • Gán: Lê Văn Hùng</span>
+                  </div>
+                </div>
+                <!-- Action: Chia lại -->
+                <button class="px-2.5 py-1 rounded-md bg-[#FAF9F6] hover:bg-[#FDECEC] border border-[#E6E2DA] hover:border-red-300 text-[12px] font-semibold text-[#B30118] transition-colors flex items-center gap-1 flex-shrink-0">
+                  <span class="material-symbols-outlined text-[14px]">swap_horiz</span>
+                  <span>Chia lại</span>
+                </button>
+              </div>
+
+              <!-- Customer 2 -->
+              <div class="py-3 flex items-center justify-between gap-2">
+                <div class="flex items-start gap-2.5 min-w-0">
+                  <div class="w-7 h-7 rounded-full bg-neutral-200 text-neutral-700 flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">
+                    TH
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[13px] font-bold text-neutral-900 truncate">Trần Hữu Nam</span>
+                      <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-red-100 text-red-700 tabular-nums">3m 42s</span>
+                    </div>
+                    <span class="text-[11px] text-neutral-500 truncate">Combo Phú Quốc • Gán: Minh Tuấn</span>
+                  </div>
+                </div>
+                <button class="px-2.5 py-1 rounded-md bg-[#FAF9F6] hover:bg-[#FDECEC] border border-[#E6E2DA] hover:border-red-300 text-[12px] font-semibold text-[#B30118] transition-colors flex items-center gap-1 flex-shrink-0">
+                  <span class="material-symbols-outlined text-[14px]">swap_horiz</span>
+                  <span>Chia lại</span>
+                </button>
+              </div>
+
+              <!-- Customer 3 -->
+              <div class="py-3 flex items-center justify-between gap-2">
+                <div class="flex items-start gap-2.5 min-w-0">
+                  <div class="w-7 h-7 rounded-full bg-neutral-200 text-neutral-700 flex items-center justify-center font-bold text-[11px] flex-shrink-0 mt-0.5">
+                    VQ
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[13px] font-bold text-neutral-900 truncate">Võ Quỳnh Mai</span>
+                      <span class="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-100 text-amber-800 tabular-nums">3m 15s</span>
+                    </div>
+                    <span class="text-[11px] text-neutral-500 truncate">Tour Pháp Ý 10N • Gán: Bảo Trâm</span>
+                  </div>
+                </div>
+                <button class="px-2.5 py-1 rounded-md bg-[#FAF9F6] hover:bg-[#FDECEC] border border-[#E6E2DA] hover:border-red-300 text-[12px] font-semibold text-[#B30118] transition-colors flex items-center gap-1 flex-shrink-0">
+                  <span class="material-symbols-outlined text-[14px]">swap_horiz</span>
+                  <span>Chia lại</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Reassign Policy Note -->
+            <div class="mt-3 p-2.5 rounded-lg bg-[#FAF9F6] border border-[#E6E2DA] text-[11px] text-neutral-600 flex items-start gap-2">
+              <span class="material-symbols-outlined text-[16px] text-amber-600 flex-shrink-0">info</span>
+              <span>Khi bấm <strong>Chia lại</strong>, hệ thống tự động luân chuyển hội thoại sang tư vấn viên có thời gian rảnh gần nhất và SLA dưới 2 phút.</span>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+</body>
+</html>

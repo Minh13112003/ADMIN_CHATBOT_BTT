@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440, initial-scale=1.0">
+  <title>Cài đặt hiển thị - BenThanh Tourist</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              red: '#D0021B',
+              darkRed: '#B30118',
+              hoverRed: '#B00216',
+              bgWarm: '#FAF9F6'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      width: 1440px;
+      margin: 0 auto;
+      background-color: #FAF9F6;
+      color: #1F2937;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F3F4F6;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D1D5DB;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #9CA3AF;
+    }
+  </style>
+</head>
+<body class="flex h-screen bg-[#FAF9F6] text-gray-800 antialiased overflow-hidden select-none">
+
+  <!-- ==================== LEFT APP SIDEBAR (88px) ==================== -->
+  <aside class="w-[88px] flex-shrink-0 bg-[#B30118] text-white flex flex-col justify-between items-center py-4 z-30 select-none shadow-md">
+    <!-- Top: Logo & Main Navigation -->
+    <div class="flex flex-col items-center w-full gap-5">
+      <!-- BenThanh Tourist Logo: White rounded square with 7-petal flower -->
+      <a href="#" class="flex flex-col items-center group cursor-pointer" title="BenThanh Tourist Omnichannel">
+        <div class="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-md p-1 group-hover:scale-105 transition-transform duration-200">
+          <svg class="w-9 h-9" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- 7 petals around center -->
+            <g transform="translate(50,50)">
+              <!-- Petal 1 (Top - Red) -->
+              <ellipse cx="0" cy="-24" rx="11" ry="19" fill="#D0021B" />
+              <!-- Petal 2 (Orange) -->
+              <g transform="rotate(51.4)">
+                <ellipse cx="0" cy="-24" rx="11" ry="19" fill="#F59E0B" />
+              </g>
+              <!-- Petal 3 (Yellow) -->
+              <g transform="rotate(102.8)">
+                <ellipse cx="0" cy="-24" rx="11" ry="19" fill="#EAB308" />
+              </g>
+              <!-- Petal 4 (Green) -->
+              <g transform="rotate(154.2)">
+                <ellipse cx="0" cy="-24" rx="11" ry="19" fill="#10B981" />
+              </g>
+              <!-- Petal 5 (Cyan/Teal) -->
+              <g transform="rotate(205.7)">
+                <ellipse cx="0" cy="-24" rx="11" ry="19" fill="#06B6D4" />
+              </g>
+              <!-- Petal 6 (Blue) -->
+              <g transform="rotate(257.1)">
+                <ellipse cx="0" cy="-24" rx="11" ry="19" fill="#3B82F6" />
+              </g>
+              <!-- Petal 7 (Purple/Pink) -->
+              <g transform="rotate(308.5)">
+                <ellipse cx="0" cy="-24" rx="11" ry="19" fill="#EC4899" />
+              </g>
+              <!-- Center Core Circle -->
+              <circle cx="0" cy="0" r="10" fill="#FFFFFF" />
+              <circle cx="0" cy="0" r="6" fill="#D0021B" />
+            </g>
+          </svg>
+        </div>
+        <span class="text-[11px] font-bold tracking-tight text-white/90 mt-1.5 leading-none">BenThanh</span>
+        <span class="text-[9px] text-white/70 tracking-tighter">Tourist</span>
+      </a>
+
+      <!-- Primary Nav Items in exact order -->
+      <nav class="flex flex-col items-center w-full gap-1.5 pt-2">
+        <!-- 1. Hội thoại -->
+        <a href="#" class="w-16 h-14 rounded-lg flex flex-col items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors group relative">
+          <div class="relative">
+            <span class="material-symbols-outlined text-[23px]">chat</span>
+            <span class="absolute -top-1.5 -right-2.5 bg-[#D0021B] text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full border border-white leading-tight shadow-sm">12</span>
+          </div>
+          <span class="text-[12px] font-medium mt-1 leading-tight whitespace-nowrap">Hội thoại</span>
+        </a>
+
+        <!-- 2. Khách hàng -->
+        <a href="#" class="w-16 h-14 rounded-lg flex flex-col items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors group">
+          <span class="material-symbols-outlined text-[23px]">group</span>
+          <span class="text-[12px] font-medium mt-1 leading-tight whitespace-nowrap">Khách hàng</span>
+        </a>
+
+        <!-- 3. Mẫu nhanh -->
+        <a href="#" class="w-16 h-14 rounded-lg flex flex-col items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors group">
+          <span class="material-symbols-outlined text-[23px]">bolt</span>
+          <span class="text-[12px] font-medium mt-1 leading-tight whitespace-nowrap">Mẫu nhanh</span>
+        </a>
+
+        <!-- 4. Thống kê -->
+        <a href="#" class="w-16 h-14 rounded-lg flex flex-col items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors group">
+          <span class="material-symbols-outlined text-[23px]">insights</span>
+          <span class="text-[12px] font-medium mt-1 leading-tight whitespace-nowrap">Thống kê</span>
+        </a>
+
+        <!-- 5. Quản trị -->
+        <a href="#" class="w-16 h-14 rounded-lg flex flex-col items-center justify-center text-white/80 hover:bg-white/10 hover:text-white transition-colors group">
+          <span class="material-symbols-outlined text-[23px]">admin_panel_settings</span>
+          <span class="text-[12px] font-medium mt-1 leading-tight whitespace-nowrap">Quản trị</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Bottom: Cài đặt (ACTIVE) & Engine status -->
+    <div class="flex flex-col items-center w-full gap-3 pt-2 border-t border-white/15">
+      <!-- Cài đặt (Active State) -->
+      <a href="#" class="w-16 h-14 rounded-lg flex flex-col items-center justify-center bg-white text-[#B30118] font-bold shadow-md transition-colors" title="Cài đặt hệ thống & hiển thị">
+        <span class="material-symbols-outlined text-[24px] fill">settings</span>
+        <span class="text-[12px] font-semibold mt-1 leading-tight whitespace-nowrap">Cài đặt</span>
+      </a>
+
+      <!-- Status indicator -->
+      <div class="flex flex-col items-center text-center py-1">
+        <div class="flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-[10px] font-medium text-white/90">bttAI</span>
+        </div>
+        <span class="text-[9px] text-white/60">99.8% OK</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+  <div class="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
+
+    <!-- ==================== SLIM TOP BAR ==================== -->
+    <header class="h-14 bg-white border-b border-gray-200 px-6 flex items-center justify-between flex-shrink-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <!-- Left: Title & Status -->
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-gray-500 text-[20px]">tune</span>
+          <h1 class="text-base font-bold text-gray-900 tracking-tight">Cài đặt hiển thị & Giao diện cá nhân</h1>
+        </div>
+        <span class="text-gray-300">|</span>
+        <div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="text-[12px] font-medium text-emerald-700">Đang kết nối</span>
+        </div>
+        <span class="text-[12px] text-gray-400">(Áp dụng cho Sale & Admin)</span>
+      </div>
+
+      <!-- Right: Notification Bell & User menu -->
+      <div class="flex items-center gap-4">
+        <!-- Notification Bell -->
+        <button class="relative w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-colors" title="Thông báo khách hàng">
+          <span class="material-symbols-outlined text-[21px]">notifications</span>
+          <span class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-brand-red rounded-full ring-2 ring-white"></span>
+        </button>
+
+        <div class="h-6 w-px bg-gray-200"></div>
+
+        <!-- User profile pill -->
+        <div class="flex items-center gap-3 pl-1 cursor-pointer group">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-brand-red to-rose-400 text-white font-bold text-[13px] flex items-center justify-center ring-2 ring-rose-100 shadow-sm">
+            MP
+          </div>
+          <div class="flex flex-col text-left">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[13px] font-bold text-gray-800 leading-tight">Nguyễn Mai Phương</span>
+              <span class="px-1.5 py-0.2 bg-emerald-100 text-emerald-700 text-[10px] font-semibold rounded">Đang trực ca</span>
+            </div>
+            <span class="text-[11px] text-gray-500 leading-tight">BTT-SALE-104 • Tư vấn viên</span>
+          </div>
+          <span class="material-symbols-outlined text-gray-400 text-[18px] group-hover:text-gray-600">expand_more</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==================== BODY AREA: 2 COLUMNS ==================== -->
+    <div class="flex-1 flex overflow-hidden">
+
+      <!-- COLUMN 1: Settings Navigation Sections (260px) -->
+      <aside class="w-[260px] bg-white border-r border-gray-200 flex flex-col justify-between p-4 flex-shrink-0">
+        <div class="flex flex-col gap-1">
+          <div class="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            Mục cài đặt
+          </div>
+
+          <!-- Section 1: Giao diện (ACTIVE) -->
+          <button class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-rose-50 text-brand-red font-semibold text-[13px] border border-rose-100 transition-all shadow-sm">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[20px] text-brand-red fill">palette</span>
+              <span>Giao diện & Hiển thị</span>
+            </div>
+            <span class="w-1.5 h-1.5 rounded-full bg-brand-red"></span>
+          </button>
+
+          <!-- Section 2: Thông báo -->
+          <button class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 font-medium text-[13px] transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[20px] text-gray-400">notifications_active</span>
+              <span>Thông báo & Chuông</span>
+            </div>
+            <span class="text-[11px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Bật</span>
+          </button>
+
+          <!-- Section 3: Tài khoản của tôi -->
+          <button class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 font-medium text-[13px] transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-[20px] text-gray-400">account_circle</span>
+              <span>Tài khoản của tôi</span>
+            </div>
+            <span class="material-symbols-outlined text-[16px] text-gray-400">chevron_right</span>
+          </button>
+
+          <div class="my-3 border-t border-gray-100"></div>
+
+          <div class="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+            Nâng cao
+          </div>
+
+          <button class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 font-medium text-[13px] transition-colors">
+            <span class="material-symbols-outlined text-[20px] text-gray-400">keyboard</span>
+            <span>Phím tắt thao tác nhanh</span>
+          </button>
+
+          <button class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-gray-600 hover:bg-gray-100 font-medium text-[13px] transition-colors">
+            <span class="material-symbols-outlined text-[20px] text-gray-400">security</span>
+            <span>Phiên đăng nhập & Bảo mật</span>
+          </button>
+        </div>
+
+        <!-- Footer helper badge in left menu -->
+        <div class="bg-gray-50 rounded-xl p-3 border border-gray-200/80 text-left">
+          <div class="flex items-center gap-1.5 text-emerald-700 font-semibold text-[12px] mb-1">
+            <span class="material-symbols-outlined text-[16px]">sync_saved_locally</span>
+            <span>Lưu tự động</span>
+          </div>
+          <p class="text-[11px] text-gray-500 leading-snug">
+            Mọi tùy chỉnh hiển thị được lưu tự động trên trình duyệt này và áp dụng ngay lập tức mà không cần tải lại trang.
+          </p>
+        </div>
+      </aside>
+
+      <!-- COLUMN 2: Main Settings Content & Real-time Live Preview (Scrollable) -->
+      <main class="flex-1 overflow-y-auto p-7 bg-[#FAF9F6] flex flex-col gap-6">
+
+        <!-- Top Header Card of Main Settings -->
+        <div class="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-sm flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-brand-red shadow-inner">
+              <span class="material-symbols-outlined text-[26px]">contrast</span>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-gray-900 leading-tight">Tùy biến Giao diện & Trải nghiệm thị giác</h2>
+              <p class="text-[13px] text-gray-500 mt-0.5">
+                Thiết lập chế độ hiển thị phù hợp với điều kiện ánh sáng văn phòng và tốc độ thao tác tư vấn tour.
+              </p>
+            </div>
+          </div>
+
+          <!-- Auto-save notification pill + Reset Button -->
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5 text-gray-500 text-[12px] bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-lg">
+              <span class="material-symbols-outlined text-[16px] text-emerald-500">check_circle</span>
+              <span class="font-medium">Lưu tự động trên trình duyệt này</span>
+            </div>
+
+            <!-- (6) Khôi phục mặc định Button (Secondary) -->
+            <button class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 font-semibold text-[13px] transition-colors shadow-sm active:scale-95">
+              <span class="material-symbols-outlined text-[16px]">restart_alt</span>
+              <span>Khôi phục mặc định</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- SETTING 1: CHẾ ĐỘ HIỂN THỊ (Sáng | Tối | Theo hệ thống) + LIVE PREVIEW PAIR -->
+        <section class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm flex flex-col gap-5">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-bold text-gray-900 uppercase tracking-wide">1. Chế độ hiển thị</span>
+                <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-rose-100 text-brand-red">Khuyên dùng: Sáng</span>
+              </div>
+              <p class="text-[13px] text-gray-500 mt-0.5">Chọn chế độ màu tổng thể cho bàn làm việc hội thoại và danh bạ khách hàng.</p>
+            </div>
+
+            <!-- (1) Segmented Control: Sáng | Tối | Theo hệ thống -->
+            <div class="inline-flex p-1 bg-gray-100 rounded-xl border border-gray-200" role="tablist">
+              <!-- Sáng (Selected) -->
+              <button class="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-gray-900 font-bold text-[13px] shadow-sm border border-gray-200/80 transition-all">
+                <span class="material-symbols-outlined text-[18px] text-amber-500">light_mode</span>
+                <span>Sáng</span>
+              </button>
+
+              <!-- Tối -->
+              <button class="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:text-gray-900 font-medium text-[13px] transition-colors">
+                <span class="material-symbols-outlined text-[18px] text-gray-400">dark_mode</span>
+                <span>Tối</span>
+              </button>
+
+              <!-- Theo hệ thống -->
+              <button class="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-600 hover:text-gray-900 font-medium text-[13px] transition-colors">
+                <span class="material-symbols-outlined text-[18px] text-gray-400">desktop_windows</span>
+                <span>Theo hệ thống</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- LIVE PREVIEW CARD PAIR (Showing light and contrast-safe dark versions of mini inbox) -->
+          <div class="grid grid-cols-2 gap-5 pt-2">
+
+            <!-- Card A: Bản xem trước Giao diện Sáng (Đang chọn) -->
+            <div class="rounded-xl border-2 border-brand-red bg-[#FAF9F6] p-3.5 shadow-sm relative overflow-hidden flex flex-col gap-2.5">
+              <div class="flex items-center justify-between pb-2 border-b border-gray-200">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-amber-400 flex items-center justify-center"></span>
+                  <span class="text-[13px] font-bold text-gray-900">Bản xem trước: Giao diện Sáng (Đang áp dụng)</span>
+                </div>
+                <span class="text-[11px] font-bold text-brand-red px-2 py-0.5 rounded bg-rose-50 border border-rose-200">Đang kích hoạt</span>
+              </div>
+
+              <!-- Mini Inbox Mockup (Light) -->
+              <div class="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-xs flex flex-col text-[12px]">
+                <!-- Mini Header -->
+                <div class="h-8 bg-gray-50 border-b border-gray-200 px-3 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    <span class="font-bold text-gray-800 text-[11px]">Trần Hoàng Bách</span>
+                    <span class="text-[10px] text-gray-400 font-normal">0918.423.889</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-brand-red bg-rose-50 px-2 py-0.5 rounded">Cần tư vấn</span>
+                </div>
+
+                <!-- Mini Chat Body -->
+                <div class="p-3 bg-[#FAF9F6] flex flex-col gap-2 min-h-[96px]">
+                  <!-- Customer bubble -->
+                  <div class="self-start max-w-[80%] bg-white p-2 rounded-lg border border-gray-200 text-gray-800 shadow-xs">
+                    <p class="text-[11px] leading-snug">Xin chào, tôi cần tư vấn tour Pháp - Thụy Sĩ Tết Nguyên Đán 2025.</p>
+                    <span class="text-[9px] text-gray-400 mt-0.5 block text-right">14:25</span>
+                  </div>
+                  <!-- Bot / Staff bubble with brand accent -->
+                  <div class="self-end max-w-[85%] bg-rose-50 p-2 rounded-lg border border-rose-200 text-gray-900 shadow-xs">
+                    <div class="flex items-center justify-between text-[10px] text-brand-red font-bold mb-1">
+                      <span>bttAI Concierge</span>
+                      <span>14:25</span>
+                    </div>
+                    <p class="text-[11px] leading-snug font-medium">Dạ em chào anh Bách, hiện bên em còn 6 chỗ Tour Pháp 10N9Đ giá 69.900.000đ ạ!</p>
+                  </div>
+                </div>
+
+                <!-- Mini Footer -->
+                <div class="h-8 bg-white border-t border-gray-200 px-2.5 flex items-center justify-between">
+                  <span class="text-[11px] text-gray-400">Nhập nội dung phản hồi...</span>
+                  <span class="px-2.5 py-1 bg-brand-red text-white text-[10px] font-bold rounded">Gửi</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card B: Bản xem trước Giao diện Tối (Contrast-safe dark preview) -->
+            <div class="rounded-xl border border-gray-300 bg-[#18181B] p-3.5 shadow-sm relative overflow-hidden flex flex-col gap-2.5 text-gray-100">
+              <div class="flex items-center justify-between pb-2 border-b border-zinc-800">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-indigo-400 flex items-center justify-center"></span>
+                  <span class="text-[13px] font-bold text-zinc-100">Bản xem trước: Giao diện Tối (Độ tương phản cao)</span>
+                </div>
+                <span class="text-[11px] font-medium text-zinc-400 px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700">Chế độ ban đêm</span>
+              </div>
+
+              <!-- Mini Inbox Mockup (Dark) -->
+              <div class="bg-[#27272A] rounded-lg border border-zinc-700 overflow-hidden shadow-xs flex flex-col text-[12px]">
+                <!-- Mini Header -->
+                <div class="h-8 bg-[#202023] border-b border-zinc-700 px-3 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="font-bold text-zinc-100 text-[11px]">Trần Hoàng Bách</span>
+                    <span class="text-[10px] text-zinc-400 font-normal">0918.423.889</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-rose-300 bg-rose-950/80 border border-rose-800/80 px-2 py-0.5 rounded">Cần tư vấn</span>
+                </div>
+
+                <!-- Mini Chat Body -->
+                <div class="p-3 bg-[#18181B] flex flex-col gap-2 min-h-[96px]">
+                  <!-- Customer bubble -->
+                  <div class="self-start max-w-[80%] bg-[#27272A] p-2 rounded-lg border border-zinc-700 text-zinc-200 shadow-xs">
+                    <p class="text-[11px] leading-snug">Xin chào, tôi cần tư vấn tour Pháp - Thụy Sĩ Tết Nguyên Đán 2025.</p>
+                    <span class="text-[9px] text-zinc-400 mt-0.5 block text-right">14:25</span>
+                  </div>
+                  <!-- Bot / Staff bubble with red accent -->
+                  <div class="self-end max-w-[85%] bg-rose-950/50 p-2 rounded-lg border border-rose-800 text-zinc-100 shadow-xs">
+                    <div class="flex items-center justify-between text-[10px] text-rose-300 font-bold mb-1">
+                      <span>bttAI Concierge</span>
+                      <span>14:25</span>
+                    </div>
+                    <p class="text-[11px] leading-snug font-medium text-rose-100">Dạ em chào anh Bách, hiện bên em còn 6 chỗ Tour Pháp 10N9Đ giá 69.900.000đ ạ!</p>
+                  </div>
+                </div>
+
+                <!-- Mini Footer -->
+                <div class="h-8 bg-[#202023] border-t border-zinc-700 px-2.5 flex items-center justify-between">
+                  <span class="text-[11px] text-zinc-400">Nhập nội dung phản hồi...</span>
+                  <span class="px-2.5 py-1 bg-brand-red text-white text-[10px] font-bold rounded">Gửi</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SETTING 2: CHỦ ĐỀ MÀU (4 Round swatches with text labels) -->
+        <section class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm flex flex-col gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[14px] font-bold text-gray-900 uppercase tracking-wide">2. Chủ đề màu điểm nhấn</span>
+              <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-gray-100 text-gray-600">Brand Color Accent</span>
+            </div>
+            <p class="text-[13px] text-gray-500 mt-0.5">Màu chủ đạo cho nút tác vụ, thông báo ưu tiên và trạng thái quan trọng trên toàn hệ thống.</p>
+          </div>
+
+          <div class="grid grid-cols-4 gap-4 pt-1">
+            <!-- 1. Đỏ BenThanh (Selected, default #D0021B) -->
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border-2 border-brand-red bg-rose-50/60 cursor-pointer shadow-xs transition-all relative">
+              <div class="relative w-8 h-8 rounded-full bg-[#D0021B] flex items-center justify-center text-white shadow-md ring-2 ring-white">
+                <span class="material-symbols-outlined text-[18px] font-bold">check</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[13px] font-bold text-gray-900">Đỏ BenThanh</span>
+                <span class="text-[11px] text-brand-red font-semibold">#D0021B (Mặc định)</span>
+              </div>
+              <span class="absolute top-2 right-2 w-2 h-2 rounded-full bg-brand-red"></span>
+            </label>
+
+            <!-- 2. Xanh dương -->
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-gray-200 hover:border-blue-400 bg-white hover:bg-blue-50/30 cursor-pointer shadow-xs transition-all">
+              <div class="w-8 h-8 rounded-full bg-[#2563EB] flex items-center justify-center text-white shadow-sm ring-2 ring-white">
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[13px] font-bold text-gray-800">Xanh dương</span>
+                <span class="text-[11px] text-gray-500 font-medium">#2563EB (Biển đảo)</span>
+              </div>
+            </label>
+
+            <!-- 3. Xanh lá -->
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-gray-200 hover:border-emerald-400 bg-white hover:bg-emerald-50/30 cursor-pointer shadow-xs transition-all">
+              <div class="w-8 h-8 rounded-full bg-[#059669] flex items-center justify-center text-white shadow-sm ring-2 ring-white">
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[13px] font-bold text-gray-800">Xanh lá</span>
+                <span class="text-[11px] text-gray-500 font-medium">#059669 (Sinh thái)</span>
+              </div>
+            </label>
+
+            <!-- 4. Tím -->
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-gray-200 hover:border-purple-400 bg-white hover:bg-purple-50/30 cursor-pointer shadow-xs transition-all">
+              <div class="w-8 h-8 rounded-full bg-[#7C3AED] flex items-center justify-center text-white shadow-sm ring-2 ring-white">
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[13px] font-bold text-gray-800">Tím</span>
+                <span class="text-[11px] text-gray-500 font-medium">#7C3AED (Hoàng gia)</span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- SETTING 3 & 4: CỠ CHỮ & MẬT ĐỘ DANH SÁCH (2 Columns) -->
+        <div class="grid grid-cols-2 gap-6">
+
+          <!-- (3) CỠ CHỮ: Nhỏ | Vừa | Lớn with sample Vietnamese sentence changing size -->
+          <section class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm flex flex-col justify-between gap-4">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[14px] font-bold text-gray-900 uppercase tracking-wide">3. Cỡ chữ văn bản</span>
+                <span class="text-[12px] font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded">Hiện tại: Vừa (14px)</span>
+              </div>
+              <p class="text-[13px] text-gray-500">Điều chỉnh kích thước font chữ giúp tư vấn viên đọc tin nhắn và dữ liệu tour thoải mái.</p>
+            </div>
+
+            <!-- Segmented Control: Nhỏ | Vừa | Lớn -->
+            <div class="inline-flex p-1 bg-gray-100 rounded-xl border border-gray-200 w-full" role="tablist">
+              <!-- Nhỏ (13px) -->
+              <button class="flex-1 py-2 rounded-lg text-gray-600 hover:text-gray-900 font-medium text-[13px] transition-colors text-center">
+                Nhỏ (13px)
+              </button>
+
+              <!-- Vừa (14px) - SELECTED -->
+              <button class="flex-1 py-2 rounded-lg bg-white text-brand-red font-bold text-[14px] shadow-sm border border-gray-200/80 transition-all text-center">
+                Vừa (14px)
+              </button>
+
+              <!-- Lớn (16px) -->
+              <button class="flex-1 py-2 rounded-lg text-gray-600 hover:text-gray-900 font-medium text-[13px] transition-colors text-center">
+                Lớn (16px)
+              </button>
+            </div>
+
+            <!-- Live Sample Box: Vietnamese sentence changing size -->
+            <div class="p-4 rounded-xl bg-gray-50 border border-gray-200 flex flex-col gap-1.5">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-gray-400">Xem trước văn bản mẫu</span>
+              <p class="text-[14px] font-semibold text-gray-900 leading-relaxed">
+                "BenThanh Tourist trân trọng gửi lịch trình chi tiết và báo giá tour Châu Âu Tết Nguyên Đán 2025 tới quý khách Trần Hoàng Bách."
+              </p>
+              <div class="flex items-center gap-2 mt-1">
+                <span class="text-[11px] text-gray-500 font-medium">Dữ liệu tour: EUR-PARIS-2025 • Giữ cọc: 139.800.000 đ</span>
+                <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                <span class="text-[11px] text-emerald-600 font-semibold">Tương phản: 7.2:1 (Đạt chuẩn AAA)</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- (4) MẬT ĐỘ HIỂN THỊ: Thoáng | Gọn with tiny list previews -->
+          <section class="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm flex flex-col justify-between gap-4">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[14px] font-bold text-gray-900 uppercase tracking-wide">4. Mật độ danh sách</span>
+                <span class="text-[12px] font-bold text-brand-red bg-rose-50 px-2 py-0.5 rounded border border-rose-200">Đang chọn: Gọn</span>
+              </div>
+              <p class="text-[13px] text-gray-500">Mức độ co giãn khoảng cách dòng trong danh sách hội thoại và danh bạ khách hàng.</p>
+            </div>
+
+            <!-- Segmented Control: Thoáng | Gọn -->
+            <div class="grid grid-cols-2 gap-3 pt-0.5">
+              <!-- Thoáng (Spacious) -->
+              <div class="p-3 rounded-xl border border-gray-200 hover:border-gray-300 bg-white cursor-pointer transition-all flex flex-col gap-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[13px] font-bold text-gray-800">Thoáng (Thư thả)</span>
+                  <span class="w-4 h-4 rounded-full border border-gray-300 flex items-center justify-center"></span>
+                </div>
+                <!-- Tiny preview (Spacious) -->
+                <div class="bg-gray-50 rounded-lg p-2 flex flex-col gap-2 border border-gray-150">
+                  <div class="h-5 bg-white rounded border border-gray-200 px-2 flex items-center justify-between">
+                    <span class="w-16 h-2 bg-gray-300 rounded"></span>
+                    <span class="w-6 h-2 bg-rose-300 rounded"></span>
+                  </div>
+                  <div class="h-5 bg-white rounded border border-gray-200 px-2 flex items-center justify-between">
+                    <span class="w-14 h-2 bg-gray-300 rounded"></span>
+                    <span class="w-8 h-2 bg-gray-200 rounded"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Gọn (Compact) - SELECTED -->
+              <div class="p-3 rounded-xl border-2 border-brand-red bg-rose-50/50 cursor-pointer transition-all flex flex-col gap-2 shadow-xs">
+                <div class="flex items-center justify-between">
+                  <span class="text-[13px] font-bold text-brand-red">Gọn (Hiển thị nhiều)</span>
+                  <span class="w-4 h-4 rounded-full bg-brand-red flex items-center justify-center text-white text-[10px] font-bold">✓</span>
+                </div>
+                <!-- Tiny preview (Compact) -->
+                <div class="bg-white rounded-lg p-1.5 flex flex-col gap-1 border border-rose-200">
+                  <div class="h-4 bg-rose-50 rounded border border-rose-100 px-1.5 flex items-center justify-between">
+                    <span class="w-16 h-1.5 bg-brand-red/60 rounded"></span>
+                    <span class="w-6 h-1.5 bg-brand-red rounded"></span>
+                  </div>
+                  <div class="h-4 bg-gray-50 rounded border border-gray-200 px-1.5 flex items-center justify-between">
+                    <span class="w-12 h-1.5 bg-gray-300 rounded"></span>
+                    <span class="w-8 h-1.5 bg-gray-200 rounded"></span>
+                  </div>
+                  <div class="h-4 bg-gray-50 rounded border border-gray-200 px-1.5 flex items-center justify-between">
+                    <span class="w-14 h-1.5 bg-gray-300 rounded"></span>
+                    <span class="w-5 h-1.5 bg-emerald-400 rounded"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-[11px] text-gray-500">Mật độ "Gọn" giúp tư vấn viên xem được thêm 3-4 khách hàng trong cùng một màn hình mà không cần cuộn chuột.</p>
+          </section>
+
+        </div>
+
+        <!-- SETTING 5: GIẢM CHUYỂN ĐỘNG (Switch) & THÔNG TIN HỆ THỐNG -->
+        <section class="bg-white rounded-2xl p-5 border border-gray-200/80 shadow-sm flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-700">
+              <span class="material-symbols-outlined text-[22px]">motion_photos_off</span>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="text-[14px] font-bold text-gray-900">5. Giảm chuyển động (Reduce Motion)</span>
+                <span class="text-[11px] text-gray-500 font-medium">(Tối ưu hiệu năng máy bàn)</span>
+              </div>
+              <p class="text-[13px] text-gray-500 mt-0.5">
+                Vô hiệu hóa các hiệu ứng chuyển cảnh mượt (fade, slide, bounce) khi mở ngăn kéo khách hàng hoặc chuyển đổi tab để tăng tốc độ phản hồi tối đa.
+              </p>
+            </div>
+          </div>
+
+          <!-- Modern Toggle Switch (State: Bật / ON) -->
+          <div class="flex items-center gap-3">
+            <span class="text-[13px] font-bold text-brand-red">Đang bật</span>
+            <button type="button" class="w-12 h-6 bg-brand-red rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 relative flex items-center" aria-pressed="true">
+              <span class="w-5 h-5 bg-white rounded-full shadow-md transform translate-x-6 transition-transform duration-200 ease-in-out"></span>
+            </button>
+          </div>
+        </section>
+
+      </main>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

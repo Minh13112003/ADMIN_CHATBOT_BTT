@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>BenThanh Tourist - Omnichannel Workspace Mobile</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-container": "#007650",
+            "on-primary-container": "#ffdfdc",
+            "on-error": "#ffffff",
+            "primary": "#a30012",
+            "surface-dim": "#dbdad7",
+            "secondary": "#4e6073",
+            "surface-container-low": "#f4f3f0",
+            "on-primary": "#ffffff",
+            "error": "#ba1a1a",
+            "surface-variant": "#e3e2e0",
+            "on-primary-fixed-variant": "#93000f",
+            "secondary-fixed": "#d1e4fb",
+            "on-surface": "#1a1c1a",
+            "on-error-container": "#93000a",
+            "error-container": "#ffdad6",
+            "surface-container-highest": "#e3e2e0",
+            "primary-fixed": "#ffdad6",
+            "on-surface-variant": "#5d3f3c",
+            "on-tertiary": "#ffffff",
+            "on-secondary-fixed": "#091d2e",
+            "surface-container-high": "#e9e8e5",
+            "primary-container": "#d0021b",
+            "background": "#faf9f6",
+            "on-secondary": "#ffffff",
+            "surface-container": "#efeeeb",
+            "surface": "#faf9f6",
+            "primary-fixed-dim": "#ffb3ac",
+            "on-tertiary-container": "#97fac8",
+            "outline-variant": "#e7bdb8",
+            "tertiary-fixed-dim": "#77daaa",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#005236",
+            "surface-tint": "#c00017",
+            "on-tertiary-fixed": "#002113",
+            "on-background": "#1a1c1a",
+            "secondary-fixed-dim": "#b5c8df",
+            "tertiary-fixed": "#93f6c4",
+            "inverse-surface": "#2f312f",
+            "outline": "#926e6b",
+            "surface-bright": "#faf9f6",
+            "secondary-container": "#cfe2f9",
+            "on-primary-fixed": "#410003",
+            "tertiary": "#005b3c",
+            "inverse-on-surface": "#f2f1ee",
+            "inverse-primary": "#ffb3ac",
+            "on-secondary-fixed-variant": "#36485b",
+            "on-secondary-container": "#526478"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xs": "0.25rem",
+            "space-md": "0.75rem",
+            "space-sm": "0.5rem",
+            "margin": "1.25rem",
+            "space-lg": "1.25rem",
+            "gutter": "1rem",
+            "space-xl": "1.75rem"
+          },
+          "fontFamily": {
+            "display-lg": ["Inter"],
+            "body-lg": ["Inter"],
+            "headline-md": ["Inter"],
+            "body-md": ["Inter"],
+            "label-sm": ["Inter"],
+            "body-sm": ["Inter"],
+            "label-md": ["Inter"],
+            "headline-sm": ["Inter"],
+            "label-lg": ["Inter"],
+            "headline-lg": ["Inter"]
+          },
+          "fontSize": {
+            "display-lg": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+            "body-lg": ["15px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-md": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-sm": ["10px", { "lineHeight": "12px", "letterSpacing": "0.03em", "fontWeight": "500" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-md": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "headline-sm": ["15px", { "lineHeight": "20px", "fontWeight": "600" }],
+            "label-lg": ["13px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600" }],
+            "headline-lg": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+      vertical-align: middle;
+    }
+    /* Hide scrollbars but allow scrolling */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased font-body-lg flex justify-center min-h-screen select-none">
+<!-- Mobile Phone Wrapper: Strictly 390px wide viewport constraint -->
+<div class="w-full max-w-[390px] min-h-screen bg-background relative flex flex-col shadow-2xl overflow-x-hidden pb-16">
+<!-- 1. FIXED TOP APP BAR (Shared TopAppBar + Mobile CRM Details) -->
+<header class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] z-50 bg-surface-container-lowest border-b border-surface-variant px-space-md py-space-xs flex flex-col shadow-sm">
+<div class="flex items-center justify-between h-[52px]">
+<!-- Left: Back Button & Customer Info -->
+<div class="flex items-center space-x-2 min-w-0">
+<button aria-label="Quay lại" class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container active:scale-95 transition-transform duration-150" type="button">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<!-- Avatar with Online indicator -->
+<div class="relative flex-shrink-0">
+<div class="w-9 h-9 rounded-full bg-secondary-container text-on-secondary-fixed flex items-center justify-center font-headline-sm text-label-lg font-bold border border-outline-variant">
+              TH
+            </div>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-tertiary border-2 border-surface-container-lowest"></span>
+</div>
+<!-- Name & Phone & Badge -->
+<div class="flex flex-col min-w-0 ml-1">
+<div class="flex items-center space-x-1.5 truncate">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Trần Hoàng Bách</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="font-body-sm text-body-sm text-secondary">0918.423.889</span>
+<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-label-sm font-semibold bg-error-container text-error border border-outline-variant leading-none">
+                Yêu cầu NV
+              </span>
+</div>
+</div>
+</div>
+<!-- Right: Primary CTA 'Chốt tour' and More actions '⋯' -->
+<div class="flex items-center space-x-1 flex-shrink-0">
+<button class="min-w-[44px] h-[36px] px-2.5 bg-primary-container text-on-primary rounded font-label-md text-label-md font-semibold flex items-center justify-center active:scale-95 transition-transform duration-150 shadow-sm" type="button">
+            Chốt tour
+          </button>
+<div class="relative">
+<button aria-label="Tùy chọn thêm" class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container active:scale-95 transition-transform duration-150" id="menu-btn" type="button">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+<!-- Popover Menu -->
+<div class="hidden absolute right-0 mt-1 w-48 bg-surface-container-lowest rounded-xl shadow-lg border border-surface-variant py-1.5 z-50 text-body-sm font-body-sm" id="popover-menu">
+<button class="w-full text-left px-3 py-2 text-on-surface hover:bg-surface-container flex items-center space-x-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">forward</span>
+<span>Chuyển cho đồng nghiệp</span>
+</button>
+<button class="w-full text-left px-3 py-2 text-on-surface hover:bg-surface-container flex items-center space-x-2">
+<span class="material-symbols-outlined text-[18px] text-secondary">smart_toy</span>
+<span>Trả lại cho bot</span>
+</button>
+<div class="h-px bg-surface-variant my-1"></div>
+<button class="w-full text-left px-3 py-2 text-primary hover:bg-surface-container flex items-center space-x-2 font-semibold">
+<span class="material-symbols-outlined text-[18px]">account_box</span>
+<span>Xem hồ sơ khách</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- 2. COMPACT ACTION STRIP (Dải 'Cần làm' ngay dưới Header) -->
+<div class="pt-[62px] px-space-sm bg-background">
+<div class="mt-1 bg-[#FFF7ED] border border-[#FED7AA] rounded-lg p-2.5 flex flex-col space-y-2">
+<div class="flex items-center space-x-2 text-[#9A3412]">
+<span class="material-symbols-outlined text-[18px] text-[#C2410C]">notification_important</span>
+<span class="font-headline-sm text-body-md font-semibold text-[#7C2D12]">
+            Khách yêu cầu NV &amp; Đơn cọc chờ xác nhận
+          </span>
+</div>
+<div class="flex items-center space-x-2">
+<!-- Gọi khách Button (>=44px touch) -->
+<a class="flex-1 h-11 min-h-[44px] bg-surface-container-lowest border border-surface-variant rounded-lg text-secondary flex items-center justify-center space-x-1.5 active:scale-95 transition-transform font-label-lg text-body-md font-medium shadow-2xl" href="tel:0918423889">
+<span class="material-symbols-outlined text-secondary text-[18px]">phone</span>
+<span>Gọi khách</span>
+</a>
+<!-- Xác nhận đơn Button (>=44px touch) -->
+<button class="flex-1 h-11 min-h-[44px] bg-primary-container text-on-primary rounded-lg flex items-center justify-center space-x-1.5 active:scale-95 transition-transform font-label-lg text-body-md font-semibold shadow-sm" type="button">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span>Xác nhận đơn</span>
+</button>
+</div>
+</div>
+</div>
+<!-- 3. MESSAGE TIMELINE -->
+<main class="flex-1 px-space-sm pt-3 pb-36 space-y-3 overflow-y-auto">
+<!-- Timestamp Divider -->
+<div class="flex items-center justify-center my-1">
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container text-secondary text-[11px] font-label-sm font-medium">
+          Hôm nay, 14:25
+        </span>
+</div>
+<!-- Customer Message -->
+<div class="flex flex-col items-start space-y-1">
+<div class="flex items-center space-x-1 pl-1">
+<span class="font-label-sm text-[11px] text-secondary font-medium">Trần Hoàng Bách</span>
+<span class="text-[10px] text-secondary opacity-75">14:25</span>
+</div>
+<div class="max-w-[85%] bg-surface-container-lowest border border-surface-variant text-on-surface p-3 rounded-2xl rounded-tl-sm text-body-lg font-body-lg shadow-sm">
+          Xin chào BenThanh Tourist, tôi muốn xem lịch khởi hành tour Châu Âu đợt Tết Nguyên Đán 2025.
+        </div>
+</div>
+<!-- bttAI Bot Message & Card -->
+<div class="flex flex-col items-start space-y-1.5 w-full">
+<div class="flex items-center space-x-1.5 pl-1">
+<span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-secondary text-on-primary text-[9px] font-bold">AI</span>
+<span class="font-label-sm text-[11px] text-secondary font-semibold">bttAI Bot</span>
+<span class="text-[10px] text-secondary opacity-75">14:26</span>
+</div>
+<div class="max-w-[94%] bg-surface-container-lowest border border-surface-variant text-on-surface p-3 rounded-2xl rounded-tl-sm space-y-2.5 shadow-sm">
+<p class="font-body-lg text-body-lg leading-snug">
+            Dạ em chào anh Bách ạ! BenThanh Tourist hiện có 2 hành trình Châu Âu mùa Tết khởi hành từ TP.HCM:
+          </p>
+<div class="font-body-md text-body-md text-secondary space-y-1 bg-surface-container-low p-2 rounded-lg border border-surface-variant">
+<p>1) <strong>Pháp - Thụy Sĩ - Ý (10N9Đ)</strong> từ 69.900.000đ/khách.</p>
+<p>2) <strong>Bắc Âu săn Cực Quang (9N8Đ)</strong> từ 89.500.000đ/khách.</p>
+</div>
+<!-- Structured Embedded Tour Card -->
+<div class="border border-surface-variant rounded-xl overflow-hidden bg-surface-container-lowest shadow-sm mt-2">
+<!-- Image Thumbnail -->
+<div class="relative h-28 w-full bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Scenic wide-angle view of the Eiffel Tower in Paris bathed in warm golden afternoon sunlight under a clear sky. In the foreground are manicured autumnal gardens with elegant European lamp posts. Captured in high aesthetic travel documentary style with crisp architectural details and vibrant warm tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbyvPhPHqjLh5RM1qsHRWlZpVXpQGPXfaH7H1Qs8PN2DPSYM26zZEERQbeEwKOpw802U17cz1Wz3iuMe2v0idk2BszvFh_q00139kCHEmgtHMqDCOaYnVdhEYLPme6r1fAq82nguuW78Mi-Viur6k7nQPTGtSJ9wyPtfIguCS2oDGUXQgGh6j5GJuuBnqi5GBK1ICQGirvg32NOxC3EI6Kt-4CtOFBSxmnX1wBLHDivIHL0KJNU2c7IH5eVlzZg1Qc8mQBqvPrjEE"/>
+<span class="absolute top-2 left-2 px-2 py-0.5 rounded bg-surface-container-lowest/90 backdrop-blur-sm text-primary font-mono text-[10px] font-bold border border-outline-variant">
+                EUR-PARIS-2025-02
+              </span>
+<span class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[#E6F5EE] text-tertiary text-[11px] font-label-sm font-semibold flex items-center space-x-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Còn 6 chỗ</span>
+</span>
+</div>
+<!-- Tour Card Content -->
+<div class="p-2.5 space-y-1.5">
+<div class="font-headline-sm text-body-lg font-bold text-on-surface leading-tight">
+                Tour Pháp - Thụy Sĩ - Ý 10N9Đ
+              </div>
+<div class="flex items-center space-x-2 text-[12px] font-body-sm text-secondary">
+<span class="flex items-center space-x-0.5">
+<span class="material-symbols-outlined text-[15px] text-primary">flight_takeoff</span>
+<span>Vietnam Airlines</span>
+</span>
+<span>•</span>
+<span>Mùng 2 Tết (30/01)</span>
+</div>
+<div class="pt-1 border-t border-surface-variant flex items-center justify-between">
+<div>
+<span class="text-[10px] text-secondary uppercase font-medium">Báo giá tổng</span>
+<div class="text-primary font-bold text-[15px] leading-none">
+                    139.800.000 đ <span class="text-[11px] font-normal text-secondary">/ 2 khách</span>
+</div>
+</div>
+<button class="h-[34px] px-3 bg-primary-container text-on-primary rounded font-label-md text-label-md font-semibold flex items-center space-x-1 active:scale-95 transition-transform shadow-sm" type="button">
+<span>Xem &amp; Cọc</span>
+<span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Agent Message (Mai Phương) -->
+<div class="flex flex-col items-end space-y-1 w-full">
+<div class="flex items-center space-x-1 pr-1">
+<span class="font-label-sm text-[11px] text-secondary font-semibold">Tư vấn viên Mai Phương</span>
+<span class="text-[10px] text-secondary opacity-75">14:27</span>
+</div>
+<div class="max-w-[85%] bg-[#FFF5F5] border-l-4 border-l-primary-container border-y border-r border-outline-variant text-on-surface p-3 rounded-2xl rounded-tr-sm text-body-lg font-body-lg shadow-sm">
+          Dạ em Phương phụ trách tư vấn trực tiếp cho anh Bách đây ạ. Em gửi anh bản chi tiết visa &amp; lịch trình qua tin nhắn này nhé!
+        </div>
+<div class="flex items-center space-x-1 pr-1 text-[11px] text-secondary">
+<span class="material-symbols-outlined text-[14px] text-tertiary">done_all</span>
+<span>Khách đã xem 14:28</span>
+</div>
+</div>
+</main>
+<!-- 4. BOTTOM COMPOSER & QUICK SNIPPETS -->
+<div class="fixed bottom-[96px] left-1/2 -translate-x-1/2 w-full max-w-[390px] z-40 bg-surface-container-lowest border-t border-surface-variant pt-1.5 pb-2 px-space-sm shadow-md">
+<!-- Horizontal Scrollable Quick Snippet Chips -->
+<div class="flex items-center space-x-1.5 overflow-x-auto no-scrollbar pb-1.5">
+<button class="flex-shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-variant text-secondary text-[12px] font-label-md font-medium whitespace-nowrap border border-surface-variant active:scale-95 transition-transform">
+          ⚡ <span class="font-semibold text-primary">/bg-eu</span> Báo giá tour Châu Âu
+        </button>
+<button class="flex-shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-variant text-secondary text-[12px] font-label-md font-medium whitespace-nowrap border border-surface-variant active:scale-95 transition-transform">
+          📋 <span class="font-semibold text-primary">/visa</span> Thủ tục Visa
+        </button>
+<button class="flex-shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-variant text-secondary text-[12px] font-label-md font-medium whitespace-nowrap border border-surface-variant active:scale-95 transition-transform">
+          📞 <span class="font-semibold text-primary">/hen</span> Hẹn gọi điện
+        </button>
+<button class="flex-shrink-0 px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-variant text-secondary text-[12px] font-label-md font-medium whitespace-nowrap border border-surface-variant active:scale-95 transition-transform">
+          💳 <span class="font-semibold text-primary">/xncoc</span> Xác nhận cọc
+        </button>
+</div>
+<!-- Input and Action Buttons -->
+<div class="flex items-center space-x-1.5 mt-0.5">
+<!-- Attachment button (touch target >= 44px) -->
+<button aria-label="Đính kèm tài liệu hoặc hình ảnh" class="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-secondary hover:bg-surface-container active:scale-95 transition-transform border border-surface-variant flex-shrink-0 bg-surface-container-low" type="button">
+<span class="material-symbols-outlined text-[22px]">attach_file</span>
+</button>
+<!-- Message Input Field -->
+<div class="flex-1 relative">
+<input class="w-full h-11 bg-surface-container-low border border-surface-variant rounded-lg px-3 text-body-lg text-on-surface placeholder:text-secondary/70 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary font-body-lg" placeholder="Nhập tin nhắn tư vấn..." type="text"/>
+</div>
+<!-- Send Button (touch target >= 44px, Heritage Brand Red) -->
+<button aria-label="Gửi tin nhắn" class="w-11 h-11 min-w-[44px] min-h-[44px] bg-primary-container text-on-primary rounded-lg flex items-center justify-center active:scale-95 transition-transform shadow-md flex-shrink-0" type="button">
+<span class="material-symbols-outlined text-[20px]">send</span>
+</button>
+</div>
+</div>
+<!-- 5. BOTTOM-SHEET HINT / CRM DOSSIER QUICK ACCESS BAR -->
+<div class="fixed bottom-[52px] left-1/2 -translate-x-1/2 w-full max-w-[390px] z-40 bg-surface-container border-t border-surface-variant px-space-md py-1 flex items-center justify-between">
+<div class="flex items-center space-x-1.5">
+<span class="w-5 h-1 rounded-full bg-secondary/40 mr-1"></span>
+<span class="text-[12px] font-label-md font-semibold text-on-surface">Hồ sơ: Trần Hoàng Bách</span>
+</div>
+<div class="flex items-center space-x-1">
+<span class="px-2 py-0.5 rounded bg-surface-container-lowest text-[11px] font-medium text-secondary border border-surface-variant">Khách VIP</span>
+<span class="px-2 py-0.5 rounded bg-[#FEF3C7] text-[11px] font-semibold text-[#B45309] border border-[#FDE68A]">Đơn tour (1)</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-lowest text-[11px] font-medium text-secondary border border-surface-variant">Hẹn &amp; ghi chú (1)</span>
+</div>
+</div>
+<!-- 6. SHARED COMPONENT: BottomNavBar (Fixed docked 5 tabs) -->
+<!-- Matches BottomNavBar in Shared Components JSON: labels ["Hội thoại", "Khách hàng", "Đơn tour", "Hẹn", "Thêm"] -->
+<nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] z-50 flex justify-around items-center px-space-xs py-space-xs bg-surface-container-lowest border-t border-surface-variant">
+<!-- 1. Hội thoại (Active Tab) -->
+<a class="flex flex-col items-center justify-center text-primary font-label-md text-label-md p-space-xs relative group min-w-[48px] min-h-[44px]" href="#">
+<div class="relative">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">chat</span>
+<span class="absolute -top-1 -right-2 px-1 min-w-[15px] h-[15px] bg-primary text-on-primary rounded-full text-[9px] font-bold flex items-center justify-center leading-none">
+            12
+          </span>
+</div>
+<span class="mt-0.5 font-semibold">Hội thoại</span>
+</a>
+<!-- 2. Khách hàng -->
+<a class="flex flex-col items-center justify-center text-secondary font-label-sm text-label-sm p-space-xs hover:text-primary min-w-[48px] min-h-[44px]" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="mt-0.5">Khách hàng</span>
+</a>
+<!-- 3. Đơn tour -->
+<a class="flex flex-col items-center justify-center text-secondary font-label-sm text-label-sm p-space-xs hover:text-primary min-w-[48px] min-h-[44px]" href="#">
+<span class="material-symbols-outlined">confirmation_number</span>
+<span class="mt-0.5">Đơn tour</span>
+</a>
+<!-- 4. Hẹn -->
+<a class="flex flex-col items-center justify-center text-secondary font-label-sm text-label-sm p-space-xs hover:text-primary min-w-[48px] min-h-[44px]" href="#">
+<span class="material-symbols-outlined">event</span>
+<span class="mt-0.5">Hẹn</span>
+</a>
+<!-- 5. Thêm -->
+<a class="flex flex-col items-center justify-center text-secondary font-label-sm text-label-sm p-space-xs hover:text-primary min-w-[48px] min-h-[44px]" href="#">
+<span class="material-symbols-outlined">more_horiz</span>
+<span class="mt-0.5">Thêm</span>
+</a>
+</nav>
+</div>
+<script>
+    // Inline interaction: Toggle Popover Menu
+    const menuBtn = document.getElementById('menu-btn');
+    const popoverMenu = document.getElementById('popover-menu');
+
+    if (menuBtn && popoverMenu) {
+      menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        popoverMenu.classList.toggle('hidden');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!popoverMenu.contains(e.target) && !menuBtn.contains(e.target)) {
+          popoverMenu.classList.add('hidden');
+        }
+      });
+    }
+  </script>
+</body></html>

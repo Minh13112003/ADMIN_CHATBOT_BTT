@@ -33,8 +33,10 @@ export class UsersController {
   /** Danh sách tài khoản: chỉ admin. */
   @Roles(Role.ADMIN)
   @Get()
-  list() {
-    return this.prisma.user.findMany({ select: COT, orderBy: { createdAt: 'desc' } });
+  async list() {
+    const users = await this.prisma.user.findMany({ select: COT, orderBy: { createdAt: 'desc' } });
+    const giu = await this.prisma.conversation.groupBy({ by: ['assigneeId'], where: { assigneeId: { not: null }, status: { in: ['CONTACT', 'PENDING'] } }, _count: { _all: true } });
+    return users.map((x) => ({ ...x, holding: giu.find((g) => g.assigneeId === x.id)?._count._all ?? 0 }));
   }
 
   /** Không có đăng ký công khai: chỉ admin tạo được tài khoản sale. */

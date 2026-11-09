@@ -41,4 +41,10 @@ export class StatsController {
   costBySource(@Query() q: StatsQuery) {
     return this.svc.getCostBySource(q.period ?? 'month');
   }
+
+  @Roles(Role.ADMIN)
+  @Get('channels')
+  channels() {
+    return this.svc.getChannels();
+  }
 }

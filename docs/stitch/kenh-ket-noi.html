@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kênh kết nối (Admin) - BenThanh Tourist</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              red: '#D0021B',
+              darkRed: '#B30118',
+              softRed: '#FDECEC',
+              hoverRed: '#FFF5F5'
+            },
+            surface: {
+              cream: '#FAF9F6',
+              border: '#E6E2DA',
+              panel: '#FFFFFF',
+              subtle: '#F4F3F0'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+    }
+    body {
+      background-color: #FAF9F6;
+      color: #1E293B;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FAF9F6;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+</head>
+<body class="w-[1440px] max-w-[1440px] min-w-[1440px] h-screen overflow-hidden flex bg-[#FAF9F6] text-slate-800 antialiased mx-auto">
+
+  <!-- ================= LEFT EXPANDED SIDEBAR (248px) ================= -->
+  <aside class="w-[248px] min-w-[248px] max-w-[248px] h-full bg-white border-r border-[#E6E2DA] flex flex-col justify-between select-none z-20 flex-shrink-0">
+    <!-- Top Branding & Navigation -->
+    <div class="flex flex-col">
+      <!-- BenThanh Tourist Logo Header -->
+      <div class="h-[72px] px-4 flex items-center gap-3 border-b border-[#F1EFEA]">
+        <!-- 7-Petal Colorful Flower SVG Mark -->
+        <div class="w-9 h-9 min-w-9 min-h-9 flex items-center justify-center">
+          <svg viewBox="0 0 100 100" class="w-9 h-9" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(50,50)">
+              <!-- 7 Petals with BenThanh distinctive colors -->
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#D0021B" opacity="0.95" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#EA580C" opacity="0.95" transform="rotate(51.4)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#EAB308" opacity="0.95" transform="rotate(102.8)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#10B981" opacity="0.95" transform="rotate(154.2)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#06B6D4" opacity="0.95" transform="rotate(205.6)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#3B82F6" opacity="0.95" transform="rotate(257)" />
+              <ellipse cx="0" cy="-30" rx="10" ry="19" fill="#8B5CF6" opacity="0.95" transform="rotate(308.4)" />
+              <!-- Center Core -->
+              <circle cx="0" cy="0" r="11" fill="#FFFFFF" />
+              <circle cx="0" cy="0" r="7" fill="#D0021B" />
+            </g>
+          </svg>
+        </div>
+        <div class="flex flex-col leading-tight">
+          <span class="font-extrabold text-[15px] tracking-tight text-slate-900">BENTHANH TOURIST</span>
+          <span class="text-[11px] font-medium text-slate-500">Quản trị hội thoại &amp; tour</span>
+        </div>
+      </div>
+
+      <!-- Navigation Menus -->
+      <div class="px-3 pt-4 space-y-5">
+        <!-- Section 1: BẢNG ĐIỀU KHIỂN -->
+        <div>
+          <div class="px-3 pb-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            BẢNG ĐIỀU KHIỂN
+          </div>
+          <nav class="space-y-1">
+            <!-- 1. Hội thoại -->
+            <a href="#" class="h-[44px] px-3 flex items-center justify-between text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">chat</span>
+                <span class="text-[13px] font-medium whitespace-nowrap">Hội thoại</span>
+              </div>
+              <span class="px-1.5 py-0.5 text-[11px] font-bold text-white bg-[#D0021B] rounded-full min-w-[20px] text-center">12</span>
+            </a>
+            <!-- 2. Khách hàng -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">group</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Khách hàng</span>
+            </a>
+            <!-- 3. Đơn đặt tour -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">receipt_long</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Đơn đặt tour</span>
+            </a>
+            <!-- 4. Lịch hẹn nhắc -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">event_note</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Lịch hẹn nhắc</span>
+            </a>
+            <!-- 5. Thư viện trả lời -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">bolt</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Thư viện trả lời</span>
+            </a>
+            <!-- 6. Cài đặt hiển thị -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">tune</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Cài đặt hiển thị</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- Section 2: QUẢN TRỊ (ADMIN) -->
+        <div>
+          <div class="px-3 pb-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            QUẢN TRỊ (ADMIN)
+          </div>
+          <nav class="space-y-1">
+            <!-- 1. Thống kê -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">insights</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Thống kê</span>
+            </a>
+            <!-- 2. Hiệu suất sale -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">trending_up</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Hiệu suất sale</span>
+            </a>
+            <!-- 3. Kênh kết nối (ACTIVE) -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 bg-[#FDECEC] text-[#B30118] font-semibold rounded-lg border-l-[3px] border-[#D0021B] relative transition-all shadow-sm">
+              <span class="material-symbols-outlined text-[20px] text-[#B30118] fill">hub</span>
+              <span class="text-[13px] whitespace-nowrap">Kênh kết nối</span>
+            </a>
+            <!-- 4. Quản trị tài khoản -->
+            <a href="#" class="h-[44px] px-3 flex items-center gap-3 text-slate-700 hover:bg-[#F4F3F0] rounded-lg transition-colors group">
+              <span class="material-symbols-outlined text-[20px] text-slate-500 group-hover:text-slate-700">admin_panel_settings</span>
+              <span class="text-[13px] font-medium whitespace-nowrap">Quản trị tài khoản</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom System Status Card -->
+    <div class="p-3 m-3 bg-[#F8FAF7] border border-[#E2E8F0] rounded-xl flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+      </div>
+      <div class="flex flex-col min-w-0">
+        <div class="text-[12px] font-bold text-slate-900 leading-tight truncate">Kênh bttAI</div>
+        <div class="text-[11px] font-medium text-emerald-600 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          <span>Hoạt động 99.8%</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN CONTENT AREA (1192px) ================= -->
+  <main class="w-[1192px] min-w-[1192px] max-w-[1192px] h-full flex flex-col bg-[#FAF9F6] overflow-y-auto">
+    
+    <!-- Top Navigation Bar -->
+    <header class="h-[72px] min-h-[72px] px-8 bg-white border-b border-[#E6E2DA] flex items-center justify-between sticky top-0 z-10 flex-shrink-0">
+      <div class="flex items-center gap-4">
+        <h1 class="text-[20px] font-extrabold text-slate-900 tracking-tight">Kênh kết nối</h1>
+        <span class="h-4 w-px bg-slate-200"></span>
+        <div class="flex items-center gap-2 px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200/60 rounded-full text-[12px] font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Gateway Omnichannel ổn định</span>
+        </div>
+      </div>
+
+      <!-- Right Header Actions & User Profile -->
+      <div class="flex items-center gap-4">
+        <!-- Live Sync Trigger -->
+        <button class="h-9 px-3.5 flex items-center gap-2 text-[13px] font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors">
+          <span class="material-symbols-outlined text-[18px] text-slate-500">sync</span>
+          <span>Kiểm tra kết nối</span>
+        </button>
+
+        <!-- Notification Bell -->
+        <div class="relative">
+          <button class="w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600 transition-colors relative">
+            <span class="material-symbols-outlined text-[22px]">notifications</span>
+            <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D0021B] rounded-full ring-2 ring-white"></span>
+          </button>
+        </div>
+
+        <span class="h-6 w-px bg-slate-200"></span>
+
+        <!-- User Menu Profile -->
+        <div class="flex items-center gap-3 pl-1">
+          <div class="w-9 h-9 rounded-full bg-[#B30118] text-white flex items-center justify-center font-bold text-[13px] shadow-sm ring-2 ring-red-100">
+            MP
+          </div>
+          <div class="flex flex-col text-left">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[13px] font-bold text-slate-900 leading-tight">Nguyễn Mai Phương</span>
+              <span class="px-1.5 py-0.2 text-[10px] font-semibold text-emerald-700 bg-emerald-100 rounded">Trực ca</span>
+            </div>
+            <span class="text-[11px] text-slate-500 leading-tight">BTT-ADMIN-01 • Quản trị hệ thống</span>
+          </div>
+          <button class="text-slate-400 hover:text-slate-600 ml-0.5">
+            <span class="material-symbols-outlined text-[18px]">expand_more</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Body Container -->
+    <div class="p-8 space-y-6">
+
+      <!-- Breadcrumbs & Quick Subheading -->
+      <div class="flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2 text-[12px] text-slate-500 font-medium">
+            <span>Hệ thống quản trị</span>
+            <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+            <span class="text-slate-800 font-semibold">Cấu hình kênh hội thoại &amp; Webhook</span>
+          </div>
+          <p class="text-[14px] text-slate-600 mt-1">
+            Quản lý tích hợp đa kênh: LiveChat trên Website du lịch, Ứng dụng bttAI di động, Zalo Official Account và Meta Facebook Fanpage.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-[12px] text-slate-500">Đồng bộ gần nhất: <strong class="text-slate-700 font-semibold">14:32 (Vừa xong)</strong></span>
+        </div>
+      </div>
+
+      <!-- ================= 1. 4 CHANNEL CARDS IN A GRID ================= -->
+      <div>
+        <div class="flex items-center justify-between mb-3.5">
+          <h2 class="text-[16px] font-bold text-slate-900 flex items-center gap-2">
+            <span class="material-symbols-outlined text-[20px] text-[#D0021B]">sensors</span>
+            <span>Danh sách kênh hội thoại tập trung</span>
+          </h2>
+          <span class="text-[12px] font-semibold text-slate-500">2/4 Kênh đang trực tuyến</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-5">
+
+          <!-- CARD 1: bttAI Web (Đã kết nối) -->
+          <div class="bg-white rounded-2xl border border-emerald-200/90 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+            <div class="absolute top-0 right-0 w-28 h-28 bg-emerald-50/50 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none"></div>
+            <div>
+              <!-- Header Card -->
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200/70 flex items-center justify-center text-emerald-600 shadow-sm">
+                    <span class="material-symbols-outlined text-[26px]">language</span>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-[15px] font-bold text-slate-900">bttAI Web</h3>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Đã kết nối
+                      </span>
+                    </div>
+                    <div class="text-[12px] text-slate-500 mt-0.5">Widget LiveChat nhúng trên benthanhtourist.com</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <button title="Cài đặt kênh" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">settings</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Metrics Grid -->
+              <div class="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100 bg-[#FAF9F6] p-3 rounded-xl">
+                <div>
+                  <span class="text-[11px] font-medium text-slate-500 block">Tin hôm nay</span>
+                  <span class="text-[15px] font-extrabold text-slate-900 mt-0.5 block">1.042 <span class="text-[11px] font-normal text-slate-500">tin</span></span>
+                </div>
+                <div>
+                  <span class="text-[11px] font-medium text-slate-500 block">Phản hồi TB</span>
+                  <span class="text-[15px] font-extrabold text-emerald-600 mt-0.5 block">1m 18s</span>
+                </div>
+                <div>
+                  <span class="text-[11px] font-medium text-slate-500 block">Webhook</span>
+                  <span class="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-600 mt-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> 200 OK
+                  </span>
+                </div>
+                <div>
+                  <span class="text-[11px] font-medium text-slate-500 block">Nhận tin gần nhất</span>
+                  <span class="text-[13px] font-semibold text-slate-700 mt-0.5 block">14:31 (1p trước)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Footer Details -->
+            <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-[12px]">
+              <span class="text-slate-500 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-emerald-600">verified</span>
+                Khách Web: Đang gắn tự động lead theo khu vực
+              </span>
+              <a href="#" class="text-[#D0021B] font-semibold hover:underline flex items-center gap-1">
+                Xem nhật ký Ingest <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- CARD 2: bttAI App và Zalo Mini App (Đã kết nối) -->
+          <div class="bg-white rounded-2xl border border-emerald-200/90 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+            <div class="absolute top-0 right-0 w-28 h-28 bg-emerald-50/50 rounded-full blur-2xl -mr-8 -mt-8 pointer-events-none"></div>
+            <div>
+              <!-- Header Card -->
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3.5">
+                  <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-200/70 flex items-center justify-center text-blue-600 shadow-sm">
+                    <span class="material-symbols-outlined text-[26px]">phone_iphone</span>
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-[15px] font-bold text-slate-900">bttAI App &amp; Zalo Mini App</h3>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-700 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Đã kết nối
+                      </span>
+                    </div>
+                    <div class="text-[12px] text-slate-500 mt-0.5">Ứng dụng di động iOS/Android &amp; Mini App BenThanh</div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <button title="Cài đặt kênh" class="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">settings</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Metrics Grid -->
+              <div class="grid grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-100 bg-[#FAF9F6] p-3 rounded-xl">
+                <div>
+                  <span class="text-[11px] font-medium text-slate-500 block">Tin hôm nay</span>
+                  <span class="text-[15px] font-extrabold text-slate-900 mt-0.5 block">386 <span class="text-[11px] font-normal text-slate-500">tin</span></span>
+                </div>
+                <div>
+                  <span class="text-[11px] font-medium text-slate-500 block">Phản hồi TB</span>
+                  <span class="text-[15px] font-extrabold text-emerald-600 mt-0.5 block">54s</span>
+                </div>
+                <div>
+                  <span class="text-[11px] font-medium text-slate-500 block">Webhook</span>
+                  <span class="inline-flex items-center gap-1 text-[12px] font-bold text-emerald-600 mt-0.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Firebase Active
+                  </span>
+                </div>
+                <div>
+                  <span class="text-[11px] font-medium text-slate-500 block">Nhận tin gần nhất</span>
+                  <span class="text-[13px] font-semibold text-slate-700 mt-0.5 block">14:28 (4p trước)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Footer Details -->
+            <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-[12px]">
+              <span class="text-slate-500 flex items-center gap-1.5">
+                <span class="material-symbols-outlined text-[16px] text-blue-600">smartphone</span>
+                Phiên bản SDK v2.4.1 (Tự động nhận diện thành viên VIP)
+              </span>
+              <a href="#" class="text-[#D0021B] font-semibold hover:underline flex items-center gap-1">
+                Quản lý thiết bị <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- CARD 3: Zalo OA (Chưa kết nối) -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div>
+              <!-- Header Card -->
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3.5">
+                  <!-- Zalo Logo icon -->
+                  <div class="w-12 h-12 rounded-xl bg-[#0068FF]/10 border border-[#0068FF]/20 flex items-center justify-center text-[#0068FF] font-extrabold text-[16px] shadow-sm">
+                    Zalo
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-[15px] font-bold text-slate-900">Zalo Official Account (OA)</h3>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Chưa kết nối
+                      </span>
+                    </div>
+                    <div class="text-[12px] text-slate-500 mt-0.5">Tài khoản doanh nghiệp: BenThanh Tourist Service JSC</div>
+                  </div>
+                </div>
+
+                <button class="h-9 px-3.5 bg-[#0068FF] hover:bg-[#0057D9] text-white text-[12px] font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+                  <span class="material-symbols-outlined text-[16px]">add_link</span>
+                  <span>Kết nối Zalo OA</span>
+                </button>
+              </div>
+
+              <!-- Checklist Requirements -->
+              <div class="mt-4 p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+                <div class="text-[12px] font-bold text-slate-800 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[16px] text-amber-500">checklist</span>
+                  <span>Điều kiện kích hoạt đồng bộ Zalo OA:</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 pt-1">
+                  <!-- Item 1 -->
+                  <div class="flex items-center gap-2 text-[12px] text-slate-700 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/60">
+                    <span class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
+                    <span>OA đã xác thực (Tích vàng)</span>
+                  </div>
+                  <!-- Item 2 -->
+                  <div class="flex items-center gap-2 text-[12px] text-slate-700 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/60">
+                    <span class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
+                    <span>Gói Tăng trưởng/Nâng cao</span>
+                  </div>
+                  <!-- Item 3 -->
+                  <div class="flex items-center gap-2 text-[12px] text-slate-500 bg-white px-2.5 py-1.5 rounded-lg border border-dashed border-amber-300">
+                    <span class="material-symbols-outlined text-[16px] text-amber-500">pending</span>
+                    <span class="font-medium">Chờ cấu hình Webhook</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer Notes -->
+            <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-[12px]">
+              <span class="text-slate-500">Hỗ trợ ZNS xác nhận vé tour &amp; thông báo nhắc lịch tự động</span>
+              <a href="#" class="text-[#0068FF] font-semibold hover:underline flex items-center gap-1">
+                Xem tài liệu Zalo API <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- CARD 4: Facebook Fanpage (Chưa kết nối) -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+            <div>
+              <!-- Header Card -->
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3.5">
+                  <!-- Meta FB Logo icon -->
+                  <div class="w-12 h-12 rounded-xl bg-[#1877F2]/10 border border-[#1877F2]/20 flex items-center justify-center text-[#1877F2] font-extrabold text-[16px] shadow-sm">
+                    f
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-[15px] font-bold text-slate-900">Facebook Fanpage</h3>
+                      <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Chưa kết nối
+                      </span>
+                    </div>
+                    <div class="text-[12px] text-slate-500 mt-0.5">Trang chính thức: BenThanh Tourist (facebook.com/benthanhtourist)</div>
+                  </div>
+                </div>
+
+                <button class="h-9 px-3.5 bg-[#1877F2] hover:bg-[#156cdb] text-white text-[12px] font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+                  <span class="material-symbols-outlined text-[16px]">add_link</span>
+                  <span>Kết nối Fanpage</span>
+                </button>
+              </div>
+
+              <!-- Checklist Requirements -->
+              <div class="mt-4 p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2">
+                <div class="text-[12px] font-bold text-slate-800 flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[16px] text-amber-500">checklist</span>
+                  <span>Yêu cầu quyền truy cập Meta Graph API:</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 pt-1">
+                  <!-- Item 1 -->
+                  <div class="flex items-center gap-2 text-[12px] text-slate-700 bg-white px-2.5 py-1.5 rounded-lg border border-slate-200/60">
+                    <span class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
+                    <span>Quyền Quản trị viên Trang</span>
+                  </div>
+                  <!-- Item 2 -->
+                  <div class="flex items-center gap-2 text-[12px] text-slate-500 bg-white px-2.5 py-1.5 rounded-lg border border-dashed border-amber-300">
+                    <span class="material-symbols-outlined text-[16px] text-amber-500">pending</span>
+                    <span>Quyền pages_messaging</span>
+                  </div>
+                  <!-- Item 3 -->
+                  <div class="flex items-center gap-2 text-[12px] text-slate-500 bg-white px-2.5 py-1.5 rounded-lg border border-dashed border-slate-300">
+                    <span class="material-symbols-outlined text-[16px] text-slate-400">hourglass_empty</span>
+                    <span>Xác minh BM Doanh nghiệp</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer Notes -->
+            <div class="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between text-[12px]">
+              <span class="text-slate-500">Đồng bộ tin nhắn Messenger &amp; bình luận bài viết quảng cáo tour</span>
+              <a href="#" class="text-[#1877F2] font-semibold hover:underline flex items-center gap-1">
+                Hướng dẫn Meta Developer <span class="material-symbols-outlined text-[14px]">open_in_new</span>
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ================= 2. RESPONSE WINDOW POLICY & COST BREAKDOWN ================= -->
+      <div class="grid grid-cols-12 gap-6">
+
+        <!-- Left: Khung thời gian trả lời & Countdown policy (5 cols) -->
+        <div class="col-span-5 bg-white rounded-2xl border border-[#E6E2DA] p-5 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 class="text-[15px] font-bold text-slate-900 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px] text-amber-600">timer</span>
+                <span>Khung thời gian trả lời (Window Policy)</span>
+              </h3>
+              <span class="px-2 py-0.5 text-[11px] font-semibold bg-amber-50 text-amber-700 rounded-md border border-amber-200/60">SLA phản hồi</span>
+            </div>
+            <p class="text-[12px] text-slate-500 mt-2.5">
+              Quy tắc cửa sổ tương tác tin nhắn miễn phí áp dụng theo chính sách của Zalo OA &amp; Meta. Hệ thống cảnh báo tự động để tối ưu chi phí.
+            </p>
+
+            <!-- Countdown Demonstrations -->
+            <div class="space-y-3.5 mt-4">
+              <!-- Zalo OA Countdown Card -->
+              <div class="p-3.5 bg-blue-50/50 border border-blue-200/80 rounded-xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-[#0068FF] text-white flex items-center justify-center font-bold text-[13px] shadow-sm">
+                    Zalo
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[13px] font-bold text-slate-900">Zalo OA: 48 giờ miễn phí</span>
+                      <span class="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">Miễn phí</span>
+                    </div>
+                    <span class="text-[12px] text-slate-600 block mt-0.5">Thời gian tư vấn viên phản hồi tin khách mà không tốn phí ZNS</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-[16px] font-mono font-extrabold text-blue-700 block">47:18:20</span>
+                  <span class="text-[10px] font-semibold text-slate-500">Đếm ngược phiên mẫu</span>
+                </div>
+              </div>
+
+              <!-- Facebook Messenger Countdown Card -->
+              <div class="p-3.5 bg-indigo-50/50 border border-indigo-200/80 rounded-xl flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-lg bg-[#1877F2] text-white flex items-center justify-center font-bold text-[14px] shadow-sm">
+                    f
+                  </div>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[13px] font-bold text-slate-900">Facebook: Cửa sổ 24 giờ</span>
+                      <span class="px-1.5 py-0.2 bg-indigo-100 text-indigo-800 text-[10px] font-bold rounded">Chuẩn Meta</span>
+                    </div>
+                    <span class="text-[12px] text-slate-600 block mt-0.5">Sau 24 giờ kể từ tin cuối của khách, phải dùng Thẻ Tin Nhắn (Message Tag)</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <span class="text-[16px] font-mono font-extrabold text-indigo-700 block">23:45:10</span>
+                  <span class="text-[10px] font-semibold text-slate-500">Đếm ngược phiên mẫu</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Warning Note -->
+          <div class="mt-4 pt-3 border-t border-slate-100 flex items-start gap-2 text-[12px] text-slate-600">
+            <span class="material-symbols-outlined text-[16px] text-emerald-600 mt-0.5 flex-shrink-0">info</span>
+            <span>Kênh <strong>bttAI Web</strong> và <strong>bttAI App</strong> không bị giới hạn khung thời gian và hoàn toàn miễn phí lượt gửi tin nhắn.</span>
+          </div>
+        </div>
+
+        <!-- Right: Bảng chi phí theo nguồn (7 cols) -->
+        <div class="col-span-7 bg-white rounded-2xl border border-[#E6E2DA] p-5 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 class="text-[15px] font-bold text-slate-900 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px] text-[#D0021B]">payments</span>
+                <span>Chi phí theo nguồn (Tháng 12/2024)</span>
+              </h3>
+              <div class="flex items-center gap-2">
+                <span class="text-[12px] text-slate-500 font-medium">Tổng ước tính:</span>
+                <span class="text-[15px] font-extrabold text-[#D0021B]">1.240.000 đ</span>
+              </div>
+            </div>
+
+            <!-- Table of Costs by Channel -->
+            <div class="mt-3.5 overflow-hidden rounded-xl border border-slate-200">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="bg-[#FAF9F6] border-b border-slate-200 text-[12px] font-bold text-slate-600 uppercase tracking-wider">
+                    <th class="py-2.5 px-4">Nguồn kênh</th>
+                    <th class="py-2.5 px-4 text-center">Trạng thái</th>
+                    <th class="py-2.5 px-4 text-right">Tin gửi (Tháng này)</th>
+                    <th class="py-2.5 px-4 text-right">Chi phí ước tính</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-[13px]">
+                  <!-- Row 1: bttAI Web -->
+                  <tr class="hover:bg-slate-50/70 transition-colors">
+                    <td class="py-3 px-4 flex items-center gap-2.5 font-semibold text-slate-800">
+                      <span class="material-symbols-outlined text-[18px] text-emerald-600">language</span>
+                      <span>bttAI Web (LiveChat)</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-100 text-emerald-700">Đang chạy</span>
+                    </td>
+                    <td class="py-3 px-4 text-right font-medium text-slate-700">28.450 tin</td>
+                    <td class="py-3 px-4 text-right font-bold text-slate-900">
+                      820.000 đ <span class="text-[11px] text-slate-400 font-normal">(Gemini API)</span>
+                    </td>
+                  </tr>
+
+                  <!-- Row 2: bttAI App -->
+                  <tr class="hover:bg-slate-50/70 transition-colors">
+                    <td class="py-3 px-4 flex items-center gap-2.5 font-semibold text-slate-800">
+                      <span class="material-symbols-outlined text-[18px] text-blue-600">phone_iphone</span>
+                      <span>bttAI App &amp; Mini App</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-100 text-emerald-700">Đang chạy</span>
+                    </td>
+                    <td class="py-3 px-4 text-right font-medium text-slate-700">14.120 tin</td>
+                    <td class="py-3 px-4 text-right font-bold text-slate-900">
+                      420.000 đ <span class="text-[11px] text-slate-400 font-normal">(Gemini API)</span>
+                    </td>
+                  </tr>
+
+                  <!-- Row 3: Zalo OA -->
+                  <tr class="hover:bg-slate-50/70 transition-colors bg-slate-50/40">
+                    <td class="py-3 px-4 flex items-center gap-2.5 text-slate-500 font-medium">
+                      <span class="w-4 h-4 rounded bg-[#0068FF] text-white text-[9px] font-bold flex items-center justify-center">Z</span>
+                      <span>Zalo Official Account</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-slate-200 text-slate-600">Chưa kết nối</span>
+                    </td>
+                    <td class="py-3 px-4 text-right text-slate-400 font-mono">0 tin</td>
+                    <td class="py-3 px-4 text-right text-slate-400 font-medium">0 đ</td>
+                  </tr>
+
+                  <!-- Row 4: Facebook Fanpage -->
+                  <tr class="hover:bg-slate-50/70 transition-colors bg-slate-50/40">
+                    <td class="py-3 px-4 flex items-center gap-2.5 text-slate-500 font-medium">
+                      <span class="w-4 h-4 rounded bg-[#1877F2] text-white text-[9px] font-bold flex items-center justify-center">f</span>
+                      <span>Facebook Fanpage</span>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                      <span class="px-2 py-0.5 text-[11px] font-medium rounded-full bg-slate-200 text-slate-600">Chưa kết nối</span>
+                    </td>
+                    <td class="py-3 px-4 text-right text-slate-400 font-mono">0 tin</td>
+                    <td class="py-3 px-4 text-right text-slate-400 font-medium">0 đ</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2 text-[12px] text-slate-500 flex items-center justify-between">
+            <span>Chi phí bttAI tính theo token AI phản hồi tư vấn viên &amp; bot gợi ý tour</span>
+            <span class="font-medium text-slate-600">Đối soát: Phòng Kỹ thuật BTT</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ================= 3. THÔNG TIN KỸ THUẬT (SECURITY & WEBHOOK INGEST) ================= -->
+      <div class="bg-white rounded-2xl border border-[#E6E2DA] p-6 shadow-sm">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div>
+            <h3 class="text-[16px] font-bold text-slate-900 flex items-center gap-2">
+              <span class="material-symbols-outlined text-[20px] text-slate-700">key</span>
+              <span>Thông tin kỹ thuật &amp; Khóa Ingest API</span>
+            </h3>
+            <p class="text-[13px] text-slate-500 mt-1">
+              Khóa xác thực bí mật để tiếp nhận và mã hóa toàn bộ dữ liệu tin nhắn hội thoại từ cổng phân tán về hệ thống CRM BenThanh Tourist.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-1 text-[12px] font-bold rounded-md bg-amber-50 text-amber-800 border border-amber-200">Bảo mật cấp Admin</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-6 mt-5">
+          <!-- Webhook Endpoint URL -->
+          <div class="space-y-1.5">
+            <label class="text-[12px] font-bold text-slate-700 flex items-center justify-between">
+              <span>Webhook Endpoint (URL nhận dữ liệu)</span>
+              <span class="text-emerald-600 font-medium flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> HTTPS SSL 256-bit
+              </span>
+            </label>
+            <div class="flex items-center gap-2">
+              <div class="h-10 px-3 bg-[#FAF9F6] border border-slate-200 rounded-lg flex items-center flex-1 text-[13px] font-mono text-slate-700 select-all">
+                https://api.benthanhtourist.com/v1/omnichannel/webhook/ingest
+              </div>
+              <button class="h-10 px-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg text-slate-700 text-[13px] font-semibold flex items-center gap-1.5 transition-colors">
+                <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                <span>Sao chép</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Secret Ingest Key (Masked) -->
+          <div class="space-y-1.5">
+            <label class="text-[12px] font-bold text-slate-700 flex items-center justify-between">
+              <span>Khoá bí mật (Ingest API Secret Key)</span>
+              <span class="text-slate-400 font-normal">Cập nhật: 12/10/2024</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <div class="h-10 px-3 bg-[#FAF9F6] border border-slate-200 rounded-lg flex items-center justify-between flex-1 text-[14px] font-mono text-slate-800">
+                <span class="tracking-widest font-bold text-slate-600">••••••••••••••••••••••••••••••••</span>
+                <button class="text-slate-400 hover:text-slate-700 text-[12px] font-sans font-medium flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[16px]">visibility</span>
+                  <span>Hiện</span>
+                </button>
+              </div>
+              <button class="h-10 px-4 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-[13px] font-bold rounded-lg flex items-center gap-2 transition-colors shadow-sm">
+                <span class="material-symbols-outlined text-[17px] text-slate-600">copy_all</span>
+                <span>Sao chép khoá ingest</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- IP Whitelist & Rate limit info -->
+        <div class="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-[12px] text-slate-500">
+          <div class="flex items-center gap-4">
+            <span>Giới hạn tốc độ: <strong>1.500 requests/phút</strong></span>
+            <span class="w-1 h-1 rounded-full bg-slate-300"></span>
+            <span>Mã hóa Ingestion: <strong>HMAC-SHA256 Signature Verification</strong></span>
+          </div>
+          <button class="text-[#D0021B] font-semibold hover:underline flex items-center gap-1">
+            <span class="material-symbols-outlined text-[15px]">refresh</span> Tạo lại khoá Ingest mới
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</body>
+</html>

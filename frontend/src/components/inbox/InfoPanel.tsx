@@ -1,14 +1,25 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { loiCua, patch, post } from '@/lib/api';
 import { BOOKING_STATUS, CHANNEL, DEAL_STATUS, dinhDangSo, gioTin, STATUS, STATUS_LIST, TAGS, vnd } from '@/lib/labels';
 import type { Conversation, Deal, Status } from '@/lib/types';
 import { chipClass, Dialog, ErrorText, Field, inputClass, primaryClass, secondaryClass } from '../ui';
 
-export function InfoPanel({ conv, deals, onChange, onClose }: { conv: Conversation; deals: Deal[] | undefined; onChange: (c: Conversation) => unknown; onClose: () => void }) {
+export function InfoPanel({
+  conv,
+  deals,
+  onChange,
+  onClose,
+}: {
+  conv: Conversation;
+  deals: Deal[] | undefined;
+  onChange: (c: Conversation) => unknown;
+  onClose: () => void;
+}) {
   const [note, setNote] = useState(conv.note ?? '');
   const [loi, setLoi] = useState('');
   const [chot, setChot] = useState<{ deal: Deal | null } | null>(null);
   const [huy, setHuy] = useState<Deal | null>(null);
+  const [tab, setTab] = useState<'customer' | 'deals' | 'followup'>('customer');
 
   useEffect(() => setNote(conv.note ?? ''), [conv.id, conv.note]);
 
@@ -31,129 +42,139 @@ export function InfoPanel({ conv, deals, onChange, onClose }: { conv: Conversati
   const xacMinh = conv.customer.phone ? (conv.customer.phoneVerified ? 'Tài khoản app' : 'Chưa xác minh') : 'Chưa có số';
 
   return (
-    <aside id="thong-tin-khach" aria-label="Thông tin khách" className="fixed inset-y-0 right-0 z-30 flex w-[300px] max-w-full flex-col gap-4 overflow-y-auto border-l border-line bg-surface p-3.5 shadow-xl lg:static lg:shrink-0 lg:shadow-none">
-      {/* Màn hẹp: cột phủ lên khung chat, che mất icon 3 gạch nên cần nút đóng riêng. */}
-      <button type="button" onClick={onClose} className="min-h-11 self-end rounded-[10px] px-3 text-sm font-medium underline lg:hidden">
-        Đóng
-      </button>
-      <div>
-        <h2 className="mb-2 text-sm font-semibold">Trạng thái</h2>
-        <div className="grid grid-cols-2 gap-1.5">
-          {STATUS_LIST.map((s) => (
-            <button
-              key={s}
-              type="button"
-              aria-pressed={conv.status === s}
-              onClick={() => doiTrangThai(s)}
-              className={`min-h-11 rounded-[10px] border px-1.5 text-sm font-semibold ${conv.status === s ? `${STATUS[s].className} border-transparent` : 'border-field bg-surface text-neutral-ink hover:bg-fill'}`}
-            >
-              {STATUS[s].label}
-            </button>
-          ))}
+    <PanelFrame onClose={onClose}>
+      <aside id="thong-tin-khach" aria-label="Thông tin khách" className="flex min-w-0 flex-col gap-6">
+        <div role="tablist" aria-label="Hồ sơ khách" className="flex rounded-xl bg-fill p-1 text-xs">{([{ key: 'customer', label: 'Khách' }, { key: 'deals', label: 'Đơn tour' }, { key: 'followup', label: 'Hẹn & ghi chú' }] as const).map((item) => <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} className={`min-h-11 flex-1 rounded-lg px-1 font-semibold ${tab === item.key ? 'bg-surface text-brand-text shadow-sm' : 'text-muted'}`} onClick={() => setTab(item.key)}>{item.label}</button>)}</div>
+        {tab === 'customer' && <>
+        <div className="rounded-xl bg-fill p-4">
+          <h2 className="font-semibold">{conv.customer.name}</h2>
+          <p className="mt-1 text-sm text-muted">{dinhDangSo(conv.customer.phone)}</p>
         </div>
-        <div className="mt-2">
-          <ErrorText>{loi}</ErrorText>
-        </div>
-      </div>
-
-      <section aria-labelledby="don-dat-tour">
-        <h2 id="don-dat-tour" className="mb-2 text-sm font-semibold">
-          Đơn đặt tour
-        </h2>
-        {!deals && <p className="text-[0.8125rem] text-muted">Đang tải...</p>}
-        {deals && !deals.length && <p className="text-[0.8125rem] text-muted">Khách chưa có đơn nào.</p>}
-        <ul className="flex flex-col gap-2">
-          {deals?.map((d) => (
-            <li key={d.id} className="rounded-[10px] border border-line p-2.5 text-[0.8125rem]">
-              <div className="flex items-start gap-2">
-                <span className="min-w-0 flex-1 break-words font-semibold">{d.tourName}</span>
-                <span className={`shrink-0 whitespace-nowrap rounded-[10px] px-2 py-0.5 text-xs font-semibold ${d.voidedAt ? DEAL_STATUS.CANCELLED.className : DEAL_STATUS[d.status].className}`}>
-                  {d.voidedAt ? 'Đã mở lại' : DEAL_STATUS[d.status].label}
-                </span>
-              </div>
-              <div className="mt-1 break-words text-body">
-                {d.tourCode ?? 'Chưa có mã tour'} · {d.guests} khách · {vnd(d.amount)}
-              </div>
-              <div className="text-muted">
-                {CHANNEL[d.channel].label} · {d.source === 'CHATBOT' ? 'Khách tự đặt' : 'Sale nhập'} · {gioTin(d.createdAt)}
-                {d.closedBy && d.status === 'CONFIRMED' ? ` · ${d.closedBy.fullName} chốt` : ''}
-              </div>
-              {d.bookingStatus && <div className="text-muted">{BOOKING_STATUS[d.bookingStatus] ?? d.bookingStatus}</div>}
-              {d.status === 'PENDING' && d.conversationId === conv.id && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  <button type="button" className={`${chipClass} border-brand font-semibold text-brand-text`} onClick={() => setChot({ deal: d })}>
-                    Xác nhận chốt
-                  </button>
-                  <button type="button" className={chipClass} onClick={() => setHuy(d)}>
-                    Khách huỷ
-                  </button>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <FollowUp conv={conv} onChange={onChange} />
-
-      <div>
-        <h2 className="mb-2 text-sm font-semibold">Khách hàng</h2>
-        <dl className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-2 gap-y-1.5 text-sm">
-          <dt className="text-muted">Họ tên</dt>
-          <dd>{conv.customer.name}</dd>
-          <dt className="text-muted">Tên từng dùng</dt>
-          <dd>{conv.customer.aliases.length ? conv.customer.aliases.join(', ') : 'Không có'}</dd>
-          <dt className="text-muted">Số điện thoại</dt>
-          <dd>{dinhDangSo(conv.customer.phone)}</dd>
-          <dt className="text-muted">Xác minh SĐT</dt>
-          <dd>{xacMinh}</dd>
-          <dt className="text-muted">Nguồn</dt>
-          <dd>{CHANNEL[conv.channel].label}</dd>
-          <dt className="text-muted">Quan tâm</dt>
-          <dd>{conv.interest ?? 'Chưa rõ'}</dd>
-          <dt className="text-muted">Phụ trách</dt>
-          <dd>{conv.assignee?.fullName ?? 'Chưa có, bot đang trả lời'}</dd>
-        </dl>
-      </div>
-
-      <div>
-        <h2 className="mb-2 text-sm font-semibold">Nhãn</h2>
-        <div className="flex flex-wrap gap-1.5">
-          {TAGS.map((t) => {
-            const on = conv.tags.includes(t);
-            return (
+        <div>
+          <h2 className="mb-2 text-sm font-semibold">Trạng thái</h2>
+          <div className="grid grid-cols-2 gap-1.5">
+            {STATUS_LIST.map((s) => (
               <button
-                key={t}
+                key={s}
                 type="button"
-                aria-pressed={on}
-                onClick={() => chay(() => patch<Conversation>(`/conversations/${conv.id}`, { tags: on ? conv.tags.filter((x) => x !== t) : [...conv.tags, t] }))}
-                className={`min-h-9 rounded-full border px-2.5 text-[0.8125rem] ${on ? 'border-brand-dark bg-brand-dark text-white' : 'border-field bg-surface text-neutral-ink hover:bg-fill'}`}
+                aria-pressed={conv.status === s}
+                onClick={() => doiTrangThai(s)}
+                className={`min-h-11 rounded-[10px] border px-1.5 text-sm font-semibold ${conv.status === s ? `${STATUS[s].className} border-transparent` : 'border-field bg-surface text-neutral-ink hover:bg-fill'}`}
               >
-                {t}
+                {STATUS[s].label}
               </button>
-            );
-          })}
+            ))}
+          </div>
+          <div className="mt-2">
+            <ErrorText>{loi}</ErrorText>
+          </div>
         </div>
-      </div>
 
-      <div>
-        <label htmlFor="ghi-chu" className="mb-2 block text-sm font-semibold">
-          Ghi chú nội bộ
-        </label>
-        <textarea
-          id="ghi-chu"
-          rows={3}
-          placeholder="Khách không thấy ghi chú này"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-          onBlur={() => note !== (conv.note ?? '') && chay(() => patch<Conversation>(`/conversations/${conv.id}`, { note }))}
-          className="w-full resize-y rounded-[10px] border border-field px-3 py-2.5 text-sm"
-        />
-      </div>
+        </>}
+        {tab === 'deals' && <section aria-labelledby="don-dat-tour">
+          <h2 id="don-dat-tour" className="mb-2 text-sm font-semibold">
+            Đơn đặt tour
+          </h2>
+          {!deals && <p className="text-[0.8125rem] text-muted">Đang tải...</p>}
+          {deals && !deals.length && <p className="text-[0.8125rem] text-muted">Khách chưa có đơn nào.</p>}
+          <ul className="flex flex-col gap-2">
+            {deals?.map((d) => (
+              <li key={d.id} className="rounded-[10px] border border-line p-2.5 text-[0.8125rem]">
+                <div className="flex items-start gap-2">
+                  <span className="min-w-0 flex-1 break-words font-semibold">{d.tourName}</span>
+                  <span
+                    className={`shrink-0 whitespace-nowrap rounded-[10px] px-2 py-0.5 text-xs font-semibold ${d.voidedAt ? DEAL_STATUS.CANCELLED.className : DEAL_STATUS[d.status].className}`}
+                  >
+                    {d.voidedAt ? 'Đã mở lại' : DEAL_STATUS[d.status].label}
+                  </span>
+                </div>
+                <div className="mt-1 break-words text-body">
+                  {d.tourCode ?? 'Chưa có mã tour'} · {d.guests} khách · {vnd(d.amount)}
+                </div>
+                <div className="text-muted">
+                  {CHANNEL[d.channel].label} · {d.source === 'CHATBOT' ? 'Khách tự đặt' : 'Sale nhập'} · {gioTin(d.createdAt)}
+                  {d.closedBy && d.status === 'CONFIRMED' ? ` · ${d.closedBy.fullName} chốt` : ''}
+                </div>
+                {d.bookingStatus && <div className="text-muted">{BOOKING_STATUS[d.bookingStatus] ?? d.bookingStatus}</div>}
+                {d.status === 'PENDING' && d.conversationId === conv.id && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <button type="button" className={`${chipClass} border-brand font-semibold text-brand-text`} onClick={() => setChot({ deal: d })}>
+                      Xác nhận chốt
+                    </button>
+                    <button type="button" className={chipClass} onClick={() => setHuy(d)}>
+                      Khách huỷ
+                    </button>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>}
 
-      {chot && <CloseDealDialog conv={conv} deal={chot.deal} onClose={() => setChot(null)} onDone={onChange} />}
-      {huy && <CancelDealDialog conv={conv} deal={huy} onClose={() => setHuy(null)} onDone={onChange} />}
-    </aside>
+        {tab === 'followup' && <FollowUp conv={conv} onChange={onChange} />}
+        {tab === 'customer' && <>
+        <div>
+          <h2 className="mb-2 text-sm font-semibold">Khách hàng</h2>
+          <dl className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-2 gap-y-1.5 text-sm">
+            <dt className="text-muted">Họ tên</dt>
+            <dd>{conv.customer.name}</dd>
+            <dt className="text-muted">Tên từng dùng</dt>
+            <dd>{conv.customer.aliases.length ? conv.customer.aliases.join(', ') : 'Không có'}</dd>
+            <dt className="text-muted">Số điện thoại</dt>
+            <dd>{dinhDangSo(conv.customer.phone)}</dd>
+            <dt className="text-muted">Xác minh SĐT</dt>
+            <dd>{xacMinh}</dd>
+            <dt className="text-muted">Nguồn</dt>
+            <dd>{CHANNEL[conv.channel].label}</dd>
+            <dt className="text-muted">Quan tâm</dt>
+            <dd>{conv.interest ?? 'Chưa rõ'}</dd>
+            <dt className="text-muted">Phụ trách</dt>
+            <dd>{conv.assignee?.fullName ?? 'Chưa có, bot đang trả lời'}</dd>
+          </dl>
+        </div>
+
+        </>}
+        {tab === 'customer' && <div>
+          <h2 className="mb-2 text-sm font-semibold">Nhãn</h2>
+          <div className="flex flex-wrap gap-1.5">
+            {TAGS.map((t) => {
+              const on = conv.tags.includes(t);
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() =>
+                    chay(() => patch<Conversation>(`/conversations/${conv.id}`, { tags: on ? conv.tags.filter((x) => x !== t) : [...conv.tags, t] }))
+                  }
+                  className={`min-h-9 rounded-full border px-2.5 text-[0.8125rem] ${on ? 'border-brand-dark bg-brand-dark text-white' : 'border-field bg-surface text-neutral-ink hover:bg-fill'}`}
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+        </div>}
+
+        {tab === 'followup' && <div>
+          <label htmlFor="ghi-chu" className="mb-2 block text-sm font-semibold">
+            Ghi chú nội bộ
+          </label>
+          <textarea
+            id="ghi-chu"
+            rows={3}
+            placeholder="Khách không thấy ghi chú này"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onBlur={() => note !== (conv.note ?? '') && chay(() => patch<Conversation>(`/conversations/${conv.id}`, { note }))}
+            className="w-full resize-y rounded-[10px] border border-field px-3 py-2.5 text-sm"
+          />
+        </div>}
+
+        {chot && <CloseDealDialog conv={conv} deal={chot.deal} onClose={() => setChot(null)} onDone={onChange} />}
+        {huy && <CancelDealDialog conv={conv} deal={huy} onClose={() => setHuy(null)} onDone={onChange} />}
+      </aside>
+    </PanelFrame>
   );
 }
 
@@ -183,7 +204,9 @@ function FollowUp({ conv, onChange }: { conv: Conversation; onChange: (c: Conver
   const luu = async (at: Date | null) => {
     setLoi('');
     try {
-      await onChange(await patch<Conversation>(`/conversations/${conv.id}`, at ? { followUpAt: at.toISOString(), followUpNote: note.trim() } : { followUpAt: null }));
+      await onChange(
+        await patch<Conversation>(`/conversations/${conv.id}`, at ? { followUpAt: at.toISOString(), followUpNote: note.trim() } : { followUpAt: null }),
+      );
       setMo(false);
       setNote('');
       setGio('');
@@ -224,7 +247,14 @@ function FollowUp({ conv, onChange }: { conv: Conversation; onChange: (c: Conver
       )}
       {mo && (
         <div className="flex flex-col gap-2 rounded-[10px] bg-page p-2.5">
-          <input aria-label="Việc cần làm khi đến hẹn" placeholder="Ví dụ: gọi lại báo giá đoàn" value={note} maxLength={300} onChange={(e) => setNote(e.target.value)} className={inputClass} />
+          <input
+            aria-label="Việc cần làm khi đến hẹn"
+            placeholder="Ví dụ: gọi lại báo giá đoàn"
+            value={note}
+            maxLength={300}
+            onChange={(e) => setNote(e.target.value)}
+            className={inputClass}
+          />
           <div className="flex flex-wrap gap-1.5">
             {mocNhanh().map((m) => (
               <button key={m.label} type="button" className={chipClass} onClick={() => void luu(m.at)}>
@@ -233,7 +263,14 @@ function FollowUp({ conv, onChange }: { conv: Conversation; onChange: (c: Conver
             ))}
           </div>
           <div className="flex gap-1.5">
-            <input aria-label="Giờ hẹn khác" type="datetime-local" value={gio} min={chuoiGio(new Date())} onChange={(e) => setGio(e.target.value)} className={`${inputClass} min-w-0 flex-1`} />
+            <input
+              aria-label="Giờ hẹn khác"
+              type="datetime-local"
+              value={gio}
+              min={chuoiGio(new Date())}
+              onChange={(e) => setGio(e.target.value)}
+              className={`${inputClass} min-w-0 flex-1`}
+            />
             <button type="button" className={secondaryClass} disabled={!gio} onClick={() => void luu(new Date(gio))}>
               Lưu
             </button>
@@ -252,7 +289,17 @@ function FollowUp({ conv, onChange }: { conv: Conversation; onChange: (c: Conver
  * Chốt tour. Có `deal` (khách tự đặt qua chatbot, đang chờ xác nhận) thì điền sẵn và xác nhận đúng đơn đó;
  * sale sửa nếu khách đổi số người hay đợt khởi hành khi gọi điện.
  */
-export function CloseDealDialog({ conv, deal, onClose, onDone }: { conv: Conversation; deal: Deal | null; onClose: () => void; onDone: (c: Conversation) => unknown }) {
+export function CloseDealDialog({
+  conv,
+  deal,
+  onClose,
+  onDone,
+}: {
+  conv: Conversation;
+  deal: Deal | null;
+  onClose: () => void;
+  onDone: (c: Conversation) => unknown;
+}) {
   const [tourName, setTourName] = useState(deal?.tourName ?? conv.interest ?? '');
   const [tourCode, setTourCode] = useState(deal?.tourCode ?? '');
   const [guests, setGuests] = useState(String(deal?.guests ?? 1));
@@ -361,10 +408,17 @@ function CancelDealDialog({ conv, deal, onClose, onDone }: { conv: Conversation;
     <Dialog title="Khách huỷ đơn" onClose={onClose}>
       <form onSubmit={gui} className="flex flex-col gap-3">
         <p className="text-sm text-body">
-          Đơn <strong className="font-semibold">{deal.tourName}</strong> sẽ không tính doanh thu. Nếu khách đã có booking bên hệ thống đặt tour, nhớ huỷ cả ở đó.
+          Đơn <strong className="font-semibold">{deal.tourName}</strong> sẽ không tính doanh thu. Nếu khách đã có booking bên hệ thống đặt tour, nhớ huỷ cả ở
+          đó.
         </p>
         <Field label="Lý do (không bắt buộc)">
-          <input value={lyDo} maxLength={300} onChange={(e) => setLyDo(e.target.value)} placeholder="Ví dụ: khách đổi lịch sang năm sau" className={inputClass} />
+          <input
+            value={lyDo}
+            maxLength={300}
+            onChange={(e) => setLyDo(e.target.value)}
+            placeholder="Ví dụ: khách đổi lịch sang năm sau"
+            className={inputClass}
+          />
         </Field>
         <ErrorText>{loi}</ErrorText>
         <div className="mt-1 flex justify-end gap-2">
@@ -377,5 +431,28 @@ function CancelDealDialog({ conv, deal, onClose, onDone }: { conv: Conversation;
         </div>
       </form>
     </Dialog>
+  );
+}
+
+/** Từ 1280 px: cột hồ sơ khách nằm cạnh khung chat (như thiết kế). Nhỏ hơn: ngăn kéo. */
+function PanelFrame({ onClose, children }: { onClose: () => void; children: ReactNode }) {
+  const [rong, setRong] = useState(() => window.matchMedia('(min-width: 1280px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1280px)');
+    const doi = () => setRong(mq.matches);
+    mq.addEventListener('change', doi);
+    return () => mq.removeEventListener('change', doi);
+  }, []);
+  if (!rong) return <Dialog title="Thông tin khách hàng" variant="drawer" onClose={onClose}>{children}</Dialog>;
+  return (
+    <div className="flex h-full w-[360px] shrink-0 flex-col overflow-y-auto border-l border-line bg-surface p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-base font-semibold">Thông tin khách hàng</h2>
+        <button type="button" onClick={onClose} aria-label="Đóng thông tin khách" className="icon-button">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 6 12 12M6 18 18 6" /></svg>
+        </button>
+      </div>
+      {children}
+    </div>
   );
 }

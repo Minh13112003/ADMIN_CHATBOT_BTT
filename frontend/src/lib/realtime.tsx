@@ -1,3 +1,4 @@
+import { playChime } from './notify';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import useSWR, { mutate } from 'swr';
@@ -67,13 +68,20 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
     });
     s.on('contact:new', (p: Omit<Ping, 'kind'> & { kind?: 'BOOKING' }) => {
       setPing({ ...p, kind: p.kind ?? 'CONTACT' });
+      playChime();
       lamMoi(p.id);
     });
     s.on('support:new', (p: { id: string; toUserId: string; by: string; name: string; handover?: boolean }) => {
-      if (p.toUserId === meId.current) setPing({ id: p.id, name: p.name, by: p.by, kind: p.handover ? 'HANDOVER' : 'SUPPORT' });
+      if (p.toUserId === meId.current) {
+        setPing({ id: p.id, name: p.name, by: p.by, kind: p.handover ? 'HANDOVER' : 'SUPPORT' });
+        playChime();
+      }
     });
     s.on('followup:due', (p: { id: string; toUserId: string | null; name: string; note: string | null }) => {
-      if (p.toUserId === meId.current) setPing({ id: p.id, name: p.name, note: p.note, kind: 'FOLLOWUP' });
+      if (p.toUserId === meId.current) {
+        setPing({ id: p.id, name: p.name, note: p.note, kind: 'FOLLOWUP' });
+        playChime();
+      }
     });
     s.on('typing', (p: { conversationId: string; userId: string; name: string }) => {
       if (p.userId === meId.current) return;

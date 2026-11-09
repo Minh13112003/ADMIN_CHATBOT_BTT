@@ -4,17 +4,22 @@ import useSWR from 'swr';
 import { ApiError, fetcher, loiCua, patch, post, postForm } from '@/lib/api';
 import { CHANNEL, dinhDangSo, STATUS, trieu } from '@/lib/labels';
 import { useRealtime } from '@/lib/realtime';
-import type { Conversation, Deal, Message, Person, Template } from '@/lib/types';
+import type { Conversation, Deal, Me, Message, Person, Template } from '@/lib/types';
+import { insertAtCursor, prepareQuickReply } from '@/lib/quick-reply';
 import { chipClass, Dialog, ErrorText, Field, inputClass, primaryClass, secondaryClass, Switch } from '../ui';
 import { CloseDealDialog, InfoPanel } from './InfoPanel';
 import { dungLuong, MessageBubble } from './MessageBubble';
+import { QuickReplyPicker } from './QuickReplyPicker';
 
 export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
   const convKey = `/conversations/${id}`;
   const { data: conv, error, mutate } = useSWR<Conversation>(convKey, fetcher, { refreshInterval: 30_000 });
   const { data: deals } = useSWR<Deal[]>(conv ? `/customers/${conv.customer.id}/deals` : null, fetcher);
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(() => window.innerWidth >= 1440);
   const [xacNhan, setXacNhan] = useState<Deal | null>(null);
+  const [closeNew, setCloseNew] = useState(false);
+  const [chatMenu, setChatMenu] = useState(false);
+  const [headerHandover, setHeaderHandover] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const { clearPing } = useRealtime();
   const daDoc = useRef(false);
@@ -39,25 +44,44 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
   return (
     <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
       <section aria-label="Nội dung hội thoại" className="flex min-h-0 min-w-0 flex-1 flex-col bg-page">
-        <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface px-3 py-2 sm:px-4">
-          <button type="button" onClick={onBack} aria-label="Quay lại danh sách" className="flex size-11 items-center justify-center rounded-[10px] hover:bg-fill md:hidden">
-            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="flex min-h-16 items-center gap-2 border-b border-line bg-surface px-3 py-2 sm:px-4">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Quay lại danh sách"
+            className="flex size-11 items-center justify-center rounded-[10px] hover:bg-fill lg:hidden"
+          >
+            <svg
+              aria-hidden="true"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <path d="m15 18-6-6 6-6" />
             </svg>
           </button>
-          <div className="min-w-0 flex-1 basis-32">
-            <div className="truncate text-base font-semibold" title={conv.customer.name}>{conv.customer.name}</div>
-            <div className="text-[0.8125rem] text-muted">{dinhDangSo(conv.customer.phone)}</div>
+          <span aria-hidden="true" className="hidden size-10 shrink-0 place-items-center rounded-full bg-brand-soft font-semibold text-brand-text sm:grid">{conv.customer.name.trim().split(' ').pop()?.charAt(0)}</span>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-base font-semibold" title={conv.customer.name}>
+              {conv.customer.name}
+            </div>
+            <div className="truncate text-[0.8125rem] text-muted">{dinhDangSo(conv.customer.phone)} · {CHANNEL[conv.channel].label}</div>
           </div>
-          <span className={`rounded-xl px-2.5 py-1 text-[0.8125rem] font-medium ${CHANNEL[conv.channel].className}`}>{CHANNEL[conv.channel].label}</span>
-          <span className={`rounded-xl px-2.5 py-1 text-[0.8125rem] font-semibold ${STATUS[conv.status].className}`}>{STATUS[conv.status].label}</span>
+          <span className={`hidden rounded-xl px-2.5 py-1 text-[0.8125rem] font-semibold sm:inline ${STATUS[conv.status].className}`}>{STATUS[conv.status].label}</span>
+          <button className="hidden min-h-11 rounded-lg bg-brand-button px-4 text-sm font-semibold text-white sm:block" onClick={() => setCloseNew(true)}>Chốt tour</button>
+          <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-11 place-items-center rounded-lg border border-line text-xl">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-surface p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button></div>}</div>
           <button
             type="button"
             onClick={() => setPanelOpen(!panelOpen)}
             aria-label={panelOpen ? 'Đóng thông tin khách' : 'Mở thông tin khách'}
             aria-expanded={panelOpen}
             aria-controls="thong-tin-khach"
-            className={`flex size-11 items-center justify-center rounded-[10px] hover:bg-fill ${panelOpen ? 'bg-fill' : ''}`}
+            className={`hidden size-11 items-center justify-center rounded-[10px] hover:bg-fill sm:flex ${panelOpen ? 'bg-fill' : ''}`}
           >
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M4 6h16" />
@@ -67,28 +91,15 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
           </button>
         </div>
 
-        {choNhanVien && (
-          <div className="border-b border-alert-line bg-brand-soft px-4 py-2 text-sm font-medium text-alert-ink">
-            {conv.role === 'OWNER' ? 'Khách đang chờ, hệ thống đã chia cho bạn.' : conv.assignee ? `Khách đang chờ, hệ thống đã chia cho ${conv.assignee.fullName}.` : 'Khách đang chờ nhân viên.'} Ai trả lời trước sẽ nhận khách, bot dừng ngay.
-          </div>
-        )}
-
-        {donCho && (
-          <div className="flex flex-wrap items-center gap-2.5 border-b border-amber-line bg-auto-soft px-4 py-2 text-amber-ink">
-            <span className="min-w-60 flex-1 text-sm">
-              <strong className="font-semibold">Khách đã tự đặt {donCho.tourName}</strong> qua bttAI ({donCho.guests} khách, {trieu(donCho.amount)}). Gọi khách xác nhận rồi bấm chốt.
-            </span>
-            <button type="button" className={primaryClass} onClick={() => setXacNhan(donCho)}>
-              Xác nhận đơn
-            </button>
-          </div>
-        )}
+        {(choNhanVien || donCho) && <div className="flex min-h-12 items-center gap-2 border-b border-amber-line bg-auto-soft px-3 py-1.5 text-sm text-amber-ink"><strong className="shrink-0">Cần làm:</strong><span className="min-w-0 flex-1 truncate">{donCho ? `Gọi khách xác nhận đơn ${donCho.tourName} (${trieu(donCho.amount)})` : conv.assignee ? `Khách chờ nhân viên ${conv.assignee.fullName}` : 'Khách đang chờ nhân viên'}</span>{conv.customer.phone && <a className="deals-action" href={`tel:${conv.customer.phone}`}>Gọi khách</a>}{donCho && <button type="button" className="deals-action deals-primary" onClick={() => setXacNhan(donCho)}>Xác nhận đơn</button>}</div>}
 
         <MessageList id={id} seenAt={conv.customerSeenAt} onReply={setReplyTo} />
         <Composer conv={conv} onChange={refresh} replyTo={replyTo} clearReply={() => setReplyTo(null)} />
       </section>
       {panelOpen && <InfoPanel conv={conv} deals={deals} onChange={refresh} onClose={() => setPanelOpen(false)} />}
       {xacNhan && <CloseDealDialog conv={conv} deal={xacNhan} onClose={() => setXacNhan(null)} onDone={refresh} />}
+      {closeNew && <CloseDealDialog conv={conv} deal={null} onClose={() => setCloseNew(false)} onDone={refresh} />}
+      {headerHandover && <HandoverDialog conv={conv} onClose={() => setHeaderHandover(false)} onDone={refresh} />}
     </div>
   );
 }
@@ -126,7 +137,7 @@ function MessageList({ id, seenAt, onReply }: { id: string; seenAt: string | nul
   return (
     // column-reverse giữ khung cuộn ở tin mới nhất mà không cần tự cuộn bằng JS.
     <div className="flex min-h-0 min-w-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto p-3 sm:p-4">
-      <div className="flex min-w-0 flex-col gap-2.5">
+      <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-4">
         {coThem && (
           <button type="button" onClick={taiCu} disabled={dangTai} className={`${chipClass} self-center`}>
             {dangTai ? 'Đang tải...' : 'Xem tin cũ hơn'}
@@ -135,6 +146,7 @@ function MessageList({ id, seenAt, onReply }: { id: string; seenAt: string | nul
         {tatCa.map((m) => (
           <MessageBubble key={m.id} message={m} onReply={onReply} seen={daXem && m.id === tinNhanVienCuoi?.id} />
         ))}
+        {!data && !error && <p className="text-center text-sm text-muted">Đang tải tin nhắn...</p>}
         {error && <p className="text-center text-sm text-brand-text">Không tải được tin nhắn.</p>}
         {data && data.items.length === 0 && <p className="text-center text-sm text-muted">Chưa có tin nhắn nào.</p>}
       </div>
@@ -142,46 +154,38 @@ function MessageList({ id, seenAt, onReply }: { id: string; seenAt: string | nul
   );
 }
 
-function ActionButton({ label, run, className }: { label: string; run: () => Promise<unknown>; className: string }) {
-  const [dang, setDang] = useState(false);
-  const [loi, setLoi] = useState('');
-  return (
-    <span className="inline-flex flex-col items-end gap-1">
-      <button
-        type="button"
-        disabled={dang}
-        className={className}
-        onClick={async () => {
-          setDang(true);
-          setLoi('');
-          try {
-            await run();
-          } catch (e) {
-            setLoi(loiCua(e));
-          } finally {
-            setDang(false);
-          }
-        }}
-      >
-        {label}
-      </button>
-      <ErrorText>{loi}</ErrorText>
-    </span>
-  );
-}
-
-function Composer({ conv, onChange, replyTo, clearReply }: { conv: Conversation; onChange: (c: Conversation) => unknown; replyTo: Message | null; clearReply: () => void }) {
+function Composer({
+  conv,
+  onChange,
+  replyTo,
+  clearReply,
+}: {
+  conv: Conversation;
+  onChange: (c: Conversation) => unknown;
+  replyTo: Message | null;
+  clearReply: () => void;
+}) {
   const id = conv.id;
-  const { data: templates } = useSWR<Template[]>('/templates', fetcher);
+  const { data: me } = useSWR<Me>('/auth/me', fetcher);
   const { data: rules } = useSWR<{ enabled: boolean }[]>('/auto-replies', fetcher);
   const { sendTyping, typing } = useRealtime();
   const [draft, setDraft] = useState('');
   const [loi, setLoi] = useState('');
   const [dangGui, setDangGui] = useState(false);
   const [hoiLai, setHoiLai] = useState<string | null>(null);
-  const [chuyen, setChuyen] = useState(false);
   const lanGo = useRef(0);
   const [tep, setTep] = useState<File | null>(null);
+  const [quickOpen, setQuickOpen] = useState(false);
+  const { data: mauNhanh } = useSWR<Template[]>('/templates', fetcher);
+  const { data: deals } = useSWR<Deal[]>(`/customers/${conv.customer.id}/deals`, fetcher);
+  const goiPhimTat = /^\/[a-z0-9_-]*$/.test(draft) ? (mauNhanh ?? []).filter((t) => t.shortcut && t.shortcut.startsWith(draft.slice(1))).slice(0, 5) : [];
+  const chonGoiY = (t: Template) => {
+    void post(`/templates/${t.id}/use`).catch(() => undefined);
+    go(prepareQuickReply(t.body, conv.customer.name, me?.fullName ?? '{tên nhân viên}', deals?.find((d) => d.status === 'PENDING') ?? deals?.[0]));
+    requestAnimationFrame(() => textarea.current?.focus());
+  };
+  const textarea = useRef<HTMLTextAreaElement>(null);
+  const caret = useRef({ start: 0, end: 0 });
   const chonTep = useRef<HTMLInputElement>(null);
   const xemTruoc = useMemo(() => (tep && tep.type.startsWith('image/') ? URL.createObjectURL(tep) : null), [tep]);
   useEffect(
@@ -219,6 +223,13 @@ function Composer({ conv, onChange, replyTo, clearReply }: { conv: Conversation;
     },
     [id, sendTyping],
   );
+  const chooseQuick = (body: string) => {
+    const value = prepareQuickReply(body, conv.customer.name, me?.fullName ?? '{tên nhân viên}', deals?.find((d) => d.status === 'PENDING') ?? deals?.[0]);
+    const next = insertAtCursor(draft, value, caret.current.start, caret.current.end);
+    go(next);
+    setQuickOpen(false);
+    requestAnimationFrame(() => { textarea.current?.focus(); const position = caret.current.start + value.length; textarea.current?.setSelectionRange(position, position); });
+  };
 
   const guiThat = async (confirm: boolean) => {
     const nd = draft.trim();
@@ -269,12 +280,12 @@ function Composer({ conv, onChange, replyTo, clearReply }: { conv: Conversation;
         : null;
 
   return (
-    <div className="flex min-w-0 flex-col gap-2 overflow-y-auto border-t border-line bg-surface px-3 pb-2.5 pt-2 sm:px-3.5">
-      <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-auto-soft py-1 pl-2.5 pr-2">
-        <span className="min-w-0 flex-1 basis-40 text-[0.8125rem] text-auto-ink">
+    <div className="chat-composer flex min-w-0 shrink-0 flex-col gap-2 border-t border-line bg-surface p-3 sm:p-4">
+      <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-fill py-1 pl-2.5 pr-2">
+        <span className="min-w-0 flex-1 basis-40 text-[0.8125rem] text-body">
           <strong className="font-semibold">Trả lời tự động</strong> · {autoText}
         </span>
-        <Link to="/templates" className="flex min-h-9 items-center px-1.5 text-[0.8125rem] text-auto-ink underline">
+        <Link to="/templates" className="flex min-h-9 items-center px-1.5 text-[0.8125rem] text-body underline">
           Soạn ở Mẫu nhanh
         </Link>
         <Switch
@@ -292,21 +303,17 @@ function Composer({ conv, onChange, replyTo, clearReply }: { conv: Conversation;
       )}
       {goiY && <div className="text-[0.8125rem] text-body">{goiY}</div>}
 
-      {!!templates?.length && (
-        <div className="flex flex-wrap gap-1.5">
-          {templates.map((q) => (
-            <button key={q.id} type="button" onClick={() => go(q.body)} className={chipClass}>
-              {q.title}
-            </button>
-          ))}
-        </div>
-      )}
       {replyTo && (
         <div className="flex items-center gap-2 rounded-[10px] border-l-4 border-brand bg-page py-1 pl-2.5 pr-1 text-[0.8125rem]">
           <span className="min-w-0 flex-1 truncate">
             Trả lời: <span className="text-body">“{replyTo.text}”</span>
           </span>
-          <button type="button" onClick={clearReply} aria-label="Bỏ trích tin" className="flex size-9 shrink-0 items-center justify-center rounded-lg hover:bg-fill">
+          <button
+            type="button"
+            onClick={clearReply}
+            aria-label="Bỏ trích tin"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg hover:bg-fill"
+          >
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M18 6 6 18" />
               <path d="m6 6 12 12" />
@@ -327,7 +334,12 @@ function Composer({ conv, onChange, replyTo, clearReply }: { conv: Conversation;
             <span className="block truncate font-medium">{tep.name}</span>
             <span className="block text-xs text-body">{dungLuong(tep.size)}</span>
           </span>
-          <button type="button" onClick={() => setTep(null)} aria-label="Bỏ file đính kèm" className="flex size-9 shrink-0 items-center justify-center rounded-lg hover:bg-fill">
+          <button
+            type="button"
+            onClick={() => setTep(null)}
+            aria-label="Bỏ file đính kèm"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg hover:bg-fill"
+          >
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M18 6 6 18" />
               <path d="m6 6 12 12" />
@@ -335,7 +347,8 @@ function Composer({ conv, onChange, replyTo, clearReply }: { conv: Conversation;
           </button>
         </div>
       )}
-      <form onSubmit={gui} className="flex items-stretch gap-2">
+      {goiPhimTat.length > 0 && <ul aria-label="Gợi ý phím tắt" className="mb-2 overflow-hidden rounded-xl border border-line bg-surface shadow-sm">{goiPhimTat.map((t) => <li key={t.id}><button type="button" onClick={() => chonGoiY(t)} className="flex min-h-11 w-full items-center gap-3 px-3 text-left text-sm hover:bg-brand-soft"><code className="rounded bg-fill px-1.5 font-mono text-xs">/{t.shortcut}</code><strong className="truncate">{t.title}</strong></button></li>)}</ul>}
+      <form onSubmit={gui} className="composer-input flex items-end gap-2 rounded-xl border border-field bg-surface p-2 focus-within:border-brand">
         <input
           ref={chonTep}
           type="file"
@@ -346,16 +359,40 @@ function Composer({ conv, onChange, replyTo, clearReply }: { conv: Conversation;
             e.target.value = '';
           }}
         />
-        <button type="button" onClick={() => chonTep.current?.click()} aria-label="Đính kèm ảnh hoặc PDF" className="flex min-h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-field bg-surface hover:bg-fill">
-          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <button
+          type="button"
+          onClick={() => chonTep.current?.click()}
+          aria-label="Đính kèm ảnh hoặc PDF"
+          className="flex min-h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-field bg-surface hover:bg-fill"
+        >
+          <svg
+            aria-hidden="true"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
             <path d="m21 12-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9" />
           </svg>
         </button>
-        <input
+        <textarea
+          ref={textarea}
+          rows={2}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && window.matchMedia('(pointer: fine)').matches) {
+              e.preventDefault();
+              void guiThat(false);
+            }
+          }}
           aria-label="Tin nhắn gửi khách"
           placeholder="Nhập tin nhắn gửi khách"
           value={draft}
           onChange={(e) => go(e.target.value)}
+          onSelect={(e) => { caret.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd }; }}
           onPaste={(e) => {
             const f = Array.from(e.clipboardData.files)[0];
             if (f) {
@@ -364,21 +401,14 @@ function Composer({ conv, onChange, replyTo, clearReply }: { conv: Conversation;
             }
           }}
           maxLength={4000}
-          className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-field px-3 text-sm"
+          className="min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-sm leading-relaxed"
         />
+        <button type="button" title="Câu trả lời nhanh" aria-label="Câu trả lời nhanh" className="quick-reply-trigger" onClick={() => setQuickOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></button>
         <button type="submit" disabled={dangGui || (!draft.trim() && !tep)} className={primaryClass}>
-          Gửi
+          {dangGui ? 'Đang gửi…' : 'Gửi'}
         </button>
       </form>
       <ErrorText>{loi}</ErrorText>
-      <div className="flex flex-wrap items-center gap-1.5 text-[0.8125rem] text-body">
-        <button type="button" className={chipClass} onClick={() => setChuyen(true)}>
-          Chuyển cho đồng nghiệp
-        </button>
-        {conv.role === 'OWNER' && (
-          <ActionButton className="min-h-9 px-1.5 text-[0.8125rem] text-body underline" label={`Trả lại cho ${bot}`} run={() => post<Conversation>(`/conversations/${id}/give-back`).then(onChange)} />
-        )}
-      </div>
 
       {hoiLai && (
         <Dialog title="Đồng nghiệp đang nhắn" onClose={() => setHoiLai(null)}>
@@ -393,7 +423,7 @@ function Composer({ conv, onChange, replyTo, clearReply }: { conv: Conversation;
           </div>
         </Dialog>
       )}
-      {chuyen && <HandoverDialog conv={conv} onClose={() => setChuyen(false)} onDone={onChange} />}
+      {quickOpen && <QuickReplyPicker onClose={() => { setQuickOpen(false); requestAnimationFrame(() => textarea.current?.focus()); }} onChoose={chooseQuick} />}
     </div>
   );
 }
@@ -438,7 +468,14 @@ function HandoverDialog({ conv, onClose, onDone }: { conv: Conversation; onClose
           </select>
         </Field>
         <Field label="Ghi chú cho người nhận (không bắt buộc)">
-          <textarea rows={3} value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} placeholder="Ví dụ: khách hỏi đoàn 20 người, đã báo giá sơ bộ" className="w-full resize-y rounded-[10px] border border-field px-3 py-2.5 text-sm" />
+          <textarea
+            rows={3}
+            value={note}
+            maxLength={500}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Ví dụ: khách hỏi đoàn 20 người, đã báo giá sơ bộ"
+            className="w-full resize-y rounded-[10px] border border-field px-3 py-2.5 text-sm"
+          />
         </Field>
         <p className="text-xs text-muted">Ghi chú nằm trong log nội bộ, khách không thấy.</p>
         <ErrorText>{error ? 'Không tải được danh sách đồng nghiệp.' : loi}</ErrorText>

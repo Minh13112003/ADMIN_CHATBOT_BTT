@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=1440, initial-scale=1.0" name="viewport"/>
+<title>Mẫu nhanh &amp; Trả lời tự động - BenThanh Tourist</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #1e293b;
+      background-color: #faf9f6;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f0ea;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="w-[1440px] h-[900px] flex overflow-hidden bg-[#faf9f6]">
+<!-- LEFT SIDEBAR: 88px Dark Red (#B30118) -->
+<aside class="w-[88px] h-full bg-[#B30118] flex flex-col items-center justify-between py-4 text-white shrink-0 select-none z-20 shadow-md">
+<!-- Brand Mark & Nav Items Top -->
+<div class="flex flex-col items-center w-full space-y-5">
+<!-- BenThanh Tourist Flower Mark (inline SVG) -->
+<div class="flex flex-col items-center group cursor-pointer" title="BenThanh Tourist">
+<div class="w-12 h-12 bg-white rounded-xl shadow-md flex items-center justify-center p-2 hover:scale-105 transition-transform">
+<svg class="w-8 h-8" fill="none" viewbox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<!-- 7 colorful petals -->
+<path d="M50 50 C50 25 35 15 50 5 C65 15 50 25 50 50Z" fill="#D0021B"></path>
+<path d="M50 50 C70 35 85 25 93 40 C85 55 70 45 50 50Z" fill="#F59E0B" transform="rotate(51.4 50 50)"></path>
+<path d="M50 50 C70 35 85 25 93 40 C85 55 70 45 50 50Z" fill="#10B981" transform="rotate(102.8 50 50)"></path>
+<path d="M50 50 C70 35 85 25 93 40 C85 55 70 45 50 50Z" fill="#0EA5E9" transform="rotate(154.2 50 50)"></path>
+<path d="M50 50 C70 35 85 25 93 40 C85 55 70 45 50 50Z" fill="#6366F1" transform="rotate(205.6 50 50)"></path>
+<path d="M50 50 C70 35 85 25 93 40 C85 55 70 45 50 50Z" fill="#EC4899" transform="rotate(257 50 50)"></path>
+<path d="M50 50 C70 35 85 25 93 40 C85 55 70 45 50 50Z" fill="#E11D48" transform="rotate(308.4 50 50)"></path>
+<!-- Center Dot -->
+<circle cx="50" cy="50" fill="#FFE500" r="10"></circle>
+</svg>
+</div>
+</div>
+<!-- Navigation Menu -->
+<nav class="flex flex-col items-center w-full space-y-1.5">
+<!-- 1. Hội thoại -->
+<a class="w-[76px] py-2 px-1 flex flex-col items-center justify-center rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all text-center relative group" href="#">
+<div class="relative">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="absolute -top-1 -right-2 bg-white text-[#B30118] text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow">12</span>
+</div>
+<span class="text-[12px] font-medium mt-1 leading-tight tracking-tight">Hội thoại</span>
+</a>
+<!-- 2. Khách hàng -->
+<a class="w-[76px] py-2 px-1 flex flex-col items-center justify-center rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all text-center" href="#">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[12px] font-medium mt-1 leading-tight tracking-tight">Khách hàng</span>
+</a>
+<!-- 3. Mẫu nhanh (Active) -->
+<a class="w-[76px] py-2 px-1 flex flex-col items-center justify-center rounded-xl bg-white/20 text-white font-semibold shadow-inner text-center border border-white/20" href="#">
+<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[12px] font-semibold mt-1 leading-tight tracking-tight">Mẫu nhanh</span>
+</a>
+<!-- 4. Thống kê -->
+<a class="w-[76px] py-2 px-1 flex flex-col items-center justify-center rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all text-center" href="#">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[12px] font-medium mt-1 leading-tight tracking-tight">Thống kê</span>
+</a>
+<!-- 5. Quản trị -->
+<a class="w-[76px] py-2 px-1 flex flex-col items-center justify-center rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all text-center" href="#">
+<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[12px] font-medium mt-1 leading-tight tracking-tight">Quản trị</span>
+</a>
+</nav>
+</div>
+<!-- Bottom: Cài đặt & Trạng thái bttAI -->
+<div class="flex flex-col items-center w-full space-y-2 border-t border-white/15 pt-3">
+<a class="w-[76px] py-2 px-1 flex flex-col items-center justify-center rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all text-center" href="#">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="text-[11px] font-medium mt-1 leading-tight">Cài đặt</span>
+</a>
+<!-- Mini connection status indicator -->
+<div class="flex flex-col items-center text-center group cursor-pointer" title="bttAI Engine: 99.8% Online">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="text-[9px] text-white/70 mt-1">bttAI OK</span>
+</div>
+</div>
+</aside>
+<!-- MAIN APP CONTAINER: 1352px (1440 - 88) -->
+<main class="w-[1352px] h-full flex flex-col bg-[#faf9f6] shrink-0 overflow-hidden">
+<!-- SLIM TOP BAR (Consistent with other screens) -->
+<header class="h-[60px] w-full px-7 bg-white border-b border-[#e2e8f0] flex items-center justify-between shrink-0 shadow-sm z-10">
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-2.5">
+<span class="text-[17px] font-bold text-slate-800 tracking-tight">Mẫu nhanh &amp; Trả lời tự động</span>
+<span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium border border-slate-200">bttAI Studio</span>
+</div>
+<div class="h-4 w-px bg-slate-200"></div>
+<!-- Connection indicator -->
+<div class="flex items-center space-x-2 text-[13px] text-slate-600 font-medium">
+<span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
+<span>Đang kết nối</span>
+<span class="text-xs text-slate-400 font-normal">(bttAI Web, bttAI App)</span>
+</div>
+</div>
+<!-- Right User Menu & Notif Bell -->
+<div class="flex items-center space-x-5">
+<!-- Notification bell with badge -->
+<button class="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-full transition-colors" title="Thông báo khẩn cấp">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span class="absolute top-1 right-1 w-2.5 h-2.5 bg-[#D0021B] rounded-full border-2 border-white"></span>
+</button>
+<div class="h-5 w-px bg-slate-200"></div>
+<!-- User Profile Pill -->
+<div class="flex items-center space-x-3 cursor-pointer group">
+<img alt="Nguyễn Mai Phương" class="w-9 h-9 rounded-full object-cover ring-2 ring-[#D0021B]/20" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+<div class="flex flex-col text-left">
+<div class="flex items-center space-x-1.5">
+<span class="text-[13px] font-semibold text-slate-800 group-hover:text-[#D0021B] transition-colors">Nguyễn Mai Phương</span>
+<span class="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">Trực ca</span>
+</div>
+<span class="text-[11px] text-slate-500">BTT-SALE-104 • Tư vấn trưởng</span>
+</div>
+<svg class="w-4 h-4 text-slate-400 group-hover:text-slate-600 transition-colors" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+</div>
+</header>
+<!-- WORKSPACE HEADER & TWO PRIMARY TABS -->
+<div class="px-7 pt-4 pb-3 bg-white border-b border-[#e2e8f0] flex items-center justify-between shrink-0">
+<div class="flex items-center space-x-2">
+<!-- Tab 1: Mẫu trả lời nhanh (Active) -->
+<button class="flex items-center space-x-2 px-4 py-2 text-[14px] font-semibold text-[#D0021B] bg-red-50/80 border-b-2 border-[#D0021B] rounded-t-lg transition-all">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Mẫu trả lời nhanh</span>
+<span class="ml-1 text-xs px-2 py-0.5 rounded-full bg-red-100 text-[#D0021B] font-bold">14</span>
+</button>
+<!-- Tab 2: Quy tắc trả lời tự động -->
+<button class="flex items-center space-x-2 px-4 py-2 text-[14px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-t-lg transition-all">
+<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Quy tắc trả lời tự động</span>
+<span class="ml-1 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-semibold">5</span>
+</button>
+</div>
+<!-- Quick Action / Helper Tag -->
+<div class="flex items-center space-x-3 text-[13px] text-slate-500">
+<span class="flex items-center">
+<svg class="w-4 h-4 mr-1 text-amber-500" fill="currentColor" viewbox="0 0 20 20">
+<path clip-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" fill-rule="evenodd"></path>
+</svg>
+          Ưu tiên: <strong class="text-slate-700 ml-1 font-semibold">Khách gọi NV &gt; Quy tắc &gt; bttAI Bot</strong>
+</span>
+</div>
+</div>
+<!-- MAIN TWO-COLUMN WORKSPACE: Left List (360px) + Right Editor (992px) -->
+<div class="flex-1 flex overflow-hidden">
+<!-- LEFT COLUMN: 360px TEMPLATES LIST -->
+<section class="w-[360px] h-full bg-white border-r border-[#e2e8f0] flex flex-col shrink-0">
+<!-- Search and Add Header -->
+<div class="p-3.5 border-b border-slate-100 space-y-2.5">
+<div class="flex items-center justify-between">
+<span class="text-[13px] font-semibold text-slate-700">Danh sách mẫu câu</span>
+<button class="inline-flex items-center px-3 py-1.5 bg-[#D0021B] hover:bg-[#b50217] active:scale-95 text-white text-[13px] font-medium rounded-lg shadow-sm transition-all">
+<svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" stroke-width="2.5" viewbox="0 0 24 24">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+              + Thêm mẫu
+            </button>
+</div>
+<!-- Search input -->
+<div class="relative">
+<input class="w-full pl-9 pr-3 py-2 text-[13px] bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[#D0021B] focus:border-[#D0021B] transition-all placeholder:text-slate-400" placeholder="Tìm kiếm tiêu đề, nội dung mẫu..." type="text"/>
+<svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</div>
+<!-- Category filter chips -->
+<div class="flex items-center space-x-1.5 overflow-x-auto pb-1 text-[12px]">
+<button class="px-2.5 py-1 rounded-md font-medium bg-slate-800 text-white shrink-0">Tất cả (14)</button>
+<button class="px-2.5 py-1 rounded-md font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 shrink-0">Báo giá tour</button>
+<button class="px-2.5 py-1 rounded-md font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 shrink-0">Visa &amp; Hồ sơ</button>
+<button class="px-2.5 py-1 rounded-md font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 shrink-0">Xác nhận cọc</button>
+</div>
+</div>
+<!-- Scrollable Template List Items -->
+<div class="flex-1 overflow-y-auto custom-scrollbar divide-y divide-slate-100">
+<!-- Item 1: Active selected item -->
+<div class="p-3.5 bg-red-50/50 border-l-4 border-[#D0021B] cursor-pointer hover:bg-red-50/70 transition-colors">
+<div class="flex items-center justify-between mb-1">
+<span class="text-[13.5px] font-bold text-[#D0021B] truncate">Báo giá tour Châu Âu Tết 2025</span>
+<span class="text-[11px] font-medium text-slate-400 shrink-0">Dùng 148 lần</span>
+</div>
+<p class="text-[13px] text-slate-600 line-clamp-2 leading-relaxed">
+              Dạ em chào {tên khách}, BenThanh Tourist xin gửi thông tin chi tiết lịch trình tour {tên tour} khởi hành Tết Nguyên Đán...
+            </p>
+<div class="flex items-center space-x-2 mt-2">
+<span class="text-[11px] px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium">#ChauAu</span>
+<span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">Phím tắt: /bg-eu</span>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="p-3.5 hover:bg-slate-50 cursor-pointer transition-colors border-l-4 border-transparent">
+<div class="flex items-center justify-between mb-1">
+<span class="text-[13.5px] font-semibold text-slate-800 truncate">Hướng dẫn chuẩn bị hồ sơ Visa Schengen</span>
+<span class="text-[11px] font-medium text-slate-400 shrink-0">Dùng 92 lần</span>
+</div>
+<p class="text-[13px] text-slate-500 line-clamp-2 leading-relaxed">
+              Kính gửi {tên khách}, danh mục hồ sơ xin Visa Schengen gồm: 1. Hộ chiếu gốc còn hạn trên 6 tháng; 2. Xác nhận công việc...
+            </p>
+<div class="flex items-center space-x-2 mt-2">
+<span class="text-[11px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-medium">#Visa</span>
+<span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">Phím tắt: /visa-eu</span>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="p-3.5 hover:bg-slate-50 cursor-pointer transition-colors border-l-4 border-transparent">
+<div class="flex items-center justify-between mb-1">
+<span class="text-[13.5px] font-semibold text-slate-800 truncate">Xác nhận chuyển cọc &amp; giữ chỗ tour</span>
+<span class="text-[11px] font-medium text-slate-400 shrink-0">Dùng 64 lần</span>
+</div>
+<p class="text-[13px] text-slate-500 line-clamp-2 leading-relaxed">
+              BenThanh Tourist đã nhận thành công khoản cọc {số tiền cọc} từ quý khách {tên khách} cho đơn đặt tour {mã tour}...
+            </p>
+<div class="flex items-center space-x-2 mt-2">
+<span class="text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">#CocTour</span>
+<span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">Phím tắt: /xncoc</span>
+</div>
+</div>
+<!-- Item 4 -->
+<div class="p-3.5 hover:bg-slate-50 cursor-pointer transition-colors border-l-4 border-transparent">
+<div class="flex items-center justify-between mb-1">
+<span class="text-[13.5px] font-semibold text-slate-800 truncate">Hẹn gọi điện tư vấn chuyên sâu 1-1</span>
+<span class="text-[11px] font-medium text-slate-400 shrink-0">Dùng 45 lần</span>
+</div>
+<p class="text-[13px] text-slate-500 line-clamp-2 leading-relaxed">
+              Dạ vâng, em xin phép đặt lịch gọi điện hỗ trợ anh/chị vào lúc {thời gian hẹn} qua số điện thoại {số điện thoại}...
+            </p>
+<div class="flex items-center space-x-2 mt-2">
+<span class="text-[11px] px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-medium">#HenGoi</span>
+<span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">Phím tắt: /hencall</span>
+</div>
+</div>
+<!-- Item 5 -->
+<div class="p-3.5 hover:bg-slate-50 cursor-pointer transition-colors border-l-4 border-transparent">
+<div class="flex items-center justify-between mb-1">
+<span class="text-[13.5px] font-semibold text-slate-800 truncate">Lời chào đầu ca &amp; Giới thiệu phụ trách</span>
+<span class="text-[11px] font-medium text-slate-400 shrink-0">Dùng 210 lần</span>
+</div>
+<p class="text-[13px] text-slate-500 line-clamp-2 leading-relaxed">
+              Xin chào {tên khách}, em là {tên nhân viên} thuộc bộ phận Lữ hành Quốc tế BenThanh Tourist. Rất vui được đồng hành...
+            </p>
+<div class="flex items-center space-x-2 mt-2">
+<span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">#ChaoHoi</span>
+<span class="text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">Phím tắt: /chao</span>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT COLUMN: 992px TEMPLATE EDITOR & LIVE PREVIEW -->
+<section class="flex-1 h-full flex flex-col overflow-y-auto custom-scrollbar p-6 space-y-6">
+<!-- TOP: EDITOR FORM CARD -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+<div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
+<div>
+<h2 class="text-[16px] font-bold text-slate-800">Chỉnh sửa mẫu trả lời nhanh</h2>
+<p class="text-[13px] text-slate-500 mt-0.5">Tư vấn viên có thể gõ phím tắt <code class="px-1.5 py-0.5 bg-slate-100 text-[#D0021B] rounded font-mono font-medium">/bg-eu</code> trong khung chat để chèn nhanh mẫu này.</p>
+</div>
+<!-- Action buttons: Lưu & Xóa (Two-step) -->
+<div class="flex items-center space-x-3">
+<!-- Two-step Delete button -->
+<button class="inline-flex items-center px-3.5 py-2 text-[13px] font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors group">
+<svg class="w-4 h-4 mr-1 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Xoá mẫu (Nhấn 2 lần)</span>
+</button>
+<!-- Primary Save Button -->
+<button class="inline-flex items-center px-5 py-2 text-[13.5px] font-semibold text-white bg-[#D0021B] hover:bg-[#b30118] active:scale-95 rounded-lg shadow-sm transition-all">
+<svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<span>Lưu thay đổi</span>
+</button>
+</div>
+</div>
+<!-- Form Fields Grid -->
+<div class="grid grid-cols-12 gap-5">
+<!-- Title Input (8 cols) -->
+<div class="col-span-8">
+<label class="block text-[13px] font-semibold text-slate-700 mb-1.5">
+                Tiêu đề mẫu trả lời <span class="text-[#D0021B]">*</span>
+</label>
+<input class="w-full px-3.5 py-2.5 text-[13.5px] bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D0021B]/30 focus:border-[#D0021B] transition-all font-medium text-slate-800" type="text" value="Báo giá tour Châu Âu Tết 2025"/>
+</div>
+<!-- Shortcut input (4 cols) -->
+<div class="col-span-4">
+<label class="block text-[13px] font-semibold text-slate-700 mb-1.5">
+                Mã phím tắt gõ nhanh
+              </label>
+<div class="relative">
+<span class="absolute left-3 top-2.5 text-slate-400 font-mono text-[13px]">/</span>
+<input class="w-full pl-7 pr-3 py-2.5 text-[13.5px] font-mono bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D0021B]/30 focus:border-[#D0021B] transition-all text-slate-800" type="text" value="bg-eu"/>
+</div>
+</div>
+<!-- Placeholder Variable Chips -->
+<div class="col-span-12">
+<div class="flex items-center justify-between mb-2">
+<label class="text-[13px] font-semibold text-slate-700">
+                  Biến dữ liệu động (Click để chèn vào vị trí con trỏ):
+                </label>
+<span class="text-[11.5px] text-slate-400">Tự động điền theo hồ sơ khách hàng bttAI</span>
+</div>
+<div class="flex flex-wrap gap-2 p-2.5 bg-slate-50 border border-dashed border-slate-300 rounded-lg">
+<button class="inline-flex items-center px-2.5 py-1 text-[12px] font-mono font-medium bg-white text-[#D0021B] border border-red-200 rounded hover:bg-red-50 hover:border-red-300 transition-colors shadow-2xs" type="button">
+                  + {tên khách}
+                </button>
+<button class="inline-flex items-center px-2.5 py-1 text-[12px] font-mono font-medium bg-white text-[#D0021B] border border-red-200 rounded hover:bg-red-50 hover:border-red-300 transition-colors shadow-2xs" type="button">
+                  + {mã tour}
+                </button>
+<button class="inline-flex items-center px-2.5 py-1 text-[12px] font-mono font-medium bg-white text-[#D0021B] border border-red-200 rounded hover:bg-red-50 hover:border-red-300 transition-colors shadow-2xs" type="button">
+                  + {tên tour}
+                </button>
+<button class="inline-flex items-center px-2.5 py-1 text-[12px] font-mono font-medium bg-white text-slate-700 border border-slate-300 rounded hover:bg-slate-100 transition-colors shadow-2xs" type="button">
+                  + {giá tour}
+                </button>
+<button class="inline-flex items-center px-2.5 py-1 text-[12px] font-mono font-medium bg-white text-slate-700 border border-slate-300 rounded hover:bg-slate-100 transition-colors shadow-2xs" type="button">
+                  + {ngày khởi hành}
+                </button>
+<button class="inline-flex items-center px-2.5 py-1 text-[12px] font-mono font-medium bg-white text-slate-700 border border-slate-300 rounded hover:bg-slate-100 transition-colors shadow-2xs" type="button">
+                  + {số tiền cọc}
+                </button>
+<button class="inline-flex items-center px-2.5 py-1 text-[12px] font-mono font-medium bg-white text-slate-700 border border-slate-300 rounded hover:bg-slate-100 transition-colors shadow-2xs" type="button">
+                  + {tên nhân viên}
+                </button>
+<button class="inline-flex items-center px-2.5 py-1 text-[12px] font-mono font-medium bg-white text-slate-700 border border-slate-300 rounded hover:bg-slate-100 transition-colors shadow-2xs" type="button">
+                  + {số hotline}
+                </button>
+</div>
+</div>
+<!-- Body Textarea with Character Counter -->
+<div class="col-span-12">
+<div class="flex items-center justify-between mb-1.5">
+<label class="text-[13px] font-semibold text-slate-700">
+                  Nội dung tin nhắn mẫu <span class="text-[#D0021B]">*</span>
+</label>
+<span class="text-[12px] text-slate-500 font-mono">
+                  Đã nhập: <span class="text-[#D0021B] font-semibold">324</span> / 1000 ký tự
+                </span>
+</div>
+<textarea class="w-full px-3.5 py-3 text-[13.5px] leading-relaxed bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#D0021B]/30 focus:border-[#D0021B] transition-all font-normal text-slate-800 resize-none" rows="6">Dạ em chào {tên khách}, BenThanh Tourist xin gửi thông tin chi tiết lịch trình tour {tên tour} (Mã: {mã tour}) khởi hành Tết Nguyên Đán 2025:
+
+• Thời gian: 10 Ngày 9 Đêm (Bay Vietnam Airlines)
+• Giá trọn gói: {giá tour}/khách (Bao gồm visa Schengen &amp; khách sạn 4 sao)
+• Khởi hành dự kiến: {ngày khởi hành}
+
+Em gửi kèm file lịch trình chi tiết và bảng danh mục hồ sơ visa phía dưới. Anh/chị cần em hỗ trợ thêm chi tiết nào không ạ?</textarea>
+</div>
+</div>
+</div>
+<!-- MIDDLE: LIVE PREVIEW BUBBLE CARD -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+<div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+<div class="flex items-center space-x-2">
+<span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+<span class="text-[13px] font-bold text-slate-800">Giao diện xem trước thực tế (Khách hàng sẽ nhìn thấy)</span>
+</div>
+<span class="text-[12px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Mô phỏng dữ liệu khách Trần Hoàng Bách</span>
+</div>
+<!-- Simulation Chat Timeline Container -->
+<div class="p-4 bg-[#f8fafc] rounded-lg border border-slate-200/80 flex flex-col space-y-3">
+<!-- Simulated Incoming Customer Message -->
+<div class="flex items-start space-x-2 max-w-[70%]">
+<div class="w-7 h-7 rounded-full bg-slate-300 text-slate-700 text-xs font-bold flex items-center justify-center shrink-0">TH</div>
+<div class="bg-white p-3 rounded-2xl rounded-tl-none border border-slate-200 shadow-2xs text-[13px] text-slate-700 leading-relaxed">
+                Cho tôi xin báo giá tour Châu Âu đi Pháp - Thụy Sĩ - Ý đợt Tết nhé!
+              </div>
+</div>
+<!-- Simulated Outgoing Staff Message using this Template -->
+<div class="flex items-start justify-end space-x-2 max-w-[85%] self-end">
+<div class="flex flex-col items-end">
+<div class="bg-red-50/90 border border-red-200 text-slate-800 p-3.5 rounded-2xl rounded-tr-none shadow-sm text-[13.5px] leading-relaxed">
+<p class="whitespace-pre-line">Dạ em chào <strong class="text-[#D0021B]">anh Bách</strong>, BenThanh Tourist xin gửi thông tin chi tiết lịch trình tour <strong class="text-[#D0021B]">Pháp - Thụy Sĩ - Ý 10N9Đ</strong> (Mã: <span class="font-mono text-xs bg-red-100 text-[#D0021B] px-1 py-0.5 rounded font-bold">EUR-PARIS-2025-02</span>) khởi hành Tết Nguyên Đán 2025:
+
+• Thời gian: 10 Ngày 9 Đêm (Bay Vietnam Airlines)
+• Giá trọn gói: <strong class="text-emerald-700">69.900.000đ</strong>/khách (Bao gồm visa Schengen &amp; khách sạn 4 sao)
+• Khởi hành dự kiến: Mùng 2 Tết (30/01/2025)
+
+Em gửi kèm file lịch trình chi tiết và bảng danh mục hồ sơ visa phía dưới. Anh/chị cần em hỗ trợ thêm chi tiết nào không ạ?</p>
+</div>
+<div class="flex items-center space-x-1.5 mt-1 text-[11px] text-slate-400">
+<span>14:32 • Tư vấn viên Mai Phương</span>
+<span class="text-emerald-600 font-medium">✓✓ Khách đã xem</span>
+</div>
+</div>
+<img alt="Nguyễn Mai Phương" class="w-7 h-7 rounded-full object-cover shrink-0 ring-1 ring-slate-300" src="https://www.gstatic.com/labs-code/stitch/stitch-placeholder-300x300.svg"/>
+</div>
+</div>
+</div>
+<!-- BOTTOM SECTION: AUTO-REPLY RULES TABLE -->
+<div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+<div class="flex items-center justify-between mb-4">
+<div>
+<div class="flex items-center space-x-2.5">
+<h3 class="text-[15px] font-bold text-slate-800">Quy tắc trả lời tự động (bttAI Auto-Rules)</h3>
+<span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">5 quy tắc đang kích hoạt</span>
+</div>
+<p class="text-[12.5px] text-slate-500 mt-1">
+                Thiết lập kịch bản bttAI gửi phản hồi tức thời cho khách hàng trước khi chuyển tiếp cho tư vấn viên trực ca.
+              </p>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-[12px] px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-md font-medium">
+                ℹ️ Ngoài giờ không lặp lại trong 12 giờ
+              </span>
+<button class="px-3 py-1.5 text-[12.5px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+                + Thêm quy tắc
+              </button>
+</div>
+</div>
+<!-- Rules Table -->
+<div class="overflow-x-auto rounded-lg border border-slate-200">
+<table class="w-full text-left border-collapse text-[13px]">
+<thead>
+<tr class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold text-[12px] uppercase tracking-wider">
+<th class="py-3 px-4">Tên quy tắc</th>
+<th class="py-3 px-3">Loại quy tắc</th>
+<th class="py-3 px-3">Kênh áp dụng</th>
+<th class="py-3 px-3 text-right">Đã gửi</th>
+<th class="py-3 px-4 text-center">Bật/Tắt</th>
+<th class="py-3 px-3 text-right">Thao tác</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-150">
+<!-- Rule 1 -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3 px-4 font-medium text-slate-800">
+<div>Chào mừng khách mới ghé bttAI</div>
+<div class="text-[11.5px] text-slate-400 font-normal">Gửi lời chào ấm áp &amp; hướng dẫn chọn danh mục tour</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11.5px] font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                      Tin đầu tiên
+                    </span>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center space-x-1">
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Web</span>
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">App</span>
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400">Zalo</span>
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400">FB</span>
+</div>
+</td>
+<td class="py-3 px-3 text-right font-mono font-semibold text-slate-700">1.842</td>
+<td class="py-3 px-4 text-center">
+<!-- Toggle switch ON -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D0021B]"></div>
+</label>
+</td>
+<td class="py-3 px-3 text-right">
+<button class="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-100">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</td>
+</tr>
+<!-- Rule 2 -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3 px-4 font-medium text-slate-800">
+<div>Bắt từ khóa Tour Tết &amp; Khởi hành</div>
+<div class="text-[11.5px] text-slate-400 font-normal">Từ khóa: <code class="text-slate-600 bg-slate-100 px-1 rounded">tour tết, khởi hành mùng 2, lịch tết</code></div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11.5px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                      Theo từ khoá
+                    </span>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center space-x-1">
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Web</span>
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">App</span>
+</div>
+</td>
+<td class="py-3 px-3 text-right font-mono font-semibold text-slate-700">920</td>
+<td class="py-3 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D0021B]"></div>
+</label>
+</td>
+<td class="py-3 px-3 text-right">
+<button class="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-100">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</td>
+</tr>
+<!-- Rule 3 -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3 px-4 font-medium text-slate-800">
+<div>Thông báo ngoài giờ làm việc (Sau 21:00)</div>
+<div class="text-[11.5px] text-slate-400 font-normal">Hẹn gọi lại từ 08:00 sáng hôm sau, không lặp lại trong 12h</div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11.5px] font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                      Ngoài giờ làm việc
+                    </span>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center space-x-1">
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Web</span>
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">App</span>
+</div>
+</td>
+<td class="py-3 px-3 text-right font-mono font-semibold text-slate-700">415</td>
+<td class="py-3 px-4 text-center">
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D0021B]"></div>
+</label>
+</td>
+<td class="py-3 px-3 text-right">
+<button class="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-100">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</td>
+</tr>
+<!-- Rule 4 -->
+<tr class="hover:bg-slate-50/80 transition-colors">
+<td class="py-3 px-4 font-medium text-slate-800">
+<div>Bắt từ khóa Giá vé &amp; Khuyến mãi sốc</div>
+<div class="text-[11.5px] text-slate-400 font-normal">Từ khóa: <code class="text-slate-600 bg-slate-100 px-1 rounded">khuyến mãi, giảm giá, combo, voucher</code></div>
+</td>
+<td class="py-3 px-3">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11.5px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                      Theo từ khoá
+                    </span>
+</td>
+<td class="py-3 px-3">
+<div class="flex items-center space-x-1">
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Web</span>
+<span class="text-[11px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">App</span>
+</div>
+</td>
+<td class="py-3 px-3 text-right font-mono font-semibold text-slate-700">630</td>
+<td class="py-3 px-4 text-center">
+<!-- Toggle switch OFF -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D0021B]"></div>
+</label>
+</td>
+<td class="py-3 px-3 text-right">
+<button class="text-slate-400 hover:text-slate-700 p-1 rounded hover:bg-slate-100">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24">
+<path d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body>
+</html>

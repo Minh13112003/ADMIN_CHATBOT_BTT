@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BenThanh Tourist - Quản trị hội thoại &amp; tour</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #faf9f6;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e2dfd9;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-[#faf9f6] text-[#1c1b1f] antialiased select-none">
+<!-- Outer container: exact 100vw, h-screen, max-w-[1440px] mx-auto overflow-hidden -->
+<div class="w-full max-w-[1440px] h-screen mx-auto flex flex-col overflow-hidden bg-[#faf9f6]">
+<!-- ==================== GLOBAL TOPBAR (height 56px) ==================== -->
+<header class="h-[56px] px-4 bg-white border-b border-[#e6e4df] flex items-center justify-between shrink-0 z-30"><div class="flex items-center gap-3"><div class="w-9 h-9 rounded-lg bg-white border border-[#e6e4df] shadow-xs flex items-center justify-center p-1.5 shrink-0"><svg class="w-full h-full" viewbox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><g transform="translate(50,50)"><ellipse cx="0" cy="-28" fill="#E53935" rx="8" ry="17" transform="rotate(0)"></ellipse><ellipse cx="0" cy="-28" fill="#FB8C00" rx="8" ry="17" transform="rotate(51.4)"></ellipse><ellipse cx="0" cy="-28" fill="#FDD835" rx="8" ry="17" transform="rotate(102.8)"></ellipse><ellipse cx="0" cy="-28" fill="#43A047" rx="8" ry="17" transform="rotate(154.2)"></ellipse><ellipse cx="0" cy="-28" fill="#00ACC1" rx="8" ry="17" transform="rotate(205.6)"></ellipse><ellipse cx="0" cy="-28" fill="#1E88E5" rx="8" ry="17" transform="rotate(257)"></ellipse><ellipse cx="0" cy="-28" fill="#8E24AA" rx="8" ry="17" transform="rotate(308.4)"></ellipse><circle cx="0" cy="0" fill="#B30118" r="9"></circle><circle cx="0" cy="0" fill="#FFFFFF" r="4.5"></circle></g></svg></div><div class="flex items-center gap-2.5"><h1 class="text-[16px] font-bold text-[#1c1b1f]">Hội thoại</h1><span class="text-[#8c8882]">|</span><div class="flex items-center gap-1.5 text-[12px] text-[#166534] font-medium"><span class="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse"></span><span>Đang kết nối</span></div></div></div><div class="flex items-center gap-3"><button class="relative w-9 h-9 rounded-lg hover:bg-[#f4f3f0] text-[#55524e] flex items-center justify-center transition-colors"><span class="material-symbols-outlined text-[20px]">notifications</span><span class="absolute top-1.5 right-1.5 w-2 h-2 bg-[#D0021B] rounded-full ring-2 ring-white"></span></button><div class="h-5 w-px bg-[#e6e4df]"></div><div class="flex items-center gap-2 pl-1 cursor-pointer"><div class="relative w-8 h-8 rounded-full overflow-hidden border border-[#e6e4df]"><img alt="Nguyễn Mai Phương" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCibBRRV-Hs8Mg1CdEdb9ay0aIbHiw8V3R-sHK7fgnxJhPLnph3bBOul0PuH4fePIzjP3skFxRjvaUqnY0THHipfZ4M4e0DcklpmPJp-etcH5NjlUWMvObwWuimMRvZA4bMUSZfjrA7j7jHsUVYxrBMXFMh7ZeeYnXe4gqQWw_jHDJxT_DOu2sOnYGXtCIefIReaqD-xiur1kvhFeofKOv4ipFIvy9UrPuuul1DBg8"/><span class="absolute bottom-0 right-0 w-2 h-2 bg-[#16a34a] rounded-full ring-2 ring-white"></span></div><div class="flex flex-col text-left"><div class="flex items-center gap-1.5 leading-none"><span class="text-[13px] font-bold text-[#1c1b1f]">Nguyễn Mai Phương</span></div><span class="text-[11px] text-[#6b6762] leading-tight mt-0.5">BTT-SALE-104</span></div></div></div></header>
+<!-- ==================== BODY LAYOUT (height: calc(100vh - 56px)) ==================== -->
+<div class="flex flex-1 h-[calc(100vh-56px)] w-full overflow-hidden">
+<!-- ==================== 1. LEFT SIDEBAR (exact width 88px) ==================== -->
+<aside class="w-[88px] shrink-0 bg-[#B30118] text-white flex flex-col justify-between py-4 items-center z-20">
+<!-- Navigation Menu in exact order -->
+<nav class="w-full flex flex-col items-center gap-2 px-1">
+<!-- Item 1: Hội thoại (Active with badge 12) -->
+<button class="w-[72px] min-h-[56px] py-1.5 px-1 rounded-xl bg-white/15 text-white flex flex-col items-center justify-center relative transition-all shadow-inner group">
+<div class="relative flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">chat</span>
+<span class="absolute -top-1.5 -right-3 px-1.5 py-0.2 bg-white text-[#B30118] text-[10px] font-bold rounded-full shadow-xs">12</span>
+</div>
+<span class="text-[11px] font-semibold leading-tight whitespace-nowrap mt-1 text-center">Hội thoại</span>
+</button>
+<!-- Item 2: Khách hàng -->
+<button class="w-[72px] min-h-[56px] py-1.5 px-1 rounded-xl text-white/80 hover:text-white hover:bg-white/10 flex flex-col items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[24px]">groups</span>
+<span class="text-[11px] font-medium leading-tight whitespace-nowrap mt-1 text-center">Khách hàng</span>
+</button>
+<!-- Item 3: Mẫu nhanh -->
+<button class="w-[72px] min-h-[56px] py-1.5 px-1 rounded-xl text-white/80 hover:text-white hover:bg-white/10 flex flex-col items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[24px]">quickreply</span>
+<span class="text-[11px] font-medium leading-tight whitespace-nowrap mt-1 text-center">Mẫu nhanh</span>
+</button>
+<!-- Item 4: Thống kê -->
+<button class="w-[72px] min-h-[56px] py-1.5 px-1 rounded-xl text-white/80 hover:text-white hover:bg-white/10 flex flex-col items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[24px]">analytics</span>
+<span class="text-[11px] font-medium leading-tight whitespace-nowrap mt-1 text-center">Thống kê</span>
+</button>
+<!-- Item 5: Quản trị -->
+<button class="w-[72px] min-h-[56px] py-1.5 px-1 rounded-xl text-white/80 hover:text-white hover:bg-white/10 flex flex-col items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[24px]">manage_accounts</span>
+<span class="text-[11px] font-medium leading-tight whitespace-nowrap mt-1 text-center">Quản trị</span>
+</button>
+</nav>
+<!-- Bottom of sidebar: status indicator -->
+<div class="w-full px-1.5 flex flex-col items-center text-center">
+<div class="w-2 h-2 rounded-full bg-[#4ade80] mb-1"></div>
+<span class="text-[10px] font-medium leading-tight text-white/90">Kênh bttAI</span>
+<span class="text-[9px] text-white/70">Hoạt động</span>
+</div>
+</aside>
+<!-- ==================== 2. CONVERSATION LIST COLUMN (exact width 340px) ==================== -->
+<section class="w-[340px] shrink-0 bg-white border-r border-[#e6e4df] flex flex-col h-full overflow-hidden z-10">
+<!-- Search bar & filters -->
+<div class="p-3 border-b border-[#f0eee9] space-y-2 shrink-0">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-2.5 text-[#8c8882] text-[18px]">search</span>
+<input class="w-full pl-8 pr-3 py-1.5 bg-[#f5f4f0] text-[#1c1b1f] text-[13px] rounded-lg border-0 outline-none focus:ring-1 focus:ring-[#B30118] placeholder:text-[#99958e]" placeholder="Tìm theo tên, SĐT..." type="text" value="0918.423.889"/>
+</div>
+<div class="flex items-center justify-between text-[11px] text-[#6b6762] pt-0.5 px-0.5">
+<label class="flex items-center gap-1.5 cursor-pointer">
+<input checked="" class="w-3.5 h-3.5 rounded text-[#B30118] focus:ring-0 accent-[#B30118]" type="checkbox"/>
+<span>Tìm trong nội dung tin nhắn</span>
+</label>
+<button class="flex items-center gap-0.5 text-[#4e6073] hover:text-[#1c1b1f] font-medium">
+<span class="material-symbols-outlined text-[14px]">tune</span>
+              Bộ lọc
+            </button>
+</div>
+</div>
+<!-- Source connectivity chips row -->
+<div class="px-3 py-1.5 bg-[#fbfaf8] border-b border-[#f0eee9] flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0"><span class="px-2 py-0.5 rounded-full bg-white border border-[#d1fae5] text-[#065f46] text-[11px] font-semibold flex items-center gap-1 shrink-0 shadow-2xs"><span class="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>bttAI Web <strong class="text-[#047857]">18</strong></span><span class="px-2 py-0.5 rounded-full bg-white border border-[#e2dfd9] text-[#334155] text-[11px] font-medium flex items-center gap-1 shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-[#3b82f6]"></span>bttAI App <strong>7</strong></span></div>
+<!-- Status Filter Tabs / Pills -->
+<div class="px-3 py-2 border-b border-[#f0eee9] flex items-center gap-1 overflow-x-auto no-scrollbar shrink-0">
+<button class="px-2.5 py-1 rounded-md bg-[#e9e8e5] text-[#1c1b1f] text-[11px] font-semibold shrink-0">
+            Tất cả 25
+          </button>
+<button class="px-2.5 py-1 rounded-md bg-[#FEE2E2] text-[#991B1B] border border-[#FCA5A5] text-[11px] font-bold flex items-center gap-1 shrink-0">
+<span class="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></span>
+            Cần gặp NV 3
+          </button>
+<button class="px-2 py-1 rounded-md text-[#6b6762] hover:bg-[#f4f3f0] text-[11px] font-medium shrink-0">
+            Chưa xem 4
+          </button>
+<button class="px-2 py-1 rounded-md text-[#6b6762] hover:bg-[#f4f3f0] text-[11px] font-medium shrink-0">
+            Chờ xử lý
+          </button>
+</div>
+<!-- Conversation items list (scrollable) -->
+<div class="flex-1 overflow-y-auto divide-y divide-[#f0eee9] p-1.5 space-y-1">
+<!-- Item 1 (Active/Selected - Trần Hoàng Bách) -->
+<div class="p-2.5 rounded-lg bg-[#FFF5F5] border-l-4 border-l-[#B30118] shadow-xs cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="text-[13px] font-bold text-[#1c1b1f] truncate">Trần Hoàng Bách</span>
+<span class="px-1.5 py-0.2 bg-[#FEE2E2] text-[#DC2626] rounded text-[10px] font-bold shrink-0">Yêu cầu NV</span>
+</div>
+<span class="text-[11px] text-[#DC2626] font-semibold shrink-0">2 phút</span>
+</div>
+<div class="flex items-center gap-2 text-[11px] text-[#6b6762] mb-1">
+<span class="font-medium text-[#1c1b1f]">0918.423.889</span>
+<span>•</span>
+<span class="text-[#4e6073]">bttAI Web</span>
+</div>
+<p class="text-[12px] text-[#3d3a37] line-clamp-2 leading-relaxed mb-2 font-medium">
+              "Cho tôi gặp nhân viên tư vấn tour Châu Âu đi Pháp - Ý - Thụy Sĩ Tết này ngay nhé!"
+            </p>
+<div class="flex items-center justify-between pt-0.5">
+<span class="inline-flex items-center gap-1 text-[11px] text-[#166534] font-medium">
+<span class="w-1.5 h-1.5 rounded-full bg-[#16a34a]"></span>
+                Mai Phương (Bạn)
+              </span>
+<span class="px-1.5 py-0.5 bg-[#EFF6FF] text-[#1E40AF] rounded text-[10px] font-semibold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[12px]">alarm</span>
+                Hẹn 15:30
+              </span>
+</div>
+</div>
+<!-- Item 2: Lê Thị Thu Hằng -->
+<div class="p-2.5 rounded-lg hover:bg-[#fbfaf8] transition-colors cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="text-[13px] font-bold text-[#1c1b1f] truncate">Lê Thị Thu Hằng</span>
+<span class="px-1.5 py-0.2 bg-[#DBEAFE] text-[#1E40AF] rounded text-[10px] font-semibold shrink-0">Đơn chờ duyệt</span>
+</div>
+<span class="text-[11px] text-[#8c8882] shrink-0">14 phút</span>
+</div>
+<div class="text-[11px] text-[#6b6762] mb-1">0903.884.112 • bttAI App</div>
+<p class="text-[12px] text-[#6b6762] line-clamp-1 leading-normal mb-1.5">
+              "Chị đã bấm đặt tour Đà Nẵng - Bà Nà 4N3Đ 3 người, nhờ em..."
+            </p>
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-[#6b6762]">3 khách • 28.500.000 đ</span>
+<span class="text-[#0284c7] font-medium">Chờ xác nhận</span>
+</div>
+</div>
+<!-- Item 3: Phạm Minh Tuấn -->
+<div class="p-2.5 rounded-lg hover:bg-[#fbfaf8] transition-colors cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="text-[13px] font-bold text-[#1c1b1f] truncate">Phạm Minh Tuấn</span>
+<span class="px-1.5 py-0.2 bg-[#F1F5F9] text-[#475569] rounded text-[10px] shrink-0">bttAI Bot</span>
+</div>
+<span class="text-[11px] text-[#8c8882] shrink-0">28 phút</span>
+</div>
+<div class="text-[11px] text-[#6b6762] mb-1">0982.115.340 • bttAI Web</div>
+<p class="text-[12px] text-[#6b6762] line-clamp-1 leading-normal">
+              [Bot đang trả lời: Lịch trình chi tiết Phú Quốc 3N2Đ...]
+            </p>
+</div>
+<!-- Item 4: Vũ Thanh Thảo -->
+<div class="p-2.5 rounded-lg hover:bg-[#fbfaf8] transition-colors cursor-pointer">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-1.5 min-w-0">
+<span class="text-[13px] font-bold text-[#1c1b1f] truncate">Vũ Thanh Thảo</span>
+<span class="px-1.5 py-0.2 bg-[#DCFCE7] text-[#15803D] rounded text-[10px] font-bold shrink-0">Đã chốt tour</span>
+</div>
+<span class="text-[11px] text-[#8c8882] shrink-0">1 giờ</span>
+</div>
+<div class="text-[11px] text-[#6b6762] mb-1">0974.556.782 • bttAI Web</div>
+<p class="text-[12px] text-[#6b6762] line-clamp-1 leading-normal">
+              "Cảm ơn em, chị đã chuyển cọc tour Nhật Bản..."
+            </p>
+</div>
+</div>
+</section>
+<!-- ==================== 3. CENTER CHAT COLUMN (flex-1, min-w-[480px]) ==================== -->
+<main class="flex-1 min-w-[480px] bg-[#f8f7f4] flex flex-col h-full overflow-hidden border-r border-[#e6e4df]">
+<!-- Chat Header: Single clean row (h-[64px]) -->
+<header class="h-[64px] px-4 bg-white border-b border-[#e6e4df] flex items-center justify-between shrink-0 z-10"><div class="flex items-center gap-3 min-w-0"><div class="relative w-10 h-10 rounded-full bg-[#FEE2E2] text-[#B30118] font-bold text-[14px] flex items-center justify-center shrink-0 shadow-2xs">TH<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#16a34a] rounded-full ring-2 ring-white"></span></div><div class="flex flex-col min-w-0"><div class="flex items-center gap-2 flex-wrap"><span class="text-[15px] font-bold text-[#1c1b1f] truncate">Trần Hoàng Bách</span><span class="px-2 py-0.5 bg-[#FEE2E2] text-[#DC2626] rounded text-[11px] font-semibold shrink-0">Yêu cầu NV</span><span class="px-1.5 py-0.5 bg-[#f4f3f0] border border-[#e6e4df] text-[#4e6073] rounded text-[10px] font-medium shrink-0">bttAI Web</span></div><span class="text-[13px] text-[#6b6762] mt-0.5">0918.423.889</span></div></div><div class="flex items-center gap-2 shrink-0"><button class="min-h-[40px] px-4 rounded-lg bg-[#D0021B] hover:bg-[#B30118] text-white text-[13px] font-bold flex items-center gap-1.5 shadow-xs transition-colors"><span class="material-symbols-outlined text-[17px]">task_alt</span><span>Chốt tour</span></button><button class="w-10 h-10 rounded-lg border border-[#d6d3cc] hover:bg-[#f4f3f0] text-[#42403d] flex items-center justify-center transition-colors" title="Thêm thao tác"><span class="material-symbols-outlined text-[20px]">more_horiz</span></button></div></header>
+<!-- Alert Banner: Prominent readable full-width banner -->
+<div class="bg-[#FFF5F5] border-b border-[#FECACA] border-l-4 border-l-[#D0021B] px-4 py-2.5 flex items-center justify-between text-[13px] shrink-0"><div class="flex items-center gap-2 min-w-0"><span class="material-symbols-outlined text-[18px] text-[#DC2626] shrink-0">notifications_active</span><div class="truncate"><strong class="text-[#991B1B]">Cần làm:</strong> <span class="text-[#1c1b1f]">Khách yêu cầu NV (14:28)</span> <span class="text-[#8c8882]">•</span> <span class="text-[#4e6073]">Đơn chờ duyệt: Tour Pháp - Thụy Sĩ - Ý</span> <strong class="text-[#D0021B]">(139.800.000đ)</strong></div></div><div class="flex items-center gap-2 shrink-0 ml-3"><button class="h-8 px-3 rounded-lg border border-[#FCA5A5] bg-white hover:bg-[#FEE2E2] text-[12px] font-semibold text-[#991B1B] flex items-center gap-1 transition-colors"><span class="material-symbols-outlined text-[15px]">call</span><span>Gọi khách</span></button><button class="h-8 px-3 rounded-lg bg-[#D0021B] hover:bg-[#B30118] text-white text-[12px] font-bold flex items-center gap-1 shadow-xs transition-colors"><span class="material-symbols-outlined text-[15px]">check_circle</span><span>Xác nhận đơn</span></button></div></div>
+<!-- Messages Timeline (flex-1 overflow-y-auto p-4 space-y-4) -->
+<div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-messages-container">
+<!-- Timeline divider -->
+<div class="flex items-center justify-center my-1">
+<span class="px-3 py-0.5 rounded-full bg-[#eae8e3] text-[#6b6762] text-[11px] font-medium">
+              Hôm nay, 14:25 (GMT+7)
+            </span>
+</div>
+<!-- Message 1 (Customer) -->
+<div class="flex items-start gap-2.5 max-w-[70%]">
+<div class="w-7 h-7 rounded-full bg-[#e2dfd9] text-[#42403d] font-bold text-[11px] flex items-center justify-center shrink-0">
+              TH
+            </div>
+<div class="flex flex-col gap-1">
+<div class="p-3 rounded-2xl rounded-tl-xs bg-white text-[#1c1b1f] shadow-xs text-[13px] leading-relaxed break-words border border-[#eeece8]">
+                Xin chào BenThanh Tourist, tôi muốn xem lịch khởi hành tour Châu Âu đợt Tết Nguyên Đán 2025.
+              </div>
+<span class="text-[11px] text-[#8c8882] pl-1">14:25</span>
+</div>
+</div>
+<!-- Message 2 (bttAI Bot with FULLY VISIBLE Recommendation Card) -->
+<div class="flex items-start gap-2.5 max-w-[75%] self-end flex-row-reverse">
+<div class="w-7 h-7 rounded-full bg-[#B30118] text-white flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[15px]">smart_toy</span>
+</div>
+<div class="flex flex-col gap-1 items-end w-full">
+<div class="p-3.5 rounded-2xl rounded-tr-xs bg-white text-[#1c1b1f] shadow-xs text-[13px] leading-relaxed break-words border border-[#eeece8] w-full space-y-3">
+<div class="flex items-center gap-1.5 text-[11px] text-[#B30118] font-bold">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+<span>bttAI Phản hồi tự động</span>
+</div>
+<p>
+                  Dạ em chào anh Bách ạ! BenThanh Tourist hiện có 2 hành trình Châu Âu mùa Tết khởi hành từ TP.HCM:
+                  <br/>1) <strong>Pháp - Thụy Sĩ - Ý (10N9Đ)</strong> khởi hành Mùng 2 Tết giá từ 69.900.000đ/khách.
+                  <br/>2) <strong>Bắc Âu săn Cực Quang (9N8Đ)</strong> giá từ 89.000.000đ/khách.
+                </p>
+<!-- Fully Visible Tour Recommendation Card -->
+<div class="rounded-xl border border-[#e6e4df] bg-[#faf9f6] p-3 flex flex-col sm:flex-row gap-3 shadow-2xs">
+<div class="w-full sm:w-28 h-24 rounded-lg bg-cover bg-center shrink-0 overflow-hidden relative shadow-inner" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuACrQyzjYmgtyIIaWawTyO5TW5KRlVT44LxcS5FLydBSgA-gWmIDzVwMOn6Orr_UUC5rRYQteZVWocVI2b782srixCylPg7mcgR2s7cxlT8S3zLVO8n0jc7l5qV262u7NnuyupBVXzSlJefo9tI3-TVvpmhkGQHqtEt-GVKN5C60tJ5moKp8oaQHyDrnKzL2esSHpLCzC5u-Ol65mOyAU3FYR-Ih-abjhDbwr8guII')">
+<span class="absolute top-1.5 left-1.5 px-1.5 py-0.2 bg-[#DCFCE7] text-[#15803D] rounded text-[10px] font-bold">Còn 6 chỗ</span>
+</div>
+<div class="flex-1 flex flex-col justify-between min-w-0">
+<div>
+<div class="text-[10px] text-[#B30118] font-bold uppercase tracking-wider">EUR-PARIS-2025-02</div>
+<h4 class="text-[13px] font-bold text-[#1c1b1f] leading-snug line-clamp-2">
+                        Tour Pháp - Thụy Sĩ - Ý (10N9Đ) - Khởi hành Mùng 2 Tết (30/01/2025)
+                      </h4>
+<p class="text-[11px] text-[#6b6762] mt-0.5">Bay Vietnam Airlines • Khách sạn 4 sao</p>
+</div>
+<div class="flex items-center justify-between pt-2 border-t border-[#eeece8] mt-2">
+<div class="text-[13px] font-bold text-[#D0021B]">139.800.000 đ <span class="text-[11px] font-normal text-[#6b6762]">/ 2 khách</span></div>
+<button class="px-2.5 py-1 rounded bg-[#B30118] hover:bg-[#8f0012] text-white text-[11px] font-medium transition-colors">
+                        Xem chi tiết &amp; Đặt cọc
+                      </button>
+</div>
+</div>
+</div>
+</div>
+<span class="text-[11px] text-[#8c8882] pr-1">14:25</span>
+</div>
+</div>
+<!-- Message 3 (Customer: Requests Human Agent) -->
+<div class="flex items-start gap-2.5 max-w-[70%]">
+<div class="w-7 h-7 rounded-full bg-[#e2dfd9] text-[#42403d] font-bold text-[11px] flex items-center justify-center shrink-0">
+              TH
+            </div>
+<div class="flex flex-col gap-1">
+<div class="p-3 rounded-2xl rounded-tl-xs bg-white text-[#1c1b1f] shadow-xs text-[13px] leading-relaxed break-words border border-[#eeece8]">
+                Nhà tôi đi 2 người lớn, muốn xin visa Schengen thủ tục như thế nào? Cho tôi gặp nhân viên hỗ trợ!
+              </div>
+<span class="text-[11px] text-[#8c8882] pl-1">14:28</span>
+</div>
+</div>
+<!-- Message 4 (Staff - Mai Phương) -->
+<div class="flex items-start gap-2.5 max-w-[70%] self-end flex-row-reverse">
+<div class="w-7 h-7 rounded-full overflow-hidden shrink-0 ring-1 ring-[#B30118]">
+<img alt="Mai Phương" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCibBRRV-Hs8Mg1CdEdb9ay0aIbHiw8V3R-sHK7fgnxJhPLnph3bBOul0PuH4fePIzjP3skFxRjvaUqnY0THHipfZ4M4e0DcklpmPJp-etcH5NjlUWMvObwWuimMRvZA4bMUSZfjrA7j7jHsUVYxrBMXFMh7ZeeYnXe4gqQWw_jHDJxT_DOu2sOnYGXtCIefIReaqD-xiur1kvhFeofKOv4ipFIvy9UrPuuul1DBg8"/>
+</div>
+<div class="flex flex-col gap-1 items-end">
+<div class="p-3 rounded-2xl rounded-tr-xs bg-[#FFF5F5] text-[#1c1b1f] shadow-xs text-[13px] leading-relaxed break-words border border-[#fecaca]">
+<!-- Quoted Reference -->
+<div class="mb-2 p-2 rounded bg-white/80 border-l-2 border-[#B30118] text-[11px] text-[#6b6762] italic">
+                  "Nhà tôi đi 2 người lớn, muốn xin visa Schengen thủ tục như thế nào?..."
+                </div>
+<div class="text-[11px] font-bold text-[#B30118] mb-1">Nguyễn Mai Phương (Tư vấn viên)</div>
+<p>
+                  Dạ em gửi anh Bách báo giá trọn gói 2 khách Tour Pháp - Ý - Thụy Sĩ Tết 2025 là <strong>139.800.000đ</strong> (đã bao gồm phí visa Schengen &amp; bảo hiểm du lịch).
+                  <br/><br/>
+                  Em hỗ trợ giữ 2 chỗ đẹp trên chuyến bay Vietnam Airlines và chuẩn bị hồ sơ visa cho nhà mình luôn nhé ạ?
+                </p>
+</div>
+<div class="flex items-center gap-1 text-[11px] text-[#16a34a] font-medium pr-1">
+<span class="material-symbols-outlined text-[13px]">done_all</span>
+<span>Khách đã xem • 14:30</span>
+</div>
+</div>
+</div>
+</div>
+<!-- ==================== COMPOSER BLOCK (tidy, unclipped block) ==================== -->
+<footer class="shrink-0 bg-white border-t border-[#e6e4df] p-3 space-y-2 z-10">
+<!-- Colleague status & Auto-bot toggle -->
+<div class="flex items-center justify-between text-[12px] text-[#6b6762]">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#16a34a] animate-pulse"></span>
+<span>Đồng nghiệp <strong>Lê Văn Hùng</strong> đang cùng xem</span>
+</div>
+<label class="flex items-center gap-2 cursor-pointer">
+<span class="text-[11px]">Tự động trả lời bttAI Bot</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox"/>
+<div class="w-7 h-4 bg-[#e2dfd9] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#B30118]"></div>
+</div>
+</label>
+</div>
+<!-- Quoted preview bar -->
+<div class="px-2.5 py-1 bg-[#f5f4f0] rounded-md flex items-center justify-between text-[11px] text-[#55524e]">
+<div class="flex items-center gap-1.5 truncate">
+<span class="material-symbols-outlined text-[14px] text-[#B30118]">reply</span>
+<span class="font-semibold text-[#1c1b1f]">Đang trả lời:</span>
+<span class="truncate italic">"Nhà tôi đi 2 người lớn, muốn xin visa Schengen thủ tục như thế nào?..."</span>
+</div>
+<button class="p-0.5 hover:text-[#1c1b1f] text-[#8c8882]">
+<span class="material-symbols-outlined text-[13px]">close</span>
+</button>
+</div>
+<!-- Quick template chips row -->
+<div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+<button class="px-2.5 py-1 rounded-full bg-[#f4f3f0] hover:bg-[#e9e8e5] text-[#3d3a37] text-[11px] font-medium whitespace-nowrap shrink-0 transition-colors">
+              Báo giá tour Châu Âu
+            </button>
+<button class="px-2.5 py-1 rounded-full bg-[#f4f3f0] hover:bg-[#e9e8e5] text-[#3d3a37] text-[11px] font-medium whitespace-nowrap shrink-0 transition-colors">
+              Thủ tục Visa
+            </button>
+<button class="px-2.5 py-1 rounded-full bg-[#f4f3f0] hover:bg-[#e9e8e5] text-[#3d3a37] text-[11px] font-medium whitespace-nowrap shrink-0 transition-colors">
+              Hẹn gọi tư vấn
+            </button>
+<button class="px-2.5 py-1 rounded-full bg-[#f4f3f0] hover:bg-[#e9e8e5] text-[#3d3a37] text-[11px] font-medium whitespace-nowrap shrink-0 transition-colors">
+              Xác nhận cọc
+            </button>
+</div>
+<!-- Input bar -->
+<div class="flex items-end gap-2">
+<!-- Attach icons -->
+<div class="flex items-center pb-1 text-[#6b6762]">
+<button class="p-1.5 hover:bg-[#f4f3f0] hover:text-[#1c1b1f] rounded-lg transition-colors" title="Đính kèm tài liệu">
+<span class="material-symbols-outlined text-[20px]">attach_file</span>
+</button>
+<button class="p-1.5 hover:bg-[#f4f3f0] hover:text-[#1c1b1f] rounded-lg transition-colors" title="Chèn ảnh điểm đến">
+<span class="material-symbols-outlined text-[20px]">image</span>
+</button>
+</div>
+<!-- Text input -->
+<div class="flex-1 bg-[#f5f4f0] rounded-xl px-3 py-2 border border-[#e6e4df] focus-within:border-[#B30118] focus-within:bg-white transition-all">
+<textarea class="w-full bg-transparent border-0 p-0 text-[13px] text-[#1c1b1f] placeholder:text-[#99958e] outline-none resize-none leading-relaxed" id="chat-input" placeholder="Nhập tin nhắn tư vấn (Enter để gửi)..." rows="2"></textarea>
+</div>
+<!-- Clear vibrant red 'Gửi' button (#D0021B, min-h-[44px]) -->
+<button class="h-[44px] px-5 bg-[#D0021B] hover:bg-[#B30118] active:scale-95 text-white font-medium text-[13px] rounded-lg shadow-sm flex items-center justify-center gap-1.5 shrink-0 transition-all" id="send-btn">
+<span>Gửi</span>
+<span class="material-symbols-outlined text-[17px]">send</span>
+</button>
+</div>
+</footer>
+</main>
+<!-- ==================== 4. CUSTOMER INFO PANEL (exact width 340px) ==================== -->
+<aside class="w-[360px] shrink-0 bg-white flex flex-col h-full overflow-y-auto p-4 space-y-4 border-l border-[#e6e4df]"><div class="flex p-1 bg-[#f5f4f0] rounded-xl shrink-0 gap-1"><button class="flex-1 py-2 rounded-lg bg-white text-[#B30118] font-bold text-[12px] shadow-2xs text-center border border-[#e6e4df]">Khách</button><button class="flex-1 py-2 rounded-lg text-[#6b6762] hover:text-[#1c1b1f] font-semibold text-[12px] text-center">Đơn tour (1)</button><button class="flex-1 py-2 rounded-lg text-[#6b6762] hover:text-[#1c1b1f] font-semibold text-[12px] text-center">Hẹn &amp; ghi chú (1)</button></div><div class="p-3.5 bg-[#faf9f6] border border-[#e6e4df] rounded-xl space-y-3"><div class="flex items-start justify-between"><div><div class="flex items-center gap-1.5"><h3 class="text-[15px] font-bold text-[#1c1b1f]">Trần Hoàng Bách</h3><span class="px-2 py-0.5 bg-[#e9e8e5] text-[#3d3a37] rounded-full text-[10px] font-bold">VIP Bạc</span></div><span class="text-[12px] text-[#6b6762]">hoangbach.tran@gmail.com</span></div><button class="p-1 text-[#8c8882] hover:text-[#1c1b1f] rounded" title="Chỉnh sửa"><span class="material-symbols-outlined text-[18px]">edit</span></button></div><div class="grid grid-cols-2 gap-2 pt-1 text-[12px]"><div class="p-2.5 bg-white rounded-lg border border-[#eeece8]"><span class="text-[11px] text-[#8c8882] block">Số điện thoại:</span><span class="font-bold text-[#1c1b1f] text-[13px]">0918.423.889</span></div><div class="p-2.5 bg-white rounded-lg border border-[#eeece8]"><span class="text-[11px] text-[#8c8882] block">Nguồn kênh:</span><span class="font-bold text-[#1c1b1f] text-[13px] truncate block">Web Tour Châu Âu</span></div></div><div class="p-2.5 bg-white rounded-lg border border-[#eeece8] flex items-center justify-between text-[12px]"><div class="flex items-center gap-2"><span class="material-symbols-outlined text-[18px] text-[#6b6762]">support_agent</span><div><span class="text-[10px] text-[#8c8882] block">Tư vấn phụ trách:</span><span class="font-bold text-[#1c1b1f]">Nguyễn Mai Phương (BTT-SALE-104)</span></div></div></div><div class="p-2.5 bg-[#FFF5F5] rounded-lg border border-[#FECACA] flex items-center justify-between text-[12px]"><span class="text-[#991B1B] font-medium">Trạng thái hội thoại:</span><span class="font-bold text-[#DC2626]">Yêu cầu tư vấn viên</span></div><div class="space-y-1.5 pt-1"><div class="text-[11px] font-bold text-[#6b6762] uppercase tracking-wider">Phân loại &amp; Quan tâm</div><div class="flex flex-wrap gap-1.5 text-[11px]"><span class="px-2 py-0.5 rounded bg-[#DBEAFE] text-[#1E40AF] font-semibold">#ChauAu</span><span class="px-2 py-0.5 rounded bg-[#f4f3f0] text-[#3d3a37] font-medium">#VisaSchengen</span><span class="px-2 py-0.5 rounded bg-[#FEE2E2] text-[#991B1B] font-bold">#Tet2025</span><span class="px-2 py-0.5 rounded bg-[#f4f3f0] text-[#3d3a37]">#GiaDinh2Nguoi</span></div></div><div class="flex items-center gap-2 pt-2"><button class="flex-1 h-9 bg-[#D0021B] hover:bg-[#B30118] text-white text-[12px] font-bold rounded-lg flex items-center justify-center gap-1.5 transition-colors shadow-xs"><span class="material-symbols-outlined text-[16px]">call</span><span>Gọi ngay</span></button><button class="flex-1 h-9 bg-white border border-[#d6d3cc] hover:bg-[#f4f3f0] text-[#3d3a37] text-[12px] font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors"><span class="material-symbols-outlined text-[16px]">open_in_new</span><span>Mở CRM</span></button></div></div><div class="p-3 bg-white border border-[#e6e4df] rounded-xl shadow-xs space-y-2"><div class="flex items-center justify-between"><span class="text-[11px] font-bold text-[#6b6762] uppercase tracking-wider">Đơn tour đang chọn</span><span class="px-2 py-0.2 bg-[#DBEAFE] text-[#1E40AF] rounded text-[10px] font-bold">EUR-PARIS-2025-02</span></div><h5 class="text-[13px] font-bold text-[#1c1b1f] leading-snug">Tour Pháp - Thụy Sĩ - Ý 10N9Đ</h5><div class="flex items-center justify-between text-[13px] pt-1 border-t border-[#f0eee9]"><span class="text-[11px] text-[#6b6762]">Tổng cọc dự kiến:</span><span class="font-bold text-[#D0021B]">139.800.000 đ</span></div></div><div class="p-3 bg-[#FEF2F2] border-l-4 border-l-[#D0021B] rounded-r-xl border border-[#FCA5A5] space-y-1.5"><div class="flex items-center justify-between"><span class="text-[11px] font-bold text-[#991B1B] flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">notifications_active</span>Nhắc hẹn hôm nay</span><span class="px-1.5 py-0.2 bg-[#FEE2E2] text-[#DC2626] font-bold text-[10px] rounded">Còn 58 phút</span></div><p class="text-[12px] font-medium text-[#1c1b1f]">Gọi tư vấn hồ sơ visa &amp; chốt lịch nộp hộ chiếu</p><div class="text-[11px] text-[#6b6762]">Hôm nay 15:30 (18/12/2024)</div></div></aside>
+</div>
+</div>
+<!-- Client-side Interactive Script -->
+<script>
+    const sendBtn = document.getElementById('send-btn');
+    const chatInput = document.getElementById('chat-input');
+    const container = document.getElementById('chat-messages-container');
+
+    function sendMessage() {
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      const bubble = document.createElement('div');
+      bubble.className = 'flex items-start gap-2.5 max-w-[70%] self-end flex-row-reverse animate-in fade-in duration-200';
+      bubble.innerHTML = `
+        <div class="w-7 h-7 rounded-full overflow-hidden shrink-0 ring-1 ring-[#B30118]">
+          <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuCibBRRV-Hs8Mg1CdEdb9ay0aIbHiw8V3R-sHK7fgnxJhPLnph3bBOul0PuH4fePIzjP3skFxRjvaUqnY0THHipfZ4M4e0DcklpmPJp-etcH5NjlUWMvObwWuimMRvZA4bMUSZfjrA7j7jHsUVYxrBMXFMh7ZeeYnXe4gqQWw_jHDJxT_DOu2sOnYGXtCIefIReaqD-xiur1kvhFeofKOv4ipFIvy9UrPuuul1DBg8" alt="Phương" class="w-full h-full object-cover"/>
+        </div>
+        <div class="flex flex-col gap-1 items-end">
+          <div class="p-3 rounded-2xl rounded-tr-xs bg-[#FFF5F5] text-[#1c1b1f] shadow-xs text-[13px] leading-relaxed break-words border border-[#fecaca]">
+            <div class="text-[11px] font-bold text-[#B30118] mb-1">Nguyễn Mai Phương (Bạn)</div>
+            <p>${text.replace(/\\n/g, '<br>')}</p>
+          </div>
+          <div class="flex items-center gap-1 text-[11px] text-[#6b6762] pr-1">
+            <span class="material-symbols-outlined text-[13px]">done</span>
+            <span>Vừa xong</span>
+          </div>
+        </div>
+      `;
+      container.appendChild(bubble);
+      chatInput.value = '';
+      container.scrollTop = container.scrollHeight;
+    }
+
+    if (sendBtn && chatInput) {
+      sendBtn.addEventListener('click', sendMessage);
+      chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+    }
+  </script>
+</body></html>

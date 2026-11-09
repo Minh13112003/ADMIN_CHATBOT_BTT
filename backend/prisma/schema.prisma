@@ -204,6 +204,9 @@ model QuickTemplate {
   id          String   @id @default(uuid())
   title       String
   body        String
+  shortcut    String?  @unique
+  category    String?
+  useCount    Int      @default(0)
   createdById String?
   createdAt   DateTime @default(now())
 

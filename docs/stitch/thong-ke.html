@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+
+<html lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Thống kê - Báo cáo &amp; Hiệu suất kinh doanh (Admin) | BenThanh Tourist</title>
+<!-- Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary-container": "#d0021b",
+            "background": "#faf9f6",
+            "surface-container": "#efeeeb",
+            "secondary-fixed": "#d1e4fb",
+            "error-container": "#ffdad6",
+            "surface-tint": "#c00017",
+            "on-secondary-container": "#526478",
+            "error": "#ba1a1a",
+            "inverse-primary": "#ffb3ac",
+            "surface-container-high": "#e9e8e5",
+            "inverse-surface": "#2f312f",
+            "on-surface-variant": "#5d3f3c",
+            "surface-variant": "#e3e2e0",
+            "on-tertiary-fixed-variant": "#005236",
+            "on-background": "#1a1c1a",
+            "tertiary-fixed": "#93f6c4",
+            "primary": "#a30012",
+            "on-primary-fixed-variant": "#93000f",
+            "surface": "#faf9f6",
+            "outline": "#926e6b",
+            "on-tertiary-fixed": "#002113",
+            "surface-bright": "#faf9f6",
+            "inverse-on-surface": "#f2f1ee",
+            "surface-dim": "#dbdad7",
+            "secondary-container": "#cfe2f9",
+            "on-error-container": "#93000a",
+            "primary-fixed": "#ffdad6",
+            "on-tertiary-container": "#97fac8",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed-dim": "#77daaa",
+            "surface-container-lowest": "#ffffff",
+            "on-primary-container": "#ffdfdc",
+            "tertiary-container": "#007650",
+            "secondary": "#4e6073",
+            "on-primary": "#ffffff",
+            "on-error": "#ffffff",
+            "on-surface": "#1a1c1a",
+            "on-secondary-fixed-variant": "#36485b",
+            "on-secondary-fixed": "#091d2e",
+            "on-primary-fixed": "#410003",
+            "outline-variant": "#e7bdb8",
+            "surface-container-highest": "#e3e2e0",
+            "surface-container-low": "#f4f3f0",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed-dim": "#b5c8df",
+            "tertiary": "#005b3c",
+            "primary-fixed-dim": "#ffb3ac"
+          },
+          borderRadius: {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          spacing: {
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.25rem",
+            "space-md": "0.75rem",
+            "margin": "1.25rem",
+            "space-xl": "1.75rem",
+            "gutter": "1rem"
+          },
+          fontFamily: {
+            "body-sm": ["Inter"],
+            "headline-sm": ["Inter"],
+            "headline-md": ["Inter"],
+            "body-lg": ["Inter"],
+            "label-md": ["Inter"],
+            "headline-lg": ["Inter"],
+            "display-lg": ["Inter"],
+            "label-lg": ["Inter"],
+            "body-md": ["Inter"],
+            "label-sm": ["Inter"]
+          },
+          fontSize: {
+            "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+            "headline-sm": ["15px", { lineHeight: "20px", fontWeight: "600" }],
+            "headline-md": ["18px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "body-lg": ["15px", { lineHeight: "22px", fontWeight: "400" }],
+            "label-md": ["11px", { lineHeight: "14px", letterSpacing: "0.02em", fontWeight: "600" }],
+            "headline-lg": ["22px", { lineHeight: "28px", letterSpacing: "-0.015em", fontWeight: "600" }],
+            "display-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }],
+            "label-lg": ["13px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "600" }],
+            "body-md": ["13px", { lineHeight: "18px", fontWeight: "400" }],
+            "label-sm": ["10px", { lineHeight: "12px", letterSpacing: "0.03em", fontWeight: "500" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Tabular figures for operational data */
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+<body class="bg-[#FAF9F6] text-[#1A1D20] font-sans antialiased m-0 p-0 flex justify-center">
+<!-- Desktop Screen Container (Strict 1440px wide viewport) -->
+<div class="w-[1440px] max-w-[1440px] min-h-screen flex bg-[#FAF9F6] text-neutral-800 overflow-x-hidden relative">
+<!-- 1. LEFT SIDEBAR (88px fixed, Brand Red #B30118, Omnichannel Shell) -->
+<aside class="w-[88px] h-screen bg-[#B30118] text-white flex flex-col items-center py-5 justify-between select-none shrink-0 z-30 shadow-md sticky top-0">
+<!-- Top Brand Logo -->
+<div class="flex flex-col items-center gap-1.5 cursor-pointer group">
+<div class="w-[44px] h-[44px] rounded-xl bg-white shadow-sm flex items-center justify-center p-1.5 transition-transform duration-150 group-hover:scale-105">
+<!-- BenThanh 7-Petal Floral Flower SVG Mark -->
+<svg class="w-full h-full" fill="none" viewbox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(50,50)">
+<!-- 7 vibrant petals radiating -->
+<ellipse cx="0" cy="-28" fill="#E51937" opacity="0.95" rx="11" ry="20"></ellipse>
+<ellipse cx="0" cy="-28" fill="#F37023" opacity="0.95" rx="11" ry="20" transform="rotate(51.4)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#FFC20E" opacity="0.95" rx="11" ry="20" transform="rotate(102.8)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#10B981" opacity="0.95" rx="11" ry="20" transform="rotate(154.2)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#00AEEF" opacity="0.95" rx="11" ry="20" transform="rotate(205.6)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#2E3192" opacity="0.95" rx="11" ry="20" transform="rotate(257.0)"></ellipse>
+<ellipse cx="0" cy="-28" fill="#EC008C" opacity="0.95" rx="11" ry="20" transform="rotate(308.4)"></ellipse>
+<!-- Warm Golden Core -->
+<circle cx="0" cy="0" fill="#FFF100" r="13" stroke="#FFFFFF" stroke-width="2.5"></circle>
+<circle cx="0" cy="0" fill="#F7941D" r="8"></circle>
+</g>
+</svg>
+</div>
+<div class="text-center">
+<span class="block text-[11px] font-bold tracking-tight text-white leading-none">BenThanh</span>
+<span class="text-[9px] text-white/80 font-medium tracking-wide">Tourist</span>
+</div>
+</div>
+<!-- Navigation Menu Items (Order specified) -->
+<nav class="flex flex-col items-center gap-2 w-full px-2 mt-4">
+<!-- 1. Hội thoại -->
+<a class="relative flex flex-col items-center justify-center py-2 px-1 w-16 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined text-[23px]">chat</span>
+<span class="text-[12px] font-medium mt-1 leading-tight text-center">Hội thoại</span>
+<span class="absolute top-1 right-1.5 bg-[#FFCC00] text-[#93000f] text-[10px] font-bold px-1.5 py-0.2 rounded-full shadow-sm leading-none min-w-[17px] text-center">12</span>
+</a>
+<!-- 2. Khách hàng -->
+<a class="flex flex-col items-center justify-center py-2 px-1 w-16 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined text-[23px]">group</span>
+<span class="text-[12px] font-medium mt-1 leading-tight text-center">Khách hàng</span>
+</a>
+<!-- 3. Mẫu nhanh -->
+<a class="flex flex-col items-center justify-center py-2 px-1 w-16 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined text-[23px]">bolt</span>
+<span class="text-[12px] font-medium mt-1 leading-tight text-center">Mẫu nhanh</span>
+</a>
+<!-- 4. Thống kê (ACTIVE) -->
+<a aria-current="page" class="flex flex-col items-center justify-center py-2 px-1 w-16 bg-white text-[#B30118] rounded-xl shadow-md transition-transform scale-100 font-semibold" href="#">
+<span class="material-symbols-outlined fill text-[24px]">insights</span>
+<span class="text-[12px] font-bold mt-1 leading-tight text-center">Thống kê</span>
+</a>
+<!-- 5. Quản trị -->
+<a class="flex flex-col items-center justify-center py-2 px-1 w-16 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors group" href="#">
+<span class="material-symbols-outlined text-[23px]">admin_panel_settings</span>
+<span class="text-[12px] font-medium mt-1 leading-tight text-center">Quản trị</span>
+</a>
+</nav>
+<!-- Bottom System Items -->
+<div class="flex flex-col items-center gap-3 w-full px-2 border-t border-white/15 pt-3">
+<!-- Cài đặt -->
+<a class="flex flex-col items-center justify-center py-1.5 px-1 w-16 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[22px]">settings</span>
+<span class="text-[11px] font-medium mt-0.5 leading-tight">Cài đặt</span>
+</a>
+<!-- Status Dot: bttAI -->
+<div class="flex flex-col items-center bg-black/20 rounded-lg px-1.5 py-1.5 w-16 text-center">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+<span class="text-[10px] font-semibold text-white tracking-tight">bttAI</span>
+</div>
+<span class="text-[9px] text-white/85 font-mono">99.8% OK</span>
+</div>
+</div>
+</aside>
+<!-- RIGHT MAIN WORKSPACE WRAPPER -->
+<div class="flex-1 flex flex-col min-w-0 bg-[#FAF9F6]">
+<!-- 2. TOP BAR (~64px, bg-white, border-b) -->
+<header class="h-16 bg-white border-b border-neutral-200 px-8 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-xs">
+<!-- Left: Title & Real-time Indicator -->
+<div class="flex items-center gap-3">
+<h1 class="text-xl font-bold text-neutral-900 tracking-tight">Thống kê</h1>
+<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 shadow-2xs">
+<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Đang kết nối
+          </span>
+<span class="text-xs text-neutral-400 font-normal">|</span>
+<span class="text-xs text-neutral-500 font-medium">Báo cáo &amp; Thống kê Hiệu suất</span>
+</div>
+<!-- Right: Actions, Notification, Profile -->
+<div class="flex items-center gap-5">
+<!-- Secondary Sync Button from JSON Blueprint -->
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-neutral-700 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-lg border border-neutral-300 transition-colors" type="button">
+<span class="material-symbols-outlined text-[17px] text-neutral-600">sync</span>
+<span>Đồng bộ dữ liệu</span>
+</button>
+<!-- Notification Bell -->
+<div class="relative cursor-pointer hover:bg-neutral-100 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined text-[22px] text-neutral-600">notifications</span>
+<span class="absolute top-1 right-1 bg-[#D0021B] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-xs">3</span>
+</div>
+<div class="h-6 w-px bg-neutral-200"></div>
+<!-- Admin Profile Pill -->
+<div class="flex items-center gap-3 pl-1">
+<div class="w-9 h-9 rounded-full bg-neutral-200 border-2 border-white shadow-xs overflow-hidden flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="Close up professional portrait of a Vietnamese female travel operations director wearing elegant attire in a bright light modern corporate office with subtle crimson branding accents." src="https://lh3.googleusercontent.com/aida-public/AB6AXuClOWrkw_0aLjiE-H_RgTMpxc6jPEAlJ_chgz9e-BO8JOr3QvyWzTrwLmxr2jpqlp9fjVy_vJkuEW3ihh36mDU2xL2Knt4wonVsF9LpqmVUWeHAmbVJXDkPYrw9KnUA7Fs_cjvQsJir2eCnhLR6YxLMSJmuSrwLaXhRa24dnAM0bc7Fm0sZ0fg0rWXpQWh7n4F_Rr5uOcdjtCOAreiobe9Kwav0XkLCs2vQRQKYx8h0iFsgdOTWswfbJlCqOBX9n48m02Jqduswjp4"/>
+</div>
+<div class="flex flex-col text-left">
+<div class="flex items-center gap-2">
+<span class="text-xs font-bold text-neutral-900 leading-tight">Nguyễn Mai Phương (Admin)</span>
+<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-1.5 py-0.5 rounded leading-none">Đang trực ca</span>
+</div>
+<span class="text-[11px] text-neutral-500 font-mono leading-tight mt-0.5">BTT-ADMIN-01 • Tổng đài Tour</span>
+</div>
+</div>
+</div>
+</header>
+<!-- 3. MAIN CONTENT CANVAS (Max 1352px inside) -->
+<main class="flex-1 flex flex-col p-8 overflow-y-auto space-y-6 max-w-[1352px] w-full">
+<!-- Section Controls Row -->
+<div class="flex items-center justify-between flex-wrap gap-4 pb-1">
+<div>
+<h2 class="text-base font-bold text-neutral-900 leading-snug">Báo cáo hiệu suất kinh doanh &amp; hội thoại đa kênh</h2>
+<p class="text-xs text-neutral-500 font-medium mt-0.5 flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[15px] text-neutral-400">schedule</span>
+              Cập nhật thời gian thực: <span class="font-semibold text-neutral-700">14:35 (Hôm nay)</span>
+              • Chu kỳ đối soát BTT Omnichannel 2024
+            </p>
+</div>
+<div class="flex items-center gap-3">
+<!-- Period Filter Segmented Control -->
+<div class="inline-flex bg-neutral-200/80 p-0.5 rounded-lg text-xs font-semibold shadow-inner">
+<button class="px-3 py-1.5 rounded-md text-neutral-600 hover:text-neutral-900 transition-colors">Hôm nay</button>
+<button class="px-3 py-1.5 rounded-md text-neutral-600 hover:text-neutral-900 transition-colors">7 ngày</button>
+<button class="px-3 py-1.5 rounded-md bg-[#D0021B] text-white shadow-xs font-bold">Tháng này</button>
+<button class="px-3 py-1.5 rounded-md text-neutral-600 hover:text-neutral-900 transition-colors">Tất cả</button>
+</div>
+<!-- Chart Granularity Filter -->
+<div class="inline-flex bg-neutral-200/80 p-0.5 rounded-lg text-xs font-semibold shadow-inner">
+<button class="px-2.5 py-1.5 rounded-md bg-neutral-900 text-white shadow-xs">Ngày</button>
+<button class="px-2.5 py-1.5 rounded-md text-neutral-600 hover:text-neutral-900 transition-colors">Tuần</button>
+<button class="px-2.5 py-1.5 rounded-md text-neutral-600 hover:text-neutral-900 transition-colors">Tháng</button>
+<button class="px-2.5 py-1.5 rounded-md text-neutral-600 hover:text-neutral-900 transition-colors">Quý</button>
+</div>
+<!-- Export Excel Button -->
+<button class="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold text-neutral-700 hover:text-neutral-900 bg-white border border-neutral-300 rounded-lg shadow-xs hover:bg-neutral-50 transition-colors active:scale-98">
+<span class="material-symbols-outlined text-[17px] text-[#007650]">file_download</span>
+<span>Xuất báo cáo Excel</span>
+</button>
+</div>
+</div>
+<!-- KPI CARDS ROW (Grid of 5 Cards) -->
+<section class="grid grid-cols-5 gap-4">
+<!-- Card 1: Khách nhắn tin -->
+<div class="bg-white rounded-xl border border-neutral-200/80 p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Khách nhắn tin</span>
+<div class="w-8 h-8 rounded-lg bg-red-50 text-[#D0021B] flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">chat</span>
+</div>
+</div>
+<div class="my-2">
+<span class="text-2xl font-bold tracking-tight text-neutral-900 tabular-nums">1,428</span>
+<span class="text-xs font-medium text-neutral-500 ml-1">khách</span>
+</div>
+<div class="flex items-center gap-1.5 text-xs">
+<span class="inline-flex items-center text-emerald-700 bg-emerald-50 font-bold px-1.5 py-0.5 rounded text-[11px]">
+<span class="material-symbols-outlined text-[13px] mr-0.5">trending_up</span>+14%
+              </span>
+<span class="text-neutral-400 text-[11px]">vs kỳ trước</span>
+</div>
+</div>
+<!-- Card 2: Số điện thoại để lại -->
+<div class="bg-white rounded-xl border border-neutral-200/80 p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Số ĐT để lại</span>
+<div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">contact_phone</span>
+</div>
+</div>
+<div class="my-2">
+<span class="text-2xl font-bold tracking-tight text-neutral-900 tabular-nums">942</span>
+<span class="text-xs font-medium text-neutral-500 ml-1">SĐT</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-neutral-600 font-medium">Tỷ lệ: <strong class="text-neutral-900 font-bold">66.0%</strong></span>
+<span class="text-[11px] text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded font-semibold">Tiềm năng cao</span>
+</div>
+</div>
+<!-- Card 3: Yêu cầu gặp nhân viên -->
+<div class="bg-white rounded-xl border border-neutral-200/80 p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Yêu cầu gặp NV</span>
+<div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">support_agent</span>
+</div>
+</div>
+<div class="my-2">
+<span class="text-2xl font-bold tracking-tight text-amber-600 tabular-nums">315</span>
+<span class="text-xs font-medium text-neutral-500 ml-1">lượt</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-neutral-600 font-medium">22.1% hội thoại</span>
+<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded border border-amber-200">Cần phản hồi nhanh</span>
+</div>
+</div>
+<!-- Card 4: Đơn đã chốt -->
+<div class="bg-white rounded-xl border border-neutral-200/80 p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Đơn đã chốt</span>
+<div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">verified</span>
+</div>
+</div>
+<div class="my-2">
+<span class="text-2xl font-bold tracking-tight text-emerald-600 tabular-nums">42</span>
+<span class="text-xs font-medium text-neutral-500 ml-1">đơn tour</span>
+</div>
+<div class="flex items-center justify-between text-xs">
+<span class="text-neutral-600 font-medium">Tỷ lệ chốt: <strong class="text-emerald-700 font-bold">13.3%</strong></span>
+<span class="text-[11px] text-emerald-800 bg-emerald-100 font-bold px-1.5 py-0.5 rounded">+3 đơn hôm nay</span>
+</div>
+</div>
+<!-- Card 5: Doanh thu -->
+<div class="bg-white rounded-xl border border-neutral-200/80 p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between border-l-4 border-l-[#D0021B]">
+<div class="flex items-center justify-between">
+<span class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Doanh thu chốt</span>
+<div class="w-8 h-8 rounded-lg bg-red-100 text-[#D0021B] flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">payments</span>
+</div>
+</div>
+<div class="my-1.5">
+<span class="text-[21px] font-extrabold tracking-tight text-[#D0021B] tabular-nums block truncate">1.842.000.000 đ</span>
+</div>
+<div class="text-[10px] text-neutral-500 leading-tight">
+              Chưa gồm 3 đơn chờ xác nhận: <span class="font-bold text-neutral-700 font-mono">~419.400.000 đ</span>
+</div>
+</div>
+</section>
+<!-- ROW 1 OF CHARTS (2 Columns Side-by-Side) -->
+<section class="grid grid-cols-2 gap-6">
+<!-- Chart A: Doanh thu theo ngày (14 bars, 01/12 - 14/12) -->
+<div class="bg-white rounded-xl border border-neutral-200/80 p-5 shadow-sm flex flex-col justify-between relative">
+<div class="flex items-center justify-between mb-2">
+<div>
+<h3 class="text-base font-bold text-neutral-900 tracking-tight flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-sm bg-[#D0021B]"></span>
+                  Doanh thu theo ngày
+                </h3>
+<p class="text-xs text-neutral-500 font-medium">Đơn vị: Triệu VNĐ • Giai đoạn 01/12/2024 – 14/12/2024</p>
+</div>
+<span class="text-xs font-bold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-md">
+                Tổng 14 ngày: <span class="text-[#D0021B]">1.842 Tỷ VNĐ</span>
+</span>
+</div>
+<!-- SVG Bar Chart Canvas -->
+<div class="w-full h-64 mt-2 relative">
+<!-- Floating Active Tooltip for 12/12 -->
+<div class="absolute top-3 left-[72%] -translate-x-1/2 z-20 bg-neutral-900 text-white rounded-lg px-3 py-1.5 shadow-xl border border-neutral-700 text-center pointer-events-none transition-transform">
+<div class="text-[11px] font-bold text-[#FFB3AC] flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[13px]">calendar_today</span> 12/12/2024: 168.500.000 đ
+                </div>
+<div class="text-[10px] text-neutral-300 font-medium">4 đơn tour Châu Âu &amp; Nhật Bản</div>
+<div class="w-2 h-2 bg-neutral-900 rotate-45 mx-auto -mb-2 mt-1"></div>
+</div>
+<svg class="w-full h-full" fill="none" viewbox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+<!-- Horizontal Grid Lines and Y-Axis Labels (0, 50, 100, 150, 200 Triệu) -->
+<!-- 200M (y=25) -->
+<line stroke="#E5E7EB" stroke-dasharray="3 3" x1="38" x2="590" y1="25" y2="25"></line>
+<text fill="#9CA3AF" font-family="Inter" font-size="10" text-anchor="end" x="32" y="29">200 Tr</text>
+<!-- 150M (y=75) -->
+<line stroke="#E5E7EB" stroke-dasharray="3 3" x1="38" x2="590" y1="75" y2="75"></line>
+<text fill="#9CA3AF" font-family="Inter" font-size="10" text-anchor="end" x="32" y="79">150 Tr</text>
+<!-- 100M (y=125) -->
+<line stroke="#E5E7EB" stroke-dasharray="3 3" x1="38" x2="590" y1="125" y2="125"></line>
+<text fill="#9CA3AF" font-family="Inter" font-size="10" text-anchor="end" x="32" y="129">100 Tr</text>
+<!-- 50M (y=175) -->
+<line stroke="#E5E7EB" stroke-dasharray="3 3" x1="38" x2="590" y1="175" y2="175"></line>
+<text fill="#9CA3AF" font-family="Inter" font-size="10" text-anchor="end" x="32" y="179">50 Tr</text>
+<!-- Baseline 0M (y=210) -->
+<line stroke="#9CA3AF" stroke-width="1.2" x1="38" x2="590" y1="210" y2="210"></line>
+<text fill="#9CA3AF" font-family="Inter" font-size="10" text-anchor="end" x="32" y="213">0</text>
+<!-- 14 Bars: Dates 01/12 to 14/12 -->
+<!-- Bar 01: 85 Tr (h=85, y=125) -->
+<rect fill="#E65A68" height="85" opacity="0.85" rx="3" width="22" x="52" y="125"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="63" y="225">01/12</text>
+<!-- Bar 02: 110 Tr (h=110, y=100) -->
+<rect fill="#E65A68" height="110" opacity="0.85" rx="3" width="22" x="91" y="100"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="102" y="225">02/12</text>
+<!-- Bar 03: 65 Tr (h=65, y=145) -->
+<rect fill="#E65A68" height="65" opacity="0.85" rx="3" width="22" x="130" y="145"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="141" y="225">03/12</text>
+<!-- Bar 04: 135 Tr (h=135, y=75) -->
+<rect fill="#D0021B" height="135" opacity="0.9" rx="3" width="22" x="169" y="75"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="180" y="225">04/12</text>
+<!-- Bar 05: 90 Tr (h=90, y=120) -->
+<rect fill="#E65A68" height="90" opacity="0.85" rx="3" width="22" x="208" y="120"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="219" y="225">05/12</text>
+<!-- Bar 06: 145 Tr (h=145, y=65) -->
+<rect fill="#D0021B" height="145" opacity="0.9" rx="3" width="22" x="247" y="65"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="258" y="225">06/12</text>
+<!-- Bar 07: 160 Tr (h=160, y=50) -->
+<rect fill="#D0021B" height="160" opacity="0.9" rx="3" width="22" x="286" y="50"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="297" y="225">07/12</text>
+<!-- Bar 08: 95 Tr (h=95, y=115) -->
+<rect fill="#E65A68" height="95" opacity="0.85" rx="3" width="22" x="325" y="115"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="336" y="225">08/12</text>
+<!-- Bar 09: 120 Tr (h=120, y=90) -->
+<rect fill="#D0021B" height="120" opacity="0.9" rx="3" width="22" x="364" y="90"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="375" y="225">09/12</text>
+<!-- Bar 10: 155 Tr (h=155, y=55) -->
+<rect fill="#D0021B" height="155" opacity="0.95" rx="3" width="22" x="403" y="55"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="414" y="225">10/12</text>
+<!-- Bar 11: 140 Tr (h=140, y=70) -->
+<rect fill="#D0021B" height="140" opacity="0.95" rx="3" width="22" x="442" y="70"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="453" y="225">11/12</text>
+<!-- Bar 12 (Peak/Active Hover): 168.5 Tr (h=168.5, y=41.5) -->
+<rect fill="#B30118" height="168.5" rx="3" stroke="#FFDAD6" stroke-width="2" width="22" x="481" y="41.5"></rect>
+<text fill="#B30118" font-family="Inter" font-size="9" font-weight="700" text-anchor="middle" x="492" y="225">12/12</text>
+<!-- Bar 13: 130 Tr (h=130, y=80) -->
+<rect fill="#D0021B" height="130" opacity="0.9" rx="3" width="22" x="520" y="80"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="531" y="225">13/12</text>
+<!-- Bar 14: 105 Tr (h=105, y=105) -->
+<rect fill="#E65A68" height="105" opacity="0.85" rx="3" width="22" x="559" y="105"></rect>
+<text fill="#6B7280" font-family="Inter" font-size="9" text-anchor="middle" x="570" y="225">14/12</text>
+</svg>
+</div>
+<!-- Footer Meta for Chart A -->
+<div class="border-t border-neutral-100 pt-2.5 mt-2 flex items-center justify-between text-xs text-neutral-500">
+<span class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                Tỷ lệ tăng trưởng doanh thu: <strong>+18.4%</strong> so với nửa đầu tháng trước
+              </span>
+<a class="text-[#D0021B] font-bold hover:underline" href="#">Chi tiết 42 hợp đồng →</a>
+</div>
+</div>
+<!-- Chart B: Khách nhắn tin và yêu cầu gặp nhân viên -->
+<div class="bg-white rounded-xl border border-neutral-200/80 p-5 shadow-sm flex flex-col justify-between relative">
+<div class="flex items-center justify-between mb-2">
+<div>
+<h3 class="text-base font-bold text-neutral-900 tracking-tight">Khách nhắn tin &amp; Yêu cầu gặp nhân viên</h3>
+<p class="text-xs text-neutral-500 font-medium">Xu hướng tương tác và nhu cầu hỗ trợ trực tiếp</p>
+</div>
+<!-- Legend at top right -->
+<div class="flex items-center gap-4 text-xs font-medium">
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-full bg-[#1E3A8A]"></span>
+<span class="text-neutral-700 font-semibold">Khách nhắn tin</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-3 rounded-full bg-[#EA580C]"></span>
+<span class="text-neutral-700 font-semibold">Yêu cầu gặp NV</span>
+</div>
+</div>
+</div>
+<!-- SVG Line Chart Canvas -->
+<div class="w-full h-64 mt-2 relative">
+<svg class="w-full h-full" fill="none" viewbox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+<!-- Horizontal Axis & Guidelines -->
+<line stroke="#E5E7EB" stroke-dasharray="3 3" x1="35" x2="590" y1="30" y2="30"></line>
+<text fill="#9CA3AF" font-family="Inter" font-size="10" text-anchor="end" x="30" y="34">150</text>
+<line stroke="#E5E7EB" stroke-dasharray="3 3" x1="35" x2="590" y1="80" y2="80"></line>
+<text fill="#9CA3AF" font-family="Inter" font-size="10" text-anchor="end" x="30" y="84">100</text>
+<line stroke="#E5E7EB" stroke-dasharray="3 3" x1="35" x2="590" y1="140" y2="140"></line>
+<text fill="#9CA3AF" font-family="Inter" font-size="10" text-anchor="end" x="30" y="144">50</text>
+<line stroke="#9CA3AF" stroke-width="1.2" x1="35" x2="590" y1="210" y2="210"></line>
+<text fill="#9CA3AF" font-family="Inter" font-size="10" text-anchor="end" x="30" y="213">0</text>
+<!-- Subtle Vertical Grid Lines & Dates -->
+<!-- 14 Points horizontally: x coordinates from 55 to 575 (dx=40) -->
+<!-- x: 55, 95, 135, 175, 215, 255, 295, 335, 375, 415, 455, 495, 535, 575 -->
+<g stroke="#F3F4F6" stroke-width="1">
+<line x1="55" x2="55" y1="30" y2="210"></line>
+<line x1="95" x2="95" y1="30" y2="210"></line>
+<line x1="135" x2="135" y1="30" y2="210"></line>
+<line x1="175" x2="175" y1="30" y2="210"></line>
+<line x1="215" x2="215" y1="30" y2="210"></line>
+<line x1="255" x2="255" y1="30" y2="210"></line>
+<line x1="295" x2="295" y1="30" y2="210"></line>
+<line x1="335" x2="335" y1="30" y2="210"></line>
+<line x1="375" x2="375" y1="30" y2="210"></line>
+<line x1="415" x2="415" y1="30" y2="210"></line>
+<line x1="455" x2="455" y1="30" y2="210"></line>
+<line x1="495" x2="495" y1="30" y2="210"></line>
+<line x1="535" x2="535" y1="30" y2="210"></line>
+<line x1="575" x2="575" y1="30" y2="210"></line>
+</g>
+<!-- Dates at bottom -->
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="55" y="225">01/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="95" y="225">02/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="135" y="225">03/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="175" y="225">04/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="215" y="225">05/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="255" y="225">06/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="295" y="225">07/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="335" y="225">08/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="375" y="225">09/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="415" y="225">10/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="455" y="225">11/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="495" y="225">12/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="535" y="225">13/12</text>
+<text fill="#6B7280" font-size="9" text-anchor="middle" x="575" y="225">14/12</text>
+<!-- Series 1: Khách nhắn tin (Navy/Indigo line & dots) -->
+<!-- Values: 75, 82, 68, 95, 88, 110, 125, 85, 102, 130, 118, 142, 115, 96 -->
+<!-- Scaled Y (0->210, 150->30): y = 210 - (val/150)*180 -->
+<polyline fill="none" points="55,120 95,111 135,128 175,96 215,104 255,78 295,60 335,108 375,87 415,54 455,68 495,39 535,72 575,94" stroke="#1E3A8A" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"></polyline>
+<!-- Dots for Series 1 -->
+<circle cx="55" cy="120" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="95" cy="111" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="135" cy="128" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="175" cy="96" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="215" cy="104" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="255" cy="78" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="295" cy="60" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="335" cy="108" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="375" cy="87" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="415" cy="54" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="455" cy="68" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<!-- Peak 12/12 point -->
+<circle cx="495" cy="39" fill="#1E3A8A" r="5" stroke="#FFFFFF" stroke-width="2"></circle>
+<circle cx="535" cy="72" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<circle cx="575" cy="94" fill="#FFFFFF" r="3.5" stroke="#1E3A8A" stroke-width="2"></circle>
+<!-- Series 2: Yêu cầu gặp NV (Amber/Orange line & dots) -->
+<!-- Values: 18, 20, 14, 25, 22, 28, 35, 19, 24, 32, 29, 38, 26, 21 -->
+<polyline fill="none" points="55,188 95,186 135,193 175,180 215,183 255,176 295,168 335,187 375,181 415,171 455,175 495,164 535,178 575,184" stroke="#EA580C" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polyline>
+<!-- Dots for Series 2 -->
+<circle cx="55" cy="188" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="95" cy="186" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="135" cy="193" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="175" cy="180" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="215" cy="183" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="255" cy="176" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="295" cy="168" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="335" cy="187" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="375" cy="181" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="415" cy="171" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="455" cy="175" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<!-- Peak 12/12 Orange Dot -->
+<circle cx="495" cy="164" fill="#EA580C" r="4.5" stroke="#FFFFFF" stroke-width="2"></circle>
+<circle cx="535" cy="178" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<circle cx="575" cy="184" fill="#FFFFFF" r="3" stroke="#EA580C" stroke-width="2"></circle>
+<!-- Callout Badge for Peak Day (12/12) -->
+<g transform="translate(435, 12)">
+<rect fill="#1E293B" height="22" opacity="0.9" rx="4" width="120" x="0" y="0"></rect>
+<text fill="#FFFFFF" font-family="Inter" font-size="9.5" font-weight="600" text-anchor="middle" x="60" y="15">Đỉnh điểm: 142 tin / 38 NV</text>
+</g>
+</svg>
+</div>
+<!-- Footer Meta for Chart B -->
+<div class="border-t border-neutral-100 pt-2.5 mt-2 flex items-center justify-between text-xs text-neutral-500">
+<span>Đỉnh điểm: ngày <strong>12/12</strong> có tỷ lệ khách đòi gặp tư vấn viên đạt <strong>26.7%</strong></span>
+<span class="text-neutral-400">Tự động điều phối qua Zalo OA &amp; Livechat</span>
+</div>
+</div>
+</section>
+<!-- ROW 2 OF ANALYTICS (3 Distinct Cards Bento Layout) -->
+<section class="grid grid-cols-12 gap-6">
+<!-- Card 1: Chi phí theo nguồn (Donut Chart) - 4 cols -->
+<div class="col-span-4 bg-white rounded-xl border border-neutral-200/80 p-5 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-base font-bold text-neutral-900 tracking-tight">Chi phí theo nguồn</h3>
+<span class="text-xs text-neutral-500 font-mono">Tháng 12/2024</span>
+</div>
+<p class="text-xs text-neutral-500 font-medium">Chi phí API và hạ tầng tin nhắn đa kênh</p>
+</div>
+<!-- SVG Donut Chart with text in center -->
+<div class="flex items-center justify-center my-3 relative">
+<svg class="w-44 h-44" viewbox="0 0 160 160">
+<!-- Background track -->
+<circle cx="80" cy="80" fill="none" r="54" stroke="#F1F0EC" stroke-width="20"></circle>
+<!-- Chatbot AI Slice (100% of current cost - #D0021B) -->
+<!-- Circumference = 2 * PI * 54 = ~339.29 -->
+<circle cx="80" cy="80" fill="none" r="54" stroke="#D0021B" stroke-dasharray="339.29 339.29" stroke-dashoffset="0" stroke-linecap="round" stroke-width="20" transform="rotate(-90 80 80)"></circle>
+<!-- Center Text -->
+<text fill="#6B7280" font-family="Inter" font-size="11" font-weight="500" text-anchor="middle" x="80" y="74">Tổng chi phí</text>
+<text fill="#111827" font-family="Inter" font-size="14" font-weight="700" text-anchor="middle" x="80" y="93">1.240.000 đ</text>
+</svg>
+</div>
+<!-- Detailed Source Legend -->
+<div class="space-y-2.5 border-t border-neutral-100 pt-3">
+<!-- Item 1: Chatbot AI -->
+<div class="flex items-center justify-between bg-red-50/60 p-2 rounded-lg border border-red-100">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-[#D0021B] shrink-0"></span>
+<div>
+<div class="text-xs font-bold text-neutral-900 leading-tight">Chatbot AI (bttAI)</div>
+<div class="text-[10px] text-neutral-500">Token usage: 820k tokens</div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-xs font-bold text-[#D0021B] font-mono leading-tight">1.240.000 đ</div>
+<span class="text-[9px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded">100% chi phí • Đang kích hoạt</span>
+</div>
+</div>
+<!-- Item 2: Zalo OA -->
+<div class="flex items-center justify-between p-2 rounded-lg bg-neutral-50 border border-neutral-200/60">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-neutral-300 border border-neutral-400 shrink-0"></span>
+<div>
+<div class="text-xs font-semibold text-neutral-600 leading-tight">Zalo OA</div>
+<div class="text-[10px] text-neutral-400">Gói doanh nghiệp Enterprise</div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-xs font-semibold text-neutral-500 font-mono leading-tight">0 đ</div>
+<span class="text-[9px] font-semibold text-neutral-500 bg-neutral-200 px-1.5 py-0.2 rounded">Chưa kết nối (0 đ)</span>
+</div>
+</div>
+<!-- Item 3: Facebook -->
+<div class="flex items-center justify-between p-2 rounded-lg bg-neutral-50 border border-neutral-200/60">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-neutral-300 border border-neutral-400 shrink-0"></span>
+<div>
+<div class="text-xs font-semibold text-neutral-600 leading-tight">Facebook Messenger</div>
+<div class="text-[10px] text-neutral-400">Graph API Fanpage</div>
+</div>
+</div>
+<div class="text-right">
+<div class="text-xs font-semibold text-neutral-500 font-mono leading-tight">0 đ</div>
+<span class="text-[9px] font-semibold text-neutral-500 bg-neutral-200 px-1.5 py-0.2 rounded">Chưa kết nối (0 đ)</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Khách chi nhiều nhất (Top 10 High-ticket Travel Clients) - 4 cols -->
+<div class="col-span-4 bg-white rounded-xl border border-neutral-200/80 p-5 shadow-sm flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<div>
+<h3 class="text-base font-bold text-neutral-900 tracking-tight">Khách chi nhiều nhất</h3>
+<p class="text-xs text-neutral-500 font-medium">Top 10 khách hàng đặt tour VIP tháng 12</p>
+</div>
+<span class="material-symbols-outlined text-[20px] text-amber-500">stars</span>
+</div>
+<!-- Top 10 Table -->
+<div class="overflow-hidden border border-neutral-200 rounded-lg">
+<div class="max-h-[352px] overflow-y-auto">
+<table class="w-full text-left border-collapse text-xs">
+<thead class="bg-neutral-100 text-neutral-600 font-bold sticky top-0 z-10 border-b border-neutral-200">
+<tr>
+<th class="py-2 px-2 text-center w-8">#</th>
+<th class="py-2 px-2.5">Khách hàng</th>
+<th class="py-2 px-2 text-center">Kênh</th>
+<th class="py-2 px-1 text-center">Đơn</th>
+<th class="py-2 px-2.5 text-right">Tổng VND</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-neutral-100 font-medium text-neutral-800">
+<!-- 1 -->
+<tr class="hover:bg-red-50/50 transition-colors">
+<td class="py-1.5 px-2 text-center font-bold text-[#D0021B]">1</td>
+<td class="py-1.5 px-2.5 font-bold text-neutral-900 truncate max-w-[100px]">Trần Hoàng Bách</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-red-100 text-[#a30012] px-1.5 py-0.5 rounded font-mono font-bold">bttAI Web</span></td>
+<td class="py-1.5 px-1 text-center font-semibold">3</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">420.000.000</td>
+</tr>
+<!-- 2 -->
+<tr class="hover:bg-neutral-50 transition-colors">
+<td class="py-1.5 px-2 text-center font-bold text-amber-600">2</td>
+<td class="py-1.5 px-2.5 font-semibold truncate max-w-[100px]">Đặng Quốc Bảo</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-neutral-100 text-neutral-700 px-1 py-0.5 rounded font-mono">bttAI Web</span></td>
+<td class="py-1.5 px-1 text-center font-semibold">2</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">105.800.000</td>
+</tr>
+<!-- 3 -->
+<tr class="hover:bg-neutral-50 transition-colors">
+<td class="py-1.5 px-2 text-center font-bold text-amber-600">3</td>
+<td class="py-1.5 px-2.5 font-semibold truncate max-w-[100px]">Lê Thị Thu Hằng</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-blue-100 text-blue-800 px-1 py-0.5 rounded font-mono">bttAI App</span></td>
+<td class="py-1.5 px-1 text-center font-semibold">2</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">85.500.000</td>
+</tr>
+<!-- 4 -->
+<tr class="hover:bg-neutral-50 transition-colors">
+<td class="py-1.5 px-2 text-center text-neutral-500 font-bold">4</td>
+<td class="py-1.5 px-2.5 truncate max-w-[100px]">Hoàng Minh Châu</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-neutral-100 text-neutral-700 px-1 py-0.5 rounded font-mono">bttAI Web</span></td>
+<td class="py-1.5 px-1 text-center">1</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">69.900.000</td>
+</tr>
+<!-- 5 -->
+<tr class="hover:bg-neutral-50 transition-colors">
+<td class="py-1.5 px-2 text-center text-neutral-500 font-bold">5</td>
+<td class="py-1.5 px-2.5 truncate max-w-[100px]">Trịnh Công Minh</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-neutral-100 text-neutral-700 px-1 py-0.5 rounded font-mono">bttAI Web</span></td>
+<td class="py-1.5 px-1 text-center">1</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">58.000.000</td>
+</tr>
+<!-- 6 -->
+<tr class="hover:bg-neutral-50 transition-colors">
+<td class="py-1.5 px-2 text-center text-neutral-500 font-bold">6</td>
+<td class="py-1.5 px-2.5 truncate max-w-[100px]">Vũ Hoài Nam</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-blue-100 text-blue-800 px-1 py-0.5 rounded font-mono">bttAI App</span></td>
+<td class="py-1.5 px-1 text-center">2</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">52.600.000</td>
+</tr>
+<!-- 7 -->
+<tr class="hover:bg-neutral-50 transition-colors">
+<td class="py-1.5 px-2 text-center text-neutral-500 font-bold">7</td>
+<td class="py-1.5 px-2.5 truncate max-w-[100px]">Bùi Thị Ánh Tuyết</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-blue-100 text-blue-800 px-1 py-0.5 rounded font-mono">bttAI App</span></td>
+<td class="py-1.5 px-1 text-center">1</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">48.200.000</td>
+</tr>
+<!-- 8 -->
+<tr class="hover:bg-neutral-50 transition-colors">
+<td class="py-1.5 px-2 text-center text-neutral-500 font-bold">8</td>
+<td class="py-1.5 px-2.5 truncate max-w-[100px]">Nguyễn Gia Hưng</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-neutral-100 text-neutral-700 px-1 py-0.5 rounded font-mono">bttAI Web</span></td>
+<td class="py-1.5 px-1 text-center">1</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">45.000.000</td>
+</tr>
+<!-- 9 -->
+<tr class="hover:bg-neutral-50 transition-colors">
+<td class="py-1.5 px-2 text-center text-neutral-500 font-bold">9</td>
+<td class="py-1.5 px-2.5 truncate max-w-[100px]">Phạm Minh Tuấn</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-neutral-100 text-neutral-700 px-1 py-0.5 rounded font-mono">bttAI Web</span></td>
+<td class="py-1.5 px-1 text-center">1</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">38.500.000</td>
+</tr>
+<!-- 10 -->
+<tr class="hover:bg-neutral-50 transition-colors">
+<td class="py-1.5 px-2 text-center text-neutral-500 font-bold">10</td>
+<td class="py-1.5 px-2.5 truncate max-w-[100px]">Vũ Thanh Thảo</td>
+<td class="py-1.5 px-2 text-center"><span class="text-[10px] bg-neutral-100 text-neutral-700 px-1 py-0.5 rounded font-mono">bttAI Web</span></td>
+<td class="py-1.5 px-1 text-center">1</td>
+<td class="py-1.5 px-2.5 text-right font-mono font-bold text-neutral-900 tabular-nums">35.000.000</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="pt-2 text-right">
+<span class="text-[11px] text-neutral-500">Tổng doanh thu Top 10: <strong class="text-neutral-900 font-mono font-bold">908.500.000 đ</strong> (49.3%)</span>
+</div>
+</div>
+<!-- Card 3: Thời gian trả lời khách đòi gặp NV - 4 cols -->
+<div class="col-span-4 bg-white rounded-xl border border-neutral-200/80 p-5 shadow-sm flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-1">
+<h3 class="text-base font-bold text-neutral-900 tracking-tight">Thời gian trả lời khách đòi gặp NV</h3>
+<span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">Đạt chuẩn SLA</span>
+</div>
+<p class="text-xs text-neutral-500 font-medium">Tốc độ phản hồi tiếp quản cuộc gọi từ Bot</p>
+</div>
+<!-- Two KPI Metric Highlighters -->
+<div class="grid grid-cols-2 gap-3 my-3">
+<!-- Metric 1: Median -->
+<div class="bg-neutral-50 p-3 rounded-lg border border-neutral-200/70">
+<span class="text-[11px] font-semibold text-neutral-500 block">Thời gian trung vị</span>
+<div class="text-lg font-bold text-neutral-900 tracking-tight mt-0.5 font-mono">2 phút 10 giây</div>
+<div class="flex items-center gap-1 mt-1 text-[11px] text-emerald-700 font-bold">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                  Mục tiêu: &lt; 3 phút
+                </div>
+</div>
+<!-- Metric 2: Rate < 5 mins -->
+<div class="bg-neutral-50 p-3 rounded-lg border border-neutral-200/70">
+<span class="text-[11px] font-semibold text-neutral-500 block">Tỷ lệ trong 5 phút</span>
+<div class="text-lg font-bold text-emerald-600 tracking-tight mt-0.5 font-mono">87%</div>
+<div class="flex items-center gap-1 mt-1 text-[11px] text-neutral-500 font-semibold">
+<span class="material-symbols-outlined text-[14px] text-neutral-400">flag</span>
+                  Mục tiêu: &gt; 85%
+                </div>
+</div>
+</div>
+<!-- Per-Sale Performance Table -->
+<div>
+<span class="text-[11px] font-bold text-neutral-600 uppercase tracking-wider block mb-1.5">Hiệu suất tư vấn viên tiếp nhận</span>
+<div class="border border-neutral-200 rounded-lg overflow-hidden">
+<table class="w-full text-left border-collapse text-xs">
+<thead class="bg-neutral-100 text-neutral-600 font-semibold border-b border-neutral-200">
+<tr>
+<th class="py-1.5 px-2.5">Tư vấn viên</th>
+<th class="py-1.5 px-1.5 text-center">Tiếp nhận</th>
+<th class="py-1.5 px-1.5 text-center">Tốc độ TB</th>
+<th class="py-1.5 px-2 text-right">&lt; 5 phút</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-neutral-100 font-medium text-neutral-800">
+<!-- Row 1: Nguyễn Mai Phương -->
+<tr class="hover:bg-neutral-50">
+<td class="py-2 px-2.5">
+<div class="font-bold text-neutral-900 leading-tight">Nguyễn Mai Phương</div>
+<span class="text-[10px] text-neutral-400 font-mono">BTT-SALE-104</span>
+</td>
+<td class="py-2 px-1.5 text-center font-bold text-neutral-900">112 ca</td>
+<td class="py-2 px-1.5 text-center font-mono font-bold text-emerald-700">1m 45s</td>
+<td class="py-2 px-2 text-right">
+<span class="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-mono">94.2%</span>
+</td>
+</tr>
+<!-- Row 2: Trần Đình Khôi -->
+<tr class="hover:bg-neutral-50">
+<td class="py-2 px-2.5">
+<div class="font-semibold text-neutral-900 leading-tight">Trần Đình Khôi</div>
+<span class="text-[10px] text-neutral-400 font-mono">BTT-SALE-088</span>
+</td>
+<td class="py-2 px-1.5 text-center font-semibold text-neutral-900">98 ca</td>
+<td class="py-2 px-1.5 text-center font-mono text-neutral-700">2m 15s</td>
+<td class="py-2 px-2 text-right">
+<span class="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-mono">88.5%</span>
+</td>
+</tr>
+<!-- Row 3: Lê Văn Hùng -->
+<tr class="hover:bg-neutral-50">
+<td class="py-2 px-2.5">
+<div class="font-semibold text-neutral-900 leading-tight">Lê Văn Hùng</div>
+<span class="text-[10px] text-neutral-400 font-mono">BTT-SALE-115</span>
+</td>
+<td class="py-2 px-1.5 text-center font-semibold text-neutral-900">64 ca</td>
+<td class="py-2 px-1.5 text-center font-mono text-neutral-700">2m 30s</td>
+<td class="py-2 px-2 text-right">
+<span class="font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-mono">83.1%</span>
+</td>
+</tr>
+<!-- Row 4: Phạm Quỳnh Anh -->
+<tr class="hover:bg-neutral-50">
+<td class="py-2 px-2.5">
+<div class="font-semibold text-neutral-900 leading-tight">Phạm Quỳnh Anh</div>
+<span class="text-[10px] text-neutral-400 font-mono">BTT-SALE-120</span>
+</td>
+<td class="py-2 px-1.5 text-center font-semibold text-neutral-900">41 ca</td>
+<td class="py-2 px-1.5 text-center font-mono text-neutral-700">2m 05s</td>
+<td class="py-2 px-2 text-right">
+<span class="font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-mono">89.0%</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Footer Note -->
+<div class="pt-2 text-[11px] text-neutral-400 flex items-center justify-between">
+<span>* Đoạn chat quá 5 phút tự động đẩy Hotline 1900 6668</span>
+<a class="text-[#D0021B] font-semibold hover:underline" href="#">Chi tiết ca trực →</a>
+</div>
+</div>
+</section>
+</main>
+</div>
+</div>
+</body></html>
