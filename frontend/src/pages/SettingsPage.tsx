@@ -140,7 +140,7 @@ export default function SettingsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm font-medium">Bật tiếng chuông</span>
           <div className="flex items-center gap-3">
-            <button type="button" className="deals-action" onClick={() => playChime(true)}>Nghe thử</button>
+            <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => playChime(true)}>Nghe thử</button>
             <Switch label="Bật tiếng chuông" checked={notify.sound} onChange={(sound) => { const v = { sound }; setNotify(v); saveNotify(v); }} />
           </div>
         </div>
@@ -155,8 +155,8 @@ export default function SettingsPage() {
           <dd>{me?.email ?? "Đang tải..."}</dd>
         </dl>
         <div className="mt-4 flex flex-wrap gap-2">
-          <button className="deals-action" onClick={() => setChangePassword(true)}>Đổi mật khẩu</button>
-          <button className="deals-action" onClick={async () => { await post("/auth/logout"); window.location.href = "/login"; }}>Đăng xuất</button>
+          <button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setChangePassword(true)}>Đổi mật khẩu</button>
+          <button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post("/auth/logout"); window.location.href = "/login"; }}>Đăng xuất</button>
         </div>
       </section>
       <section id="settings-keys" className="rounded-2xl border border-line bg-surface p-5">
@@ -185,7 +185,7 @@ export default function SettingsPage() {
       >
         Khôi phục mặc định
       </button>
-      <section id="settings-account" className="rounded-2xl border border-line bg-surface p-5"><h2 className="mb-3 font-semibold">Tài khoản của tôi</h2>{!me ? <p className="text-sm text-muted">Đang tải...</p> : <><p className="font-medium">{me.fullName}</p><p className="text-sm text-muted">{me.email} · {me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</p>{me.role === 'SALE' && <div className="mt-4 flex items-center justify-between gap-3"><span className="text-sm">Đang trực, nhận khách tự động</span><Switch label="Đang trực" checked={me.onDuty} onChange={async (onDuty) => { await patch('/users/me/duty', { onDuty }); await mutateMe(); }} /></div>}<div className="mt-5 flex flex-wrap gap-2"><button className="deals-action" onClick={() => setChangePassword(true)}>Đổi mật khẩu</button><button className="deals-action" onClick={async () => { await post('/auth/logout'); window.location.href = '/login'; }}>Đăng xuất</button></div></>}</section>
+      <section id="settings-account" className="rounded-2xl border border-line bg-surface p-5"><h2 className="mb-3 font-semibold">Tài khoản của tôi</h2>{!me ? <p className="text-sm text-muted">Đang tải...</p> : <><p className="font-medium">{me.fullName}</p><p className="text-sm text-muted">{me.email} · {me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</p>{me.role === 'SALE' && <div className="mt-4 flex items-center justify-between gap-3"><span className="text-sm">Đang trực, nhận khách tự động</span><Switch label="Đang trực" checked={me.onDuty} onChange={async (onDuty) => { await patch('/users/me/duty', { onDuty }); await mutateMe(); }} /></div>}<div className="mt-5 flex flex-wrap gap-2"><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setChangePassword(true)}>Đổi mật khẩu</button><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post('/auth/logout'); window.location.href = '/login'; }}>Đăng xuất</button></div></>}</section>
         </div>
       </div>
       {changePassword && <ChangePasswordDialog onClose={() => setChangePassword(false)} />}

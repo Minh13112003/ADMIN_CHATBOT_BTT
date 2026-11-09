@@ -304,19 +304,6 @@ button:not(:disabled) {
 .workspace-header {
   min-height: 72px;
 }
-.icon-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  color: var(--color-body);
-}
-.icon-button:hover {
-  background: var(--color-fill);
-}
 .page-layout {
   display: flex;
   flex-direction: column;
@@ -604,11 +591,6 @@ textarea {
   line-height: 1.8;
   max-width: 400px;
 }
-@media (min-width: 768px) {
-  .icon-button.md\:hidden {
-    display: none;
-  }
-}
 @media (max-width: 1199px) {
   .workspace-sidebar {
     width: 248px;
@@ -681,8 +663,6 @@ textarea {
 .deals-column-body { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
 .deals-card, .reminder-card, .reminder-week { min-width: 0; background: var(--color-surface); border: 1px solid var(--color-line); border-radius: 12px; padding: 16px; }
 .deals-card strong, .deals-card p { overflow-wrap: anywhere; }
-.deals-action { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border: 1px solid var(--color-field); border-radius: 9px; padding: 0 12px; background: var(--color-surface); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
-.deals-primary { background: var(--color-brand-button); border-color: var(--color-brand-button); color: white; }
 .reminder-layout { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 20px; }
 .reminder-week { align-self: start; }
 .reminder-overview { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }

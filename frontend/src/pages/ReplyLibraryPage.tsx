@@ -121,7 +121,7 @@ function RuleLibrary() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-semibold">Quy tắc trả lời tự động</h2>
         <button
-          className="deals-action deals-primary"
+          className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white"
           onClick={() => open("new")}
         >
           + Thêm quy tắc
@@ -200,7 +200,7 @@ function RuleLibrary() {
             placeholder="Nhập câu khách có thể gửi"
           />
           <button
-            className="deals-action"
+            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
             disabled={!test.trim()}
             onClick={() => void testRule()}
           >
@@ -269,7 +269,7 @@ function RuleLibrary() {
               {editing !== "new" && (
                 <button
                   type="button"
-                  className="deals-action"
+                  className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
                   onClick={async () => {
                     if (!deleteConfirm) {
                       setDeleteConfirm(true);

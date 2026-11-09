@@ -448,7 +448,7 @@ function PanelFrame({ onClose, children }: { onClose: () => void; children: Reac
     <div className="flex h-full w-[360px] shrink-0 flex-col overflow-y-auto border-l border-line bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-base font-semibold">Thông tin khách hàng</h2>
-        <button type="button" onClick={onClose} aria-label="Đóng thông tin khách" className="icon-button">
+        <button type="button" onClick={onClose} aria-label="Đóng thông tin khách" className="inline-flex size-11 shrink-0 items-center justify-center rounded-[10px] text-body hover:bg-fill">
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 6 12 12M6 18 18 6" /></svg>
         </button>
       </div>

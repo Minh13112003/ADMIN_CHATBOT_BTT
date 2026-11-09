@@ -118,14 +118,14 @@ export default function RemindersPage() {
           <h1>Lịch hẹn nhắc</h1>
           <p>Những việc cần tiếp tục với khách hàng.</p>
         </div>
-        <button type="button" className="deals-action deals-primary" onClick={() => setNewOpen(true)}>+ Thêm lịch hẹn</button>
+        <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => setNewOpen(true)}>+ Thêm lịch hẹn</button>
       </header>
       <div className="reminder-overview"><div><span>Quá hạn cần xử lý</span><strong>{overdueCount}</strong></div><div><span>Lịch hẹn hôm nay</span><strong>{todayCount}</strong></div><div><span>Tổng lịch đang theo dõi</span><strong>{allItems.length}</strong></div></div>
       <div className="reminder-layout">
         <div className="min-w-0">
           <div className="mb-4 flex gap-2 overflow-x-auto pb-1 md:hidden">
             <button
-              className="deals-action"
+              className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
               aria-pressed={!day}
               onClick={() => setDay(null)}
             >
@@ -133,7 +133,7 @@ export default function RemindersPage() {
             </button>
             {week.map((d) => (
               <button
-                className="deals-action whitespace-nowrap"
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface whitespace-nowrap"
                 key={dayKey(d)}
                 aria-pressed={day === dayKey(d)}
                 onClick={() => setDay(dayKey(d))}
@@ -192,18 +192,18 @@ export default function RemindersPage() {
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Link
                           to={`/inbox?c=${c.id}`}
-                          className="deals-action deals-primary"
+                          className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white"
                         >
                           Mở hội thoại
                         </Link>
                         <button
                           disabled={busy === c.id}
-                          className="deals-action"
+                          className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
                           onClick={() => void update(c.id, null)}
                         >
                           Xong
                         </button>
-                        <button className="deals-action" onClick={() => setReschedule(c.id)}>Dời hẹn</button>
+                        <button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setReschedule(c.id)}>Dời hẹn</button>
                       </div>
                     </article>
                   ))}
@@ -247,8 +247,8 @@ export default function RemindersPage() {
           <div className="reminder-agenda"><h3>Lịch theo giờ hôm nay</h3>{allItems.filter((c) => dayKey(new Date(c.followUp!.at)) === today).sort((a,b) => new Date(a.followUp!.at).getTime() - new Date(b.followUp!.at).getTime()).map((c) => <Link key={c.id} to={`/inbox?c=${c.id}`}><time>{gioTin(c.followUp!.at)}</time><span>{c.customer.name}<small>{c.followUp?.note || "Mở hội thoại để xem chi tiết"}</small></span></Link>)}{todayCount === 0 && <p>Chưa có lịch hẹn hôm nay.</p>}</div>
         </aside>
       </div>
-      {reschedule && <Dialog title="Dời hẹn nhắc" variant="drawer" onClose={() => setReschedule(null)}><div className="flex flex-col gap-2">{[{ label: '+30 phút', at: new Date(Date.now() + 30 * 60000) }, { label: '+2 giờ', at: new Date(Date.now() + 2 * 3600_000) }, { label: 'Sáng mai 09:00', at: nextMorning() }].map((option) => <button key={option.label} className="deals-action" onClick={() => { void update(reschedule, option.at); setReschedule(null); }}>{option.label}</button>)}</div></Dialog>}
-      {newOpen && <Dialog title="Thêm lịch hẹn nhắc" variant="drawer" onClose={() => setNewOpen(false)}><div className="flex flex-col gap-4"><label className="text-sm font-medium">Khách hàng<select className="mt-2 w-full rounded-lg border border-field bg-surface p-3" value={newConversation} onChange={(e) => setNewConversation(e.target.value)}><option value="">Chọn khách hàng</option>{conversations?.items.map((c) => <option key={c.id} value={c.id}>{c.customer.name} · {c.customer.phone ?? CHANNEL[c.channel].label}</option>)}</select></label><label className="text-sm font-medium">Thời gian<input type="datetime-local" className="mt-2 w-full rounded-lg border border-field bg-surface p-3" value={newAt} onChange={(e) => setNewAt(e.target.value)} /></label><label className="text-sm font-medium">Nội dung cần nhắc<textarea maxLength={300} rows={4} className="mt-2 w-full rounded-lg border border-field bg-surface p-3" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Ví dụ: Gọi tư vấn lịch khởi hành" /></label><ErrorText>{actionError}</ErrorText><button type="button" disabled={!newConversation || !newAt || busy === "new"} className="deals-action deals-primary" onClick={() => void createReminder()}>Lưu lịch hẹn</button></div></Dialog>}
+      {reschedule && <Dialog title="Dời hẹn nhắc" variant="drawer" onClose={() => setReschedule(null)}><div className="flex flex-col gap-2">{[{ label: '+30 phút', at: new Date(Date.now() + 30 * 60000) }, { label: '+2 giờ', at: new Date(Date.now() + 2 * 3600_000) }, { label: 'Sáng mai 09:00', at: nextMorning() }].map((option) => <button key={option.label} className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => { void update(reschedule, option.at); setReschedule(null); }}>{option.label}</button>)}</div></Dialog>}
+      {newOpen && <Dialog title="Thêm lịch hẹn nhắc" variant="drawer" onClose={() => setNewOpen(false)}><div className="flex flex-col gap-4"><label className="text-sm font-medium">Khách hàng<select className="mt-2 w-full rounded-lg border border-field bg-surface p-3" value={newConversation} onChange={(e) => setNewConversation(e.target.value)}><option value="">Chọn khách hàng</option>{conversations?.items.map((c) => <option key={c.id} value={c.id}>{c.customer.name} · {c.customer.phone ?? CHANNEL[c.channel].label}</option>)}</select></label><label className="text-sm font-medium">Thời gian<input type="datetime-local" className="mt-2 w-full rounded-lg border border-field bg-surface p-3" value={newAt} onChange={(e) => setNewAt(e.target.value)} /></label><label className="text-sm font-medium">Nội dung cần nhắc<textarea maxLength={300} rows={4} className="mt-2 w-full rounded-lg border border-field bg-surface p-3" value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Ví dụ: Gọi tư vấn lịch khởi hành" /></label><ErrorText>{actionError}</ErrorText><button type="button" disabled={!newConversation || !newAt || busy === "new"} className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => void createReminder()}>Lưu lịch hẹn</button></div></Dialog>}
     </main>
   );
 }

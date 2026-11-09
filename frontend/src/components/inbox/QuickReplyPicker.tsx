@@ -204,7 +204,7 @@ export function QuickReplyPicker({
           ))}
         </div>
         <footer className="flex justify-end border-t border-line p-4">
-          <Link className="deals-action" to="/templates" onClick={onClose}>
+          <Link className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" to="/templates" onClick={onClose}>
             Quản lý mẫu câu
           </Link>
         </footer>
@@ -242,13 +242,13 @@ export function QuickReplyPicker({
             </div>
             <footer className="flex gap-2 border-t border-line p-4">
               <button
-                className="deals-action flex-1"
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface flex-1"
                 onClick={() => setPreview(null)}
               >
                 Đóng
               </button>
               <button
-                className="deals-action deals-primary flex-1"
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white flex-1"
                 onClick={() => dung(preview)}
               >
                 Dùng mẫu này

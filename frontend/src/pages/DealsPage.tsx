@@ -150,14 +150,14 @@ export default function DealsPage() {
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2 border-t border-line-soft pt-3">
                       <Link
-                        className="deals-action"
+                        className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
                         to={`/inbox?c=${d.conversationId}`}
                       >
                         Mở hội thoại
                       </Link>
                       {d.customer.phone && (
                         <a
-                          className="deals-action"
+                          className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
                           href={`tel:${d.customer.phone}`}
                         >
                           Gọi khách
@@ -166,13 +166,13 @@ export default function DealsPage() {
                       {g.tone === "pending" && (
                         <>
                           <button
-                            className="deals-action deals-primary"
+                            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white"
                             onClick={() => setSelected(d)}
                           >
                             Xác nhận đơn
                           </button>
                           <button
-                            className="deals-action"
+                            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
                             onClick={() => setCancel(d)}
                           >
                             Khách huỷ
@@ -222,12 +222,12 @@ export default function DealsPage() {
             </label>
             <ErrorText>{actionError}</ErrorText>
             <div className="mt-4 flex justify-end gap-3">
-              <button className="deals-action" onClick={() => setCancel(null)}>
+              <button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setCancel(null)}>
                 Không huỷ
               </button>
               <button
                 disabled={saving}
-                className="deals-action deals-primary"
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white"
                 onClick={() => void cancelDeal()}
               >
                 Huỷ đơn
