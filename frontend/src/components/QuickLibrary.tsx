@@ -136,7 +136,7 @@ export default function QuickLibrary() {
   const preview = prepareQuickReply(body, "anh Bách", "Mai Phương", { tourName: "Pháp - Thụy Sĩ - Ý 10N9Đ", tourCode: "EUR-PARIS-2025-02", amount: 69900000 });
 
   return (
-    <div className="grid min-h-[540px] grid-cols-[360px_minmax(0,1fr)] overflow-hidden rounded-[14px] border border-line bg-surface max-md:grid-cols-[minmax(0,1fr)]">
+    <div className="grid min-h-[540px] grid-cols-[360px_minmax(0,1fr)] overflow-hidden rounded-[14px] border border-line bg-surface shadow-sm max-md:grid-cols-[minmax(0,1fr)]">
       <section className={`min-w-0 border-r border-line max-md:border-r-0 ${mobileEditor ? "hidden md:block" : ""}`}>
         <div className="flex items-center justify-between gap-2 p-4">
           <h2 className="text-sm font-semibold">Danh sách mẫu câu</h2>
@@ -255,7 +255,7 @@ export default function QuickLibrary() {
               </div>
               <div className="flex gap-2">
                 <span className="grid size-8 shrink-0 place-items-center rounded-full bg-fill text-xs font-bold">TH</span>
-                <div className="max-w-[80%] rounded-2xl rounded-tl-sm border border-line bg-surface px-3 py-2 text-sm">Cho tôi xin báo giá tour Châu Âu nhé!</div>
+                <div className="max-w-[80%] rounded-2xl rounded-tl-sm border border-line bg-surface shadow-sm px-3 py-2 text-sm">Cho tôi xin báo giá tour Châu Âu nhé!</div>
               </div>
               <div className="mt-3 ml-auto max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-tr-sm border border-alert-line bg-brand-soft px-3 py-2 text-sm">
                 {preview || "Nội dung mẫu sẽ hiển thị ở đây."}

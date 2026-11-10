@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { CloseDealDialog } from "@/components/inbox/InfoPanel";
 import { ErrorText, Segmented } from "@/components/ui";
 import { fetcher, loiCua, post } from "@/lib/api";
+import { Icon } from "@/components/icons";
 import { CHANNEL, vnd } from "@/lib/labels";
 import type { Conversation, Deal } from "@/lib/types";
 
@@ -87,10 +88,10 @@ export default function DealsPage() {
         />
       </header>
       <div className="grid grid-cols-[minmax(220px,1fr)_minmax(150px,180px)_auto_auto] items-stretch gap-3 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1">
-        <label className="flex min-h-16 items-center rounded-xl border border-line bg-surface px-4 py-3 max-[1100px]:col-span-full max-[700px]:col-auto [&_input]:w-full [&_input]:min-w-0 [&_input]:border-0 [&_input]:bg-transparent [&_input]:text-sm [&_input]:outline-0"><span className="sr-only">Tìm đơn đặt tour</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm theo tên khách, số điện thoại, mã tour..." /></label>
-        <label className="flex min-w-0 rounded-xl border border-line bg-surface p-3 [&_select]:w-full [&_select]:min-w-0 [&_select]:border-0 [&_select]:bg-transparent [&_select]:text-[0.82rem] [&_select]:outline-0"><span className="sr-only">Lọc theo nguồn</span><select value={channel} onChange={(e) => setChannel(e.target.value as typeof channel)}><option value="ALL">Tất cả nguồn</option><option value="WEB">bttAI Web</option><option value="APP">bttAI App</option></select></label>
-        <div className="flex min-h-16 min-w-[180px] flex-col items-start justify-center gap-[3px] rounded-xl border border-line bg-surface px-4 py-3 [&_span]:text-xs [&_span]:text-muted [&_strong]:text-[1.05rem] [&_strong]:text-green-ink [&.pending_strong]:text-brand-text"><span>Doanh thu đã chốt</span><strong>{vnd((data ?? []).filter((d) => d.status === "CONFIRMED" && !d.voidedAt).reduce((sum, d) => sum + d.amount, 0))}</strong></div>
-        <div className="flex min-h-16 min-w-[180px] flex-col items-start justify-center gap-[3px] rounded-xl border border-line bg-surface px-4 py-3 [&_span]:text-xs [&_span]:text-muted [&_strong]:text-[1.05rem] [&_strong]:text-green-ink [&.pending_strong]:text-brand-text pending"><span>Chờ xác nhận</span><strong>{(data ?? []).filter((d) => d.status === "PENDING" && !d.voidedAt).length} đơn</strong></div>
+        <label className="flex min-h-16 items-center rounded-xl border border-line bg-surface shadow-sm px-4 py-3 max-[1100px]:col-span-full max-[700px]:col-auto [&_input]:w-full [&_input]:min-w-0 [&_input]:border-0 [&_input]:bg-transparent [&_input]:text-sm [&_input]:outline-0"><span className="sr-only">Tìm đơn đặt tour</span><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Tìm theo tên khách, số điện thoại, mã tour..." /></label>
+        <label className="flex min-w-0 rounded-xl border border-line bg-surface shadow-sm p-3 [&_select]:w-full [&_select]:min-w-0 [&_select]:border-0 [&_select]:bg-transparent [&_select]:text-[0.82rem] [&_select]:outline-0"><span className="sr-only">Lọc theo nguồn</span><select value={channel} onChange={(e) => setChannel(e.target.value as typeof channel)}><option value="ALL">Tất cả nguồn</option><option value="WEB">bttAI Web</option><option value="APP">bttAI App</option></select></label>
+        <div className="flex min-h-16 min-w-[180px] flex-col items-start justify-center gap-[3px] rounded-xl border border-line bg-green-soft/40 border-green-soft shadow-sm px-4 py-3 [&_span]:text-xs [&_span]:text-muted [&_strong]:text-[1.05rem] [&_strong]:text-green-ink [&.pending_strong]:text-brand-text"><span>Doanh thu đã chốt</span><strong>{vnd((data ?? []).filter((d) => d.status === "CONFIRMED" && !d.voidedAt).reduce((sum, d) => sum + d.amount, 0))}</strong></div>
+        <div className="flex min-h-16 min-w-[180px] flex-col items-start justify-center gap-[3px] rounded-xl border border-line bg-auto-soft border-amber-line shadow-sm px-4 py-3 [&_span]:text-xs [&_span]:text-muted [&_strong]:text-[1.05rem] [&_strong]:text-green-ink [&.pending_strong]:text-brand-text pending"><span>Chờ xác nhận</span><strong>{(data ?? []).filter((d) => d.status === "PENDING" && !d.voidedAt).length} đơn</strong></div>
       </div>
       {isLoading && !data && <p role="status">Đang tải đơn đặt tour...</p>}
       {error && (
@@ -109,14 +110,14 @@ export default function DealsPage() {
           {groups.map((g) => (
             <section key={g.title} className={`min-w-0 overflow-hidden rounded-[14px] border [&>h2]:flex [&>h2]:justify-between [&>h2]:border-b [&>h2]:border-line [&>h2]:p-4 [&>h2]:font-bold [&>h2_span]:rounded-full [&>h2_span]:bg-surface [&>h2_span]:px-2 ${{"pending":"border-amber-line bg-auto-soft [&>h2]:text-amber-ink","confirmed":"border-green-soft bg-[color-mix(in_srgb,var(--color-green-soft)_35%,var(--color-surface))] [&>h2]:text-green-ink","cancelled":"border-line bg-fill"}[g.tone]}`}>
               <h2>
-                {g.title} <span>{g.rows.length} đơn · {vnd(g.rows.reduce((t, r) => t + r.amount, 0))}</span>
+                <span className="flex items-center gap-2"><i className={`size-2.5 rounded-full not-italic ${g.tone === "pending" ? "bg-amber-ink" : g.tone === "confirmed" ? "bg-on" : "bg-off"}`} />{g.title}</span> <span>{g.rows.length} đơn · {vnd(g.rows.reduce((t, r) => t + r.amount, 0))}</span>
               </h2>
               <div className="flex flex-col gap-3 p-3">
                 {g.rows.length === 0 && (
                   <p className="grid min-h-[150px] place-items-center rounded-[10px] border border-dashed border-line bg-surface p-4 text-center text-sm text-muted">{query ? "Không có đơn khớp tìm kiếm." : "Chưa có đơn trong kỳ này."}</p>
                 )}
                 {g.rows.map((d) => (
-                  <article key={d.id} className="min-w-0 rounded-xl border border-line bg-surface p-4 [&_strong]:[overflow-wrap:anywhere] [&_p]:[overflow-wrap:anywhere]">
+                  <article key={d.id} className={`min-w-0 rounded-xl border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md ${g.tone === "pending" ? "border-amber-line" : g.tone === "confirmed" ? "border-green-soft" : "border-line"} [&_strong]:[overflow-wrap:anywhere] [&_p]:[overflow-wrap:anywhere]`}>
                     <div className="flex items-center justify-between gap-2">
                       <strong className="min-w-0 flex-1">{d.customer.name}</strong>
                       <span className="shrink-0 rounded bg-blue-soft px-2 py-0.5 text-[0.6875rem] font-bold text-blue-ink">
@@ -138,7 +139,7 @@ export default function DealsPage() {
                       {vnd(d.amount)}
                     </p>
                     <p className="mt-2 flex items-center justify-between gap-2 text-xs text-muted">
-                      <span className="rounded bg-fill px-2 py-0.5 font-semibold text-body">
+                      <span className={`rounded px-2 py-0.5 font-semibold ${d.source === "CHATBOT" ? "bg-purple-soft text-purple-ink" : "bg-amber-soft text-amber-ink"}`}>
                         {d.source === "CHATBOT" ? "Chatbot" : "Sale"}
                       </span>
                       <span className="flex items-center gap-1.5">
@@ -148,36 +149,24 @@ export default function DealsPage() {
                         {d.conversation.assignee?.fullName ?? "Chưa có"}
                       </span>
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2 border-t border-line-soft pt-3">
-                      <Link
-                        className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
-                        to={`/inbox?c=${d.conversationId}`}
-                      >
-                        Mở hội thoại
-                      </Link>
+                    <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line-soft pt-3">
                       {d.customer.phone && (
-                        <a
-                          className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
-                          href={`tel:${d.customer.phone}`}
-                        >
-                          Gọi khách
+                        <a className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-field bg-surface px-3 text-[0.8125rem] font-semibold shadow-sm hover:bg-fill" href={`tel:${d.customer.phone}`}>
+                          <Icon name="phone" size={15} /> Gọi khách
                         </a>
                       )}
                       {g.tone === "pending" && (
-                        <>
-                          <button
-                            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white"
-                            onClick={() => setSelected(d)}
-                          >
-                            Xác nhận đơn
-                          </button>
-                          <button
-                            className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface"
-                            onClick={() => setCancel(d)}
-                          >
-                            Khách huỷ
-                          </button>
-                        </>
+                        <button className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-brand-button bg-brand-button px-3 text-[0.8125rem] font-semibold text-white shadow-sm hover:bg-brand-dark" onClick={() => setSelected(d)}>
+                          <Icon name="checkCircle" size={15} /> Xác nhận đơn
+                        </button>
+                      )}
+                      <Link className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-field bg-surface px-3 text-[0.8125rem] font-semibold hover:bg-fill" to={`/inbox?c=${d.conversationId}`}>
+                        <Icon name="chat" size={15} /> Mở hội thoại
+                      </Link>
+                      {g.tone === "pending" && (
+                        <button className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-field bg-surface px-3 text-[0.8125rem] font-semibold text-muted hover:bg-fill" onClick={() => setCancel(d)}>
+                          <Icon name="x" size={15} /> Khách huỷ
+                        </button>
                       )}
                     </div>
                   </article>

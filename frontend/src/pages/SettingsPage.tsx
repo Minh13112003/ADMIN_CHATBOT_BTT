@@ -52,7 +52,7 @@ export default function SettingsPage() {
         </div>
       </header>
       <div className="grid grid-cols-[200px_minmax(0,1fr)] items-start gap-5 max-[1199px]:grid-cols-1">
-        <aside className="sticky top-[18px] flex flex-col gap-[5px] rounded-[14px] border border-line bg-surface p-[15px] max-[1199px]:hidden [&_p]:px-2.5 [&_p]:py-[7px] [&_p]:text-[0.7rem] [&_p]:font-bold [&_p]:tracking-[0.08em] [&_p]:text-muted [&_a]:flex [&_a]:min-h-[42px] [&_a]:items-center [&_a]:rounded-[9px] [&_a]:px-2.5 [&_a]:py-2 [&_a]:text-[0.8rem] [&_a:hover]:bg-brand-soft [&_a:hover]:text-brand-text [&_a:focus-visible]:bg-brand-soft [&_a:focus-visible]:text-brand-text [&_small]:mx-2.5 [&_small]:mb-1 [&_small]:mt-[18px] [&_small]:text-[0.73rem] [&_small]:leading-normal [&_small]:text-muted" aria-label="Mục cài đặt">
+        <aside className="sticky top-[18px] flex flex-col gap-[5px] rounded-[14px] border border-line bg-surface shadow-sm p-[15px] max-[1199px]:hidden [&_p]:px-2.5 [&_p]:py-[7px] [&_p]:text-[0.7rem] [&_p]:font-bold [&_p]:tracking-[0.08em] [&_p]:text-muted [&_a]:flex [&_a]:min-h-[42px] [&_a]:items-center [&_a]:rounded-[9px] [&_a]:px-2.5 [&_a]:py-2 [&_a]:text-[0.8rem] [&_a:hover]:bg-brand-soft [&_a:hover]:text-brand-text [&_a:focus-visible]:bg-brand-soft [&_a:focus-visible]:text-brand-text [&_small]:mx-2.5 [&_small]:mb-1 [&_small]:mt-[18px] [&_small]:text-[0.73rem] [&_small]:leading-normal [&_small]:text-muted" aria-label="Mục cài đặt">
           <p>MỤC CÀI ĐẶT</p>
           <a href="#settings-mode">Giao diện & hiển thị</a>
           <a href="#settings-accent">Chủ đề màu</a>
@@ -64,7 +64,7 @@ export default function SettingsPage() {
           <small>Thay đổi được lưu tự động trên trình duyệt này.</small>
         </aside>
         <div className="min-w-0 space-y-6">
-        <section className="[&>div+div]:border-t [&>div+div]:border-line-soft [&>div+div]:pt-6 space-y-6 rounded-2xl border border-line bg-surface p-4 sm:p-6" aria-label="Tùy chọn hiển thị">
+        <section className="[&>div+div]:border-t [&>div+div]:border-line-soft [&>div+div]:pt-6 space-y-6 rounded-2xl border border-line bg-surface shadow-sm p-4 sm:p-6" aria-label="Tùy chọn hiển thị">
           <div id="settings-mode" className="space-y-4">
             <div><h2 className="font-semibold">1. Chế độ hiển thị</h2><p className="text-sm text-muted">Chọn giao diện phù hợp với ánh sáng nơi làm việc.</p></div>
             <Segmented
@@ -134,7 +134,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-      <section id="settings-notify" className="rounded-2xl border border-line bg-surface p-5">
+      <section id="settings-notify" className="rounded-2xl border border-line bg-surface shadow-sm p-5">
         <h2 className="mb-1 font-semibold">Thông báo & Chuông</h2>
         <p className="mb-4 text-sm text-muted">Phát tiếng chuông khi có khách đòi gặp nhân viên, đồng nghiệp chuyển khách hoặc đến giờ hẹn nhắc. Lưu trên trình duyệt này.</p>
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -145,7 +145,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
-      <section id="settings-session" className="rounded-2xl border border-line bg-surface p-5">
+      <section id="settings-session" className="rounded-2xl border border-line bg-surface shadow-sm p-5">
         <h2 className="mb-1 font-semibold">Phiên đăng nhập & Bảo mật</h2>
         <p className="mb-3 text-sm text-muted">Phiên đăng nhập tự hết hạn sau 12 giờ. Hiện chưa xem được danh sách các thiết bị khác.</p>
         <dl className="grid grid-cols-[120px_minmax(0,1fr)] gap-y-2 text-sm">
@@ -159,7 +159,7 @@ export default function SettingsPage() {
           <button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post("/auth/logout"); window.location.href = "/login"; }}>Đăng xuất</button>
         </div>
       </section>
-      <section id="settings-keys" className="rounded-2xl border border-line bg-surface p-5">
+      <section id="settings-keys" className="rounded-2xl border border-line bg-surface shadow-sm p-5">
         <h2 className="mb-3 font-semibold">Phím tắt thao tác nhanh</h2>
         <ul className="grid gap-2 text-sm sm:grid-cols-2">
           {[
@@ -185,7 +185,7 @@ export default function SettingsPage() {
       >
         Khôi phục mặc định
       </button>
-      <section id="settings-account" className="rounded-2xl border border-line bg-surface p-5"><h2 className="mb-3 font-semibold">Tài khoản của tôi</h2>{!me ? <p className="text-sm text-muted">Đang tải...</p> : <><p className="font-medium">{me.fullName}</p><p className="text-sm text-muted">{me.email} · {me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</p>{me.role === 'SALE' && <div className="mt-4 flex items-center justify-between gap-3"><span className="text-sm">Đang trực, nhận khách tự động</span><Switch label="Đang trực" checked={me.onDuty} onChange={async (onDuty) => { await patch('/users/me/duty', { onDuty }); await mutateMe(); }} /></div>}<div className="mt-5 flex flex-wrap gap-2"><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setChangePassword(true)}>Đổi mật khẩu</button><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post('/auth/logout'); window.location.href = '/login'; }}>Đăng xuất</button></div></>}</section>
+      <section id="settings-account" className="rounded-2xl border border-line bg-surface shadow-sm p-5"><h2 className="mb-3 font-semibold">Tài khoản của tôi</h2>{!me ? <p className="text-sm text-muted">Đang tải...</p> : <><p className="font-medium">{me.fullName}</p><p className="text-sm text-muted">{me.email} · {me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</p>{me.role === 'SALE' && <div className="mt-4 flex items-center justify-between gap-3"><span className="text-sm">Đang trực, nhận khách tự động</span><Switch label="Đang trực" checked={me.onDuty} onChange={async (onDuty) => { await patch('/users/me/duty', { onDuty }); await mutateMe(); }} /></div>}<div className="mt-5 flex flex-wrap gap-2"><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setChangePassword(true)}>Đổi mật khẩu</button><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post('/auth/logout'); window.location.href = '/login'; }}>Đăng xuất</button></div></>}</section>
         </div>
       </div>
       {changePassword && <ChangePasswordDialog onClose={() => setChangePassword(false)} />}

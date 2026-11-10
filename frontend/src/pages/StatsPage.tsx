@@ -132,7 +132,7 @@ export default function StatsPage() {
             </p>
           </Card>
 
-          <div className="flex flex-col gap-2.5 rounded-[14px] border border-line bg-surface p-3.5">
+          <div className="flex flex-col gap-2.5 rounded-[14px] border border-line bg-surface shadow-sm p-3.5">
             <div className="flex flex-wrap items-baseline gap-2">
               <h3 className="min-w-52 flex-1 text-[0.9375rem] font-semibold">Chi phí Gemini của bttAI</h3>
               <span className="text-xs text-muted">
@@ -158,7 +158,7 @@ export default function StatsPage() {
 
 function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
   return (
-    <div className="min-h-[152px] rounded-xl border border-line bg-surface p-[19px] max-md:p-3.5 last:border-l-4 last:border-l-brand [&>div:nth-child(2)]:mb-2 [&>div:nth-child(2)]:mt-3.5 [&>div:nth-child(2)]:text-[1.8rem] [&>div:nth-child(2)]:tracking-[-0.04em] max-md:[&>div:nth-child(2)]:text-[1.45rem]">
+    <div className="min-h-[152px] rounded-xl border border-line bg-surface shadow-sm p-[19px] max-md:p-3.5 last:border-l-4 last:border-l-brand [&>div:nth-child(2)]:mb-2 [&>div:nth-child(2)]:mt-3.5 [&>div:nth-child(2)]:text-[1.8rem] [&>div:nth-child(2)]:tracking-[-0.04em] max-md:[&>div:nth-child(2)]:text-[1.45rem]">
       <div className="text-[0.8125rem] text-body">{label}</div>
       <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
       <div className="mt-0.5 text-xs text-muted">{sub}</div>
@@ -178,7 +178,7 @@ function Mini({ label, value, sub }: { label: string; value: string; sub: string
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-[14px] border border-line bg-surface p-3.5">
+    <div className="overflow-x-auto rounded-[14px] border border-line bg-surface shadow-sm p-3.5">
       <h3 className="mb-3 text-[0.9375rem] font-semibold">{title}</h3>
       <div className="flex flex-col gap-2.5">{children}</div>
     </div>

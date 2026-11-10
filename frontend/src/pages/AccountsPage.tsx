@@ -120,7 +120,7 @@ export default function AccountsPage() {
           { label: 'Đang hoạt động', value: accounts?.filter((a) => a.isActive).length },
           { label: 'Đã khoá', value: accounts?.filter((a) => !a.isActive).length },
         ].map((item) => (
-          <div className="rounded-2xl border border-line bg-surface p-5 max-md:p-3 [&_span]:block [&_span]:text-[0.8rem] [&_span]:text-muted max-md:[&_span]:text-[0.7rem] [&_strong]:mt-2.5 [&_strong]:block [&_strong]:text-[1.8rem] [&_strong]:font-semibold [&_strong]:tabular-nums max-md:[&_strong]:text-[1.4rem]" key={item.label}>
+          <div className="rounded-2xl border border-line bg-surface shadow-sm p-5 max-md:p-3 [&_span]:block [&_span]:text-[0.8rem] [&_span]:text-muted max-md:[&_span]:text-[0.7rem] [&_strong]:mt-2.5 [&_strong]:block [&_strong]:text-[1.8rem] [&_strong]:font-semibold [&_strong]:tabular-nums max-md:[&_strong]:text-[1.4rem]" key={item.label}>
             <span>{item.label}</span>
             <strong>{item.value ?? '—'}</strong>
           </div>
@@ -179,7 +179,7 @@ export default function AccountsPage() {
         </Dialog>
       )}
 
-      <section className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface">
+      <section className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
         <div className="flex flex-wrap items-center gap-3 border-b border-line p-4">
           <div className="min-w-48 flex-1">
             <label className="sr-only" htmlFor="account-search">

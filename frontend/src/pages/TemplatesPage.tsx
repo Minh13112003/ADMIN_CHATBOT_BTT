@@ -61,9 +61,9 @@ function QuickTemplates() {
   return (
     <>
       <p className="text-sm text-body">Nhân viên bấm để chèn vào khung nhắn, sửa rồi mới gửi.</p>
-      <details className="overflow-hidden rounded-2xl border border-line bg-surface [&>summary]:px-5 [&>summary]:py-4 [&>summary]:text-sm [&>summary]:font-semibold [&>summary]:text-brand-text [&>form]:rounded-none [&>form]:border-x-0 [&>form]:border-b-0 [&>form]:border-t [&>form]:border-line [&>form]:p-5">
+      <details className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm [&>summary]:px-5 [&>summary]:py-4 [&>summary]:text-sm [&>summary]:font-semibold [&>summary]:text-brand-text [&>form]:rounded-none [&>form]:border-x-0 [&>form]:border-b-0 [&>form]:border-t [&>form]:border-line [&>form]:p-5">
         <summary>+ Thêm mới</summary>
-        <form onSubmit={them} className="flex flex-wrap gap-2 rounded-[14px] border border-line bg-surface p-3">
+        <form onSubmit={them} className="flex flex-wrap gap-2 rounded-[14px] border border-line bg-surface shadow-sm p-3">
           <input
             aria-label="Tên mẫu"
             placeholder="Tên mẫu"
@@ -89,7 +89,7 @@ function QuickTemplates() {
       </details>
       <ErrorText>{loi}</ErrorText>
       {data?.map((q) => (
-        <div key={q.id} className="flex items-start gap-3 rounded-[14px] border border-line bg-surface px-3.5 py-3">
+        <div key={q.id} className="flex items-start gap-3 rounded-[14px] border border-line bg-surface shadow-sm px-3.5 py-3">
           <div className="min-w-0 flex-1">
             <div className="text-[0.9375rem] font-semibold">{q.title}</div>
             <div className="mt-1 text-sm leading-[1.45] text-body">{q.body}</div>
@@ -151,9 +151,9 @@ function AutoReplies() {
       <p className="text-sm text-body">
         Hệ thống tự gửi khi khớp điều kiện. Thứ tự ưu tiên: khách đòi gặp nhân viên, quy tắc tự động, rồi mới đến bot. Quy tắc tự dừng khi nhân viên đang nhắn.
       </p>
-      <details className="overflow-hidden rounded-2xl border border-line bg-surface [&>summary]:px-5 [&>summary]:py-4 [&>summary]:text-sm [&>summary]:font-semibold [&>summary]:text-brand-text [&>form]:rounded-none [&>form]:border-x-0 [&>form]:border-b-0 [&>form]:border-t [&>form]:border-line [&>form]:p-5">
+      <details className="overflow-hidden rounded-2xl border border-line bg-surface shadow-sm [&>summary]:px-5 [&>summary]:py-4 [&>summary]:text-sm [&>summary]:font-semibold [&>summary]:text-brand-text [&>form]:rounded-none [&>form]:border-x-0 [&>form]:border-b-0 [&>form]:border-t [&>form]:border-line [&>form]:p-5">
         <summary>+ Thêm mới</summary>
-        <form onSubmit={them} className="flex flex-col gap-2 rounded-[14px] border border-line bg-surface p-3">
+        <form onSubmit={them} className="flex flex-col gap-2 rounded-[14px] border border-line bg-surface shadow-sm p-3">
           <div className="text-[0.9375rem] font-semibold">Thêm quy tắc</div>
           <div role="group" aria-label="Điều kiện kích hoạt" className="flex flex-wrap gap-1.5">
             {(Object.keys(RULE_TYPE) as RuleType[]).map((t) => (
@@ -207,7 +207,7 @@ function AutoReplies() {
 
       <ErrorText>{loi}</ErrorText>
       {data?.map((r) => (
-        <div key={r.id} className="flex items-start gap-3 rounded-[14px] border border-line bg-surface px-3.5 py-3">
+        <div key={r.id} className="flex items-start gap-3 rounded-[14px] border border-line bg-surface shadow-sm px-3.5 py-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[0.9375rem] font-semibold">{r.name}</span>
@@ -278,7 +278,7 @@ function RuleTester() {
   }, [text]);
 
   return (
-    <div className="flex flex-col gap-2 rounded-[14px] border border-line bg-surface p-3">
+    <div className="flex flex-col gap-2 rounded-[14px] border border-line bg-surface shadow-sm p-3">
       <label htmlFor="thu-quy-tac" className="text-[0.9375rem] font-semibold">
         Thử một câu của khách
       </label>

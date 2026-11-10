@@ -127,7 +127,7 @@ function RuleLibrary() {
           + Thêm quy tắc
         </button>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-line bg-surface">
+      <div className="overflow-x-auto rounded-xl border border-line bg-surface shadow-sm">
         <table className="w-full min-w-[650px] text-sm">
           <thead>
             <tr className="bg-fill text-left">
@@ -190,7 +190,7 @@ function RuleLibrary() {
           <p className="p-4 text-muted">Chưa có quy tắc nào.</p>
         )}
       </div>
-      <div className="rounded-xl border border-line bg-surface p-4">
+      <div className="rounded-xl border border-line bg-surface shadow-sm p-4">
         <h3 className="font-semibold">Thử một câu của khách</h3>
         <div className="mt-3 flex flex-wrap gap-2">
           <input

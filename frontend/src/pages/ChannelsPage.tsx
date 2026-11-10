@@ -33,9 +33,6 @@ export default function ChannelsPage() {
     "/stats/channels",
     fetcher,
   );
-  const health = useSWR<{ ok: boolean }>("/health", fetcher, {
-    refreshInterval: 30000,
-  });
   const { data: costs } = useSWR<CostSource[]>("/stats/cost-by-source?period=month", fetcher);
   return (
     <main className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 px-8 py-6 max-[1199px]:px-6 max-md:gap-5 max-md:px-4 max-md:py-5 [&_table_thead]:bg-fill [&_table_thead]:text-xs [&_table_th]:whitespace-nowrap [&_table_td]:py-[18px]">
@@ -46,17 +43,6 @@ export default function ChannelsPage() {
           <p>Trạng thái và hoạt động của các kênh tư vấn.</p>
         </div>
       </header>
-      <p
-        role="status"
-        className={`self-start rounded-full px-3 py-1 text-sm font-medium ${health.data?.ok ? "bg-green-soft text-green-ink" : "bg-fill text-muted"}`}
-      >
-        Backend:{" "}
-        {health.data?.ok
-          ? "Hoạt động"
-          : health.error
-            ? "Mất kết nối"
-            : "Đang kiểm tra"}
-      </p>
       {!data && !error && <p role="status">Đang tải trạng thái kênh...</p>}
       {error && (
         <p role="alert" className="text-brand-text">
@@ -121,7 +107,7 @@ export default function ChannelsPage() {
           </section>
         ))}
       </div>
-      {data && <div className="grid grid-cols-2 gap-4 max-[800px]:grid-cols-1 [&_section]:min-w-0 [&_section]:rounded-[14px] [&_section]:border [&_section]:border-line [&_section]:bg-surface [&_section]:p-5 [&_h2]:text-base [&_h2]:font-bold [&_p]:mb-4 [&_p]:mt-[5px] [&_p]:text-[0.78rem] [&_p]:leading-normal [&_p]:text-muted [&_section>div]:flex [&_section>div]:justify-between [&_section>div]:gap-4 [&_section>div]:border-t [&_section>div]:border-line-soft [&_section>div]:py-3 [&_section>div]:text-[0.8rem] [&_section>div_span]:max-w-[65%] [&_section>div_span]:text-right [&_section>div_span]:text-muted">
+      {data && <div className="grid grid-cols-2 gap-4 max-[800px]:grid-cols-1 [&_section]:min-w-0 [&_section]:rounded-[14px] [&_section]:border [&_section]:border-line [&_section]:bg-surface [&_section]:shadow-sm [&_section]:p-5 [&_h2]:text-base [&_h2]:font-bold [&_p]:mb-4 [&_p]:mt-[5px] [&_p]:text-[0.78rem] [&_p]:leading-normal [&_p]:text-muted [&_section>div]:flex [&_section>div]:justify-between [&_section>div]:gap-4 [&_section>div]:border-t [&_section>div]:border-line-soft [&_section>div]:py-3 [&_section>div]:text-[0.8rem] [&_section>div_span]:max-w-[65%] [&_section>div_span]:text-right [&_section>div_span]:text-muted">
         <section><h2>Khung thời gian phản hồi</h2><p>Quy định của kênh sẽ áp dụng sau khi kết nối tài khoản tương ứng.</p><div><strong>Zalo OA</strong><span>Tư vấn miễn phí trong 48 giờ kể từ lần khách tương tác.</span></div><div><strong>Facebook Messenger</strong><span>Trả lời trong cửa sổ 24 giờ theo chính sách của Meta.</span></div></section>
         <section><h2>Chi phí theo nguồn trong tháng</h2><p>Số liệu ước tính từ các kênh đã được hệ thống ghi nhận.</p>{costs ? costs.map((item) => <div key={item.source}><strong>{item.source === 'AI' ? 'AI bttAI' : item.source === 'ZALO' ? 'Zalo OA' : 'Facebook'}</strong><span>{item.connected ? vnd(item.costVnd) : 'Chưa kết nối'}</span></div>) : <p>Đang tải chi phí...</p>}</section>
       </div>}

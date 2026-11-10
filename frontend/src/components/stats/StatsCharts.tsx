@@ -19,13 +19,13 @@ export function StatsCharts({ period }: { period: 'today' | 'week' | 'month' | '
   return <div className="grid min-w-0 gap-3.5">
     <div className="flex flex-wrap items-center gap-3"><div className="flex-1"><h3 className="font-semibold">Diễn biến theo thời gian</h3><p className="text-xs text-muted">Các mốc gần nhất; khoảng này có thể khác kỳ của thẻ tổng.</p></div><Segmented label="Mốc biểu đồ" value={granularity} onChange={setGranularity} items={[{ key: 'day', label: 'Ngày' }, { key: 'week', label: 'Tuần' }, { key: 'month', label: 'Tháng' }, { key: 'quarter', label: 'Quý' }]} /></div>
     {series.error ? <p role="alert" className="text-sm text-brand-text">Không tải được biểu đồ theo thời gian.</p> : !series.data ? <p className="text-sm text-muted">Đang tải biểu đồ...</p> : <div className="grid grid-cols-1 gap-3.5 min-[1350px]:grid-cols-2">
-      <section className="min-w-0 rounded-2xl border border-line bg-surface p-3.5" aria-label="Biểu đồ doanh thu và số đơn">
+      <section className="min-w-0 rounded-2xl border border-line bg-surface shadow-sm p-3.5" aria-label="Biểu đồ doanh thu và số đơn">
         <div className="mb-3 flex flex-wrap items-center gap-2"><h4 className="flex-1 font-semibold">{metric === 'revenue' ? 'Doanh thu theo mốc' : 'Số đơn đã chốt theo mốc'}</h4><Segmented label="Số liệu biểu đồ cột" value={metric} onChange={setMetric} items={[{ key: 'revenue', label: 'Doanh thu' }, { key: 'deals', label: 'Số đơn' }]} /></div>
         <p className="mb-2 text-xs text-muted">{metric === 'revenue' ? 'Đơn vị: triệu đồng' : 'Đơn vị: đơn'}. Chỉ gồm đơn đã chốt, chưa bị huỷ.</p>
         {series.data.every((point) => point[metric] === 0) ? <p className="py-8 text-center text-sm text-muted">Chưa có dữ liệu trong kỳ này.</p> : <BarChart key={`${granularity}:${metric}`} data={series.data} metric={metric} />}
         <SeriesTable data={series.data} columns={[{ key: metric, label: metric === 'revenue' ? 'Doanh thu' : 'Số đơn' }]} />
       </section>
-      <section className="min-w-0 rounded-2xl border border-line bg-surface p-3.5" aria-label="Biểu đồ khách nhắn tin và yêu cầu gặp nhân viên">
+      <section className="min-w-0 rounded-2xl border border-line bg-surface shadow-sm p-3.5" aria-label="Biểu đồ khách nhắn tin và yêu cầu gặp nhân viên">
         <h4 className="font-semibold">Khách nhắn tin và yêu cầu gặp nhân viên</h4>
         <p className="mb-2 text-xs text-muted">Đơn vị: khách và yêu cầu. Mỗi điểm ứng với một mốc thời gian.</p>
         <div className="mb-2 flex flex-wrap gap-4 text-xs"><Legend color="var(--color-brand-button)" label="Khách nhắn tin" /><Legend color="var(--color-series-contact)" label="Yêu cầu gặp nhân viên" /></div>
@@ -33,7 +33,7 @@ export function StatsCharts({ period }: { period: 'today' | 'week' | 'month' | '
         <SeriesTable data={series.data} columns={[{ key: 'customers', label: 'Khách nhắn tin' }, { key: 'contacts', label: 'Yêu cầu gặp nhân viên' }]} />
       </section>
     </div>}
-    <section className="min-w-0 rounded-2xl border border-line bg-surface p-3.5" aria-label="Chi phí theo nguồn">
+    <section className="min-w-0 rounded-2xl border border-line bg-surface shadow-sm p-3.5" aria-label="Chi phí theo nguồn">
       <h4 className="font-semibold">Tỷ lệ chi phí theo nguồn</h4><p className="mt-1 text-xs text-muted">Theo kỳ thống kê đang chọn. Chi phí AI là ước tính từ token đã gắn với hội thoại.</p>
       {cost.error ? <p role="alert" className="mt-3 text-sm text-brand-text">Không tải được chi phí theo nguồn.</p> : !cost.data ? <p className="mt-3 text-sm text-muted">Đang tải chi phí...</p> : <CostDonut data={cost.data} />}
     </section>

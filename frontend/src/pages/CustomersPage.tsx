@@ -41,20 +41,20 @@ export default function CustomersPage() {
           className={`${inputClass} sm:max-w-72`}
         />
       </div>
-      <div className="grid grid-cols-4 gap-3.5 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1 [&>div]:flex [&>div]:min-h-[130px] [&>div]:flex-col [&>div]:gap-2 [&>div]:rounded-[13px] [&>div]:border [&>div]:border-line [&>div]:bg-surface [&>div]:p-[18px] [&_span]:text-[0.82rem] [&_span]:text-muted [&_strong]:text-[1.8rem] [&_strong]:leading-[1.1] [&_small]:text-xs [&_small]:text-muted [&_.attention]:border-alert-line [&_.attention_strong]:text-brand-text">
+      <div className="grid grid-cols-4 gap-3.5 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1 [&>div]:flex [&>div]:min-h-[130px] [&>div]:flex-col [&>div]:gap-2 [&>div]:rounded-[13px] [&>div]:border [&>div]:border-line [&>div]:bg-surface [&>div]:shadow-sm [&>div]:p-[18px] [&_span]:text-[0.82rem] [&_span]:text-muted [&_strong]:text-[1.8rem] [&_strong]:leading-[1.1] [&_small]:text-xs [&_small]:text-muted [&_.attention]:border-alert-line [&_.attention_strong]:text-brand-text">
         <div><span>Khách hàng tìm thấy</span><strong>{(data ?? []).length.toLocaleString('vi-VN')}</strong><small>Trong danh sách đang tìm kiếm</small></div>
         <div><span>Hội thoại</span><strong>{allRows.length.toLocaleString('vi-VN')}</strong><small>Trên Web và ứng dụng</small></div>
         <div className="attention"><span>Cần tư vấn</span><strong>{needsHelp.toLocaleString('vi-VN')}</strong><small>Liên hệ hoặc chưa xem</small></div>
         <div><span>Hội thoại đã chốt</span><strong>{allRows.filter(({ c }) => c.status === 'CLOSED').length.toLocaleString('vi-VN')}</strong><small>Đã hoàn tất tư vấn</small></div>
       </div>
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface p-3.5 [&>span:first-child]:mr-1 [&>span:first-child]:text-[0.8rem] [&>span:first-child]:text-muted [&_button]:min-h-9 [&_button]:rounded-[20px] [&_button]:bg-fill [&_button]:px-[13px] [&_button]:text-[0.78rem] [&_button[aria-pressed=true]]:bg-brand-soft [&_button[aria-pressed=true]]:font-bold [&_button[aria-pressed=true]]:text-brand-text" role="group" aria-label="Lọc khách hàng">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface shadow-sm p-3.5 [&>span:first-child]:mr-1 [&>span:first-child]:text-[0.8rem] [&>span:first-child]:text-muted [&_button]:min-h-9 [&_button]:rounded-[20px] [&_button]:bg-fill [&_button]:px-[13px] [&_button]:text-[0.78rem] [&_button[aria-pressed=true]]:bg-brand-soft [&_button[aria-pressed=true]]:font-bold [&_button[aria-pressed=true]]:text-brand-text" role="group" aria-label="Lọc khách hàng">
         <span>Bộ lọc nhanh</span>
         {([{ key: 'ALL', label: 'Tất cả nguồn' }, { key: 'WEB', label: 'bttAI Web' }, { key: 'APP', label: 'bttAI App' }] as const).map((item) => <button key={item.key} type="button" aria-pressed={channel === item.key} onClick={() => setChannel(item.key)}>{item.label}</button>)}
         <button type="button" aria-pressed={urgent} onClick={() => setUrgent(!urgent)}>Cần hỗ trợ ngay ({needsHelp})</button>
         <span className="ml-auto text-[0.78rem] text-muted">{dong.length} hội thoại</span>
       </div>
       {/* relative: giữ nhãn sr-only (định vị tuyệt đối) trong khung cuộn, nếu không nó làm cả trang tràn ngang. */}
-      <div className="relative overflow-x-auto rounded-[14px] border border-line bg-surface">
+      <div className="relative overflow-x-auto rounded-[14px] border border-line bg-surface shadow-sm">
         {/* Màn hình nhỏ dùng thẻ để thấy đủ thông tin mà không phải vuốt ngang; từ lg (đủ chỗ cho bảng 820px) dùng bảng. */}
         <ul className="divide-y divide-line-soft xl:hidden">
           {dong.map(({ k, c }) => (

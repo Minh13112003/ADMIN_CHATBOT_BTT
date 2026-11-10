@@ -120,7 +120,7 @@ export default function RemindersPage() {
         </div>
         <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => setNewOpen(true)}>+ Thêm lịch hẹn</button>
       </header>
-      <div className="grid grid-cols-3 gap-3 max-[700px]:grid-cols-1 [&>div]:flex [&>div]:items-center [&>div]:justify-between [&>div]:gap-3 [&>div]:rounded-[11px] [&>div]:border [&>div]:border-line [&>div]:bg-surface [&>div]:px-[18px] [&>div]:py-[15px] [&_span]:text-[0.82rem] [&_span]:text-muted [&_strong]:text-[1.35rem] [&_strong]:text-brand-text"><div><span>Quá hạn cần xử lý</span><strong>{overdueCount}</strong></div><div><span>Lịch hẹn hôm nay</span><strong>{todayCount}</strong></div><div><span>Tổng lịch đang theo dõi</span><strong>{allItems.length}</strong></div></div>
+      <div className="grid grid-cols-3 gap-3 max-[700px]:grid-cols-1 [&>div]:flex [&>div]:items-center [&>div]:justify-between [&>div]:gap-3 [&>div]:rounded-[11px] [&>div]:border [&>div]:border-line [&>div]:bg-surface [&>div]:shadow-sm [&>div]:px-[18px] [&>div]:py-[15px] [&_span]:text-[0.82rem] [&_span]:text-muted [&_strong]:text-[1.35rem] [&_strong]:text-brand-text"><div><span>Quá hạn cần xử lý</span><strong>{overdueCount}</strong></div><div><span>Lịch hẹn hôm nay</span><strong>{todayCount}</strong></div><div><span>Tổng lịch đang theo dõi</span><strong>{allItems.length}</strong></div></div>
       <div className="grid grid-cols-[minmax(0,1fr)_280px] gap-5 max-[1100px]:grid-cols-1">
         <div className="min-w-0">
           <div className="mb-4 flex gap-2 overflow-x-auto pb-1 md:hidden">
@@ -157,7 +157,7 @@ export default function RemindersPage() {
           )}
           <ErrorText>{actionError}</ErrorText>
           {data && items.length === 0 && (
-            <p className="rounded-xl border border-line bg-surface p-8 text-center text-muted">
+            <p className="rounded-xl border border-line bg-surface shadow-sm p-8 text-center text-muted">
               {day ? "Không có hẹn nhắc trong ngày đã chọn." : "Chưa có hẹn nhắc. Bạn có thể đặt lịch từ hồ sơ khách trong Hội thoại."}
             </p>
           )}
@@ -171,7 +171,7 @@ export default function RemindersPage() {
                 </h2>
                 <div className="space-y-3">
                   {g.rows.map((c) => (
-                    <article key={c.id} className="min-w-0 rounded-xl border border-line bg-surface p-4">
+                    <article key={c.id} className="min-w-0 rounded-xl border border-line bg-surface shadow-sm p-4">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <strong>{c.customer.name}</strong>
@@ -211,7 +211,7 @@ export default function RemindersPage() {
               </section>
             ))}
         </div>
-        <aside className="min-w-0 self-start rounded-xl border border-line bg-surface p-4 max-[1100px]:hidden">
+        <aside className="min-w-0 self-start rounded-xl border border-line bg-surface shadow-sm p-4 max-[1100px]:hidden">
           <h2 className="mb-4 font-semibold">Lịch trong tuần</h2>
           {week.map((d) => (
             <button

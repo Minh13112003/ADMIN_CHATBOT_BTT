@@ -31,7 +31,7 @@ export default function InboxPage() {
           <ChatPane key={selected} id={selected} onBack={() => selectConversation(null)} />
         ) : (
           <div className="m-auto max-w-sm p-8 text-center">
-            <span className="inline-grid size-[88px] place-items-center rounded-[26px] border border-line bg-surface text-brand-text shadow-[0_10px_28px_#00000005]">
+            <span className="inline-grid size-[88px] place-items-center rounded-[26px] border border-line bg-surface shadow-sm text-brand-text shadow-[0_10px_28px_#00000005]">
               <svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4">
                 <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM7 8h10M7 12h6" />
               </svg>

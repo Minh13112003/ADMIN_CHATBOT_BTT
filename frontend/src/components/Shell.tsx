@@ -137,10 +137,6 @@ export function Shell({ children }: { children: ReactNode }) {
             </div>
           ))}
           <div className="mt-auto" />
-          <div className={`mx-3 mb-2 mt-4 flex items-center gap-2.5 rounded-xl border border-line bg-page p-2.5 text-xs ${thu ? 'justify-center' : ''}`} title={connected ? 'Kênh bttAI: Hoạt động' : 'Kênh bttAI: Mất kết nối'}>
-            <span className={`size-2.5 shrink-0 rounded-full ${connected ? 'bg-on' : 'bg-off'}`} />
-            {!thu && <span><strong className="block text-ink">Kênh bttAI</strong>{connected ? 'Hoạt động' : 'Mất kết nối'}</span>}
-          </div>
           <div className={`flex items-center gap-2.5 border-t border-line-soft p-3 ${thu ? 'justify-center' : ''}`} title={me.fullName}>
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-bold text-brand-text">{me.fullName.trim().split(' ').pop()?.charAt(0)}</span>
             {!thu && (
@@ -156,7 +152,7 @@ export function Shell({ children }: { children: ReactNode }) {
           onClick={() => setThu(!thu)}
           aria-label={thu ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
           aria-expanded={!thu}
-          className="absolute -right-3.5 top-1/2 z-10 grid size-7 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface text-body shadow-md hover:bg-fill"
+          className="absolute -right-3.5 top-1/2 z-10 grid size-7 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface shadow-sm text-body shadow-md hover:bg-fill"
         >
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={thu ? 'rotate-180' : ''}>
             <path d="m15 6-6 6 6 6" />
@@ -170,7 +166,6 @@ export function Shell({ children }: { children: ReactNode }) {
             <div className="text-base font-semibold md:text-xl">{NAV.find((n) => pathname.startsWith(n.href))?.label ?? 'BenThanh Tourist'}</div>
             {!connected && <p className="text-xs text-brand-text">Mất kết nối tức thời, tin mới có thể đến chậm</p>}
           </div>
-          {connected && <span className="hidden items-center gap-2 text-sm text-green-ink sm:flex"><span className="size-[7px] shrink-0 rounded-full bg-on" />Đang kết nối</span>}
 
           <div className="relative">
             <button
@@ -191,7 +186,7 @@ export function Shell({ children }: { children: ReactNode }) {
               )}
             </button>
             {menu === 'bell' && (
-              <div className="fixed right-4 top-20 w-80 max-w-[calc(100vw-32px)] sm:absolute sm:right-0 sm:top-12 rounded-2xl border border-line bg-surface p-2 shadow-xl">
+              <div className="fixed right-4 top-20 w-80 max-w-[calc(100vw-32px)] sm:absolute sm:right-0 sm:top-12 rounded-2xl border border-line bg-surface shadow-sm p-2 shadow-xl">
                 <div className="px-2 py-1.5 text-sm font-semibold">Khách đang chờ nhân viên</div>
                 {contacts?.items.map((c) => (
                   <button
@@ -222,7 +217,7 @@ export function Shell({ children }: { children: ReactNode }) {
               {me.fullName.trim().split(' ').pop()?.charAt(0)}
             </button>
             {menu === 'me' && (
-              <div className="absolute right-0 top-12 flex w-72 max-w-[calc(100vw-32px)] flex-col gap-2.5 rounded-2xl border border-line bg-surface p-3.5 shadow-xl">
+              <div className="absolute right-0 top-12 flex w-72 max-w-[calc(100vw-32px)] flex-col gap-2.5 rounded-2xl border border-line bg-surface shadow-sm p-3.5 shadow-xl">
                 <div className="text-[0.9375rem] font-semibold">{me.fullName}</div>
                 <dl className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-2 gap-y-1 text-[0.8125rem]">
                   <dt className="text-muted">Mã nhân viên</dt>
