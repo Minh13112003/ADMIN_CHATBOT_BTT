@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router';
+import useSWR from 'swr';
 import { ChatPane } from '@/components/inbox/ChatPane';
+import { fetcher } from '@/lib/api';
+import type { Me } from '@/lib/types';
 import { ConversationList } from '@/components/inbox/ConversationList';
 
 export default function InboxPage() {
   const [params, setParams] = useSearchParams();
+  const { data: me } = useSWR<Me>('/auth/me', fetcher);
   const tuUrl = params.get('c');
   const [selected, setSelected] = useState<string | null>(tuUrl);
 
@@ -20,6 +24,9 @@ export default function InboxPage() {
       return next;
     }, { replace: true });
   };
+
+  // Digital chỉ xem một hội thoại được mở từ báo cáo nhu cầu tour, không có danh sách hộp thư.
+  if (me?.role === 'DIGITAL' && selected) return <div className="flex h-full min-h-0"><ChatPane key={selected} id={selected} onBack={() => window.close()} /></div>;
 
   return (
     <div className="flex h-full min-h-0 flex-col lg:flex-row">

@@ -1,8 +1,11 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { loiCua, patch, post } from '@/lib/api';
+import useSWR from 'swr';
+import { fetcher, loiCua, patch, post } from '@/lib/api';
 import { BOOKING_STATUS, CHANNEL, DEAL_STATUS, dinhDangSo, gioTin, STATUS, STATUS_LIST, TAGS, vnd } from '@/lib/labels';
-import type { Conversation, Deal, Status } from '@/lib/types';
+import type { Conversation, Deal, Me, Status } from '@/lib/types';
 import { chipClass, Dialog, ErrorText, Field, inputClass, primaryClass, secondaryClass } from '../ui';
+import { CloseDealDialog } from './CloseDealDialog';
+import { TourTagsTab, xemTinTrongChat } from './TourTags';
 
 export function InfoPanel({
   conv,
@@ -19,7 +22,14 @@ export function InfoPanel({
   const [loi, setLoi] = useState('');
   const [chot, setChot] = useState<{ deal: Deal | null } | null>(null);
   const [huy, setHuy] = useState<Deal | null>(null);
-  const [tab, setTab] = useState<'customer' | 'deals' | 'followup'>('customer');
+  const [tab, setTab] = useState<'customer' | 'tours' | 'deals'>('customer');
+  const { data: me } = useSWR<Me>('/auth/me', fetcher);
+  const { data: tags } = useSWR<unknown[]>(`/conversations/${conv.id}/tour-tags`, fetcher);
+  /** Xem tin đã ghim: ở màn hẹp cột thông tin là ngăn kéo che khung chat nên đóng lại trước. */
+  const xemTin = (id: string) => {
+    if (!window.matchMedia('(min-width: 1280px)').matches) onClose();
+    setTimeout(() => xemTinTrongChat(id), 50);
+  };
 
   useEffect(() => setNote(conv.note ?? ''), [conv.id, conv.note]);
 
@@ -44,7 +54,7 @@ export function InfoPanel({
   return (
     <PanelFrame onClose={onClose}>
       <aside id="thong-tin-khach" aria-label="Thông tin khách" className="flex min-w-0 flex-col gap-6">
-        <div role="tablist" aria-label="Hồ sơ khách" className="flex rounded-xl bg-fill p-1 text-xs">{([{ key: 'customer', label: 'Khách' }, { key: 'deals', label: 'Đơn tour' }, { key: 'followup', label: 'Hẹn & ghi chú' }] as const).map((item) => <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} className={`min-h-11 flex-1 rounded-lg px-1 font-semibold ${tab === item.key ? 'bg-surface text-brand-text shadow-sm' : 'text-muted'}`} onClick={() => setTab(item.key)}>{item.label}</button>)}</div>
+        <div role="tablist" aria-label="Hồ sơ khách" className="flex rounded-xl bg-fill p-1 text-[0.8125rem]">{([{ key: 'customer', label: 'Khách' }, { key: 'tours', label: 'Tour quan tâm' }, { key: 'deals', label: 'Đơn tour' }] as const).map((item) => <button key={item.key} type="button" role="tab" aria-selected={tab === item.key} className={`relative inline-flex min-h-11 flex-1 items-center justify-center whitespace-nowrap rounded-lg px-1 font-semibold ${tab === item.key ? 'bg-surface text-brand-text shadow-sm' : 'text-muted'}`} onClick={() => setTab(item.key)}>{item.label}{item.key === 'tours' && !!tags?.length && <span aria-label={`${tags.length} nhãn`} className="absolute -right-0.5 -top-1 min-w-4 rounded-full bg-brand px-1 text-[0.625rem] leading-4 text-white">{tags.length}</span>}{item.key === 'deals' && !!deals?.length && <span className="ml-1 text-xs font-medium text-muted">({deals.length})</span>}</button>)}</div>
         {tab === 'customer' && <>
         <div className="rounded-xl bg-fill p-4">
           <h2 className="font-semibold">{conv.customer.name}</h2>
@@ -70,6 +80,21 @@ export function InfoPanel({
           </div>
         </div>
 
+        <FollowUp conv={conv} onChange={onChange} />
+        <div>
+          <label htmlFor="ghi-chu" className="mb-2 block text-sm font-semibold">
+            Ghi chú nội bộ <span className="font-normal text-muted">(khách không thấy)</span>
+          </label>
+          <textarea
+            id="ghi-chu"
+            rows={3}
+            placeholder="Ví dụ: khách đi đoàn 4 người, muốn phòng gần nhau"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            onBlur={() => note !== (conv.note ?? '') && chay(() => patch<Conversation>(`/conversations/${conv.id}`, { note }))}
+            className="w-full resize-y rounded-[10px] border border-field px-3 py-2.5 text-sm"
+          />
+        </div>
         </>}
         {tab === 'deals' && <section aria-labelledby="don-dat-tour">
           <h2 id="don-dat-tour" className="mb-2 text-sm font-semibold">
@@ -111,7 +136,7 @@ export function InfoPanel({
           </ul>
         </section>}
 
-        {tab === 'followup' && <FollowUp conv={conv} onChange={onChange} />}
+        {tab === 'tours' && <TourTagsTab conv={conv} readOnly={me?.role === 'DIGITAL'} onJump={xemTin} />}
         {tab === 'customer' && <>
         <div>
           <h2 className="mb-2 text-sm font-semibold">Khách hàng</h2>
@@ -156,22 +181,8 @@ export function InfoPanel({
           </div>
         </div>}
 
-        {tab === 'followup' && <div>
-          <label htmlFor="ghi-chu" className="mb-2 block text-sm font-semibold">
-            Ghi chú nội bộ
-          </label>
-          <textarea
-            id="ghi-chu"
-            rows={3}
-            placeholder="Khách không thấy ghi chú này"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            onBlur={() => note !== (conv.note ?? '') && chay(() => patch<Conversation>(`/conversations/${conv.id}`, { note }))}
-            className="w-full resize-y rounded-[10px] border border-field px-3 py-2.5 text-sm"
-          />
-        </div>}
 
-        {chot && <CloseDealDialog conv={conv} deal={chot.deal} onClose={() => setChot(null)} onDone={onChange} />}
+        {chot && <CloseDealDialog conv={conv} deal={chot.deal} pending={deals?.filter((d) => d.status === 'PENDING' && d.conversationId === conv.id) ?? []} onClose={() => setChot(null)} onDone={onChange} />}
         {huy && <CancelDealDialog conv={conv} deal={huy} onClose={() => setHuy(null)} onDone={onChange} />}
       </aside>
     </PanelFrame>
@@ -282,109 +293,6 @@ function FollowUp({ conv, onChange }: { conv: Conversation; onChange: (c: Conver
       )}
       <ErrorText>{loi}</ErrorText>
     </section>
-  );
-}
-
-/**
- * Chốt tour. Có `deal` (khách tự đặt qua chatbot, đang chờ xác nhận) thì điền sẵn và xác nhận đúng đơn đó;
- * sale sửa nếu khách đổi số người hay đợt khởi hành khi gọi điện.
- */
-export function CloseDealDialog({
-  conv,
-  deal,
-  onClose,
-  onDone,
-}: {
-  conv: Conversation;
-  deal: Deal | null;
-  onClose: () => void;
-  onDone: (c: Conversation) => unknown;
-}) {
-  const [tourName, setTourName] = useState(deal?.tourName ?? conv.interest ?? '');
-  const [tourCode, setTourCode] = useState(deal?.tourCode ?? '');
-  const [guests, setGuests] = useState(String(deal?.guests ?? 1));
-  const [amount, setAmount] = useState(deal ? deal.amount.toLocaleString('vi-VN') : '');
-  const [orderCode, setOrderCode] = useState(deal?.orderCode ?? '');
-  const [loi, setLoi] = useState('');
-  const [dangGui, setDangGui] = useState(false);
-
-  const gui = async (e: FormEvent) => {
-    e.preventDefault();
-    const tien = Number(amount.replace(/\D/g, ''));
-    if (!tien) {
-      setLoi('Nhập tổng tiền của đơn');
-      return;
-    }
-    setDangGui(true);
-    setLoi('');
-    try {
-      await onDone(
-        await post<Conversation>(`/conversations/${conv.id}/close`, {
-          ...(deal ? { dealId: deal.id } : {}),
-          tourName,
-          tourCode,
-          guests: Number(guests),
-          amount: tien,
-          orderCode,
-        }),
-      );
-      onClose();
-    } catch (err) {
-      setLoi(loiCua(err));
-      setDangGui(false);
-    }
-  };
-
-  return (
-    <Dialog title={deal ? 'Xác nhận đơn khách đã đặt' : 'Chốt tour'} onClose={onClose}>
-      <form onSubmit={gui} className="flex flex-col gap-3">
-        {deal && <p className="text-[0.8125rem] text-body">Khách tự đặt qua bttAI. Gọi khách xác nhận, sửa lại nếu khách đổi số người hoặc đợt khởi hành.</p>}
-        <Field label="Tên tour">
-          <input required minLength={2} value={tourName} onChange={(e) => setTourName(e.target.value)} className={inputClass} />
-        </Field>
-        <Field label="Mã tour (mã đợt khởi hành)">
-          <input
-            required
-            value={tourCode}
-            onChange={(e) => setTourCode(e.target.value.toUpperCase())}
-            placeholder="Ví dụ A06.FIT.TW.070227.A"
-            autoCapitalize="characters"
-            spellCheck={false}
-            className={`${inputClass} font-mono`}
-          />
-        </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Số khách">
-            <input type="number" required min={1} value={guests} onChange={(e) => setGuests(e.target.value)} className={inputClass} />
-          </Field>
-          <Field label="Tổng tiền (đồng)">
-            <input
-              inputMode="numeric"
-              required
-              value={amount}
-              onChange={(e) => {
-                const so = e.target.value.replace(/\D/g, '');
-                setAmount(so ? Number(so).toLocaleString('vi-VN') : '');
-              }}
-              className={inputClass}
-            />
-          </Field>
-        </div>
-        <Field label="Mã đơn (không bắt buộc)">
-          <input value={orderCode} onChange={(e) => setOrderCode(e.target.value)} disabled={!!deal?.orderCode} className={inputClass} />
-        </Field>
-        <p className="text-xs text-muted">Mã tour lấy trên benthanhtourist.com hoặc hệ thống điều hành tour. Đơn chốt được tính vào doanh thu.</p>
-        <ErrorText>{loi}</ErrorText>
-        <div className="mt-1 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className={secondaryClass}>
-            Huỷ
-          </button>
-          <button type="submit" disabled={dangGui} className={primaryClass}>
-            {deal ? 'Xác nhận chốt' : 'Chốt tour'}
-          </button>
-        </div>
-      </form>
-    </Dialog>
   );
 }
 

@@ -1,0 +1,246 @@
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Prisma } from '../generated/prisma/client';
+import { AuthUser } from '../auth/auth.decorators';
+import { phamViPhong, sqlPhamHoiThoai } from '../common/scope';
+import { diaDiemTuTen, khoaTour, khopTour } from '../common/tours';
+import { PrismaService } from '../prisma/prisma.service';
+import { TourCatalogService, type CatalogTour } from '../tours/tour-catalog.service';
+
+export type Bo = { tu?: Date; kenh?: string };
+
+/** Một cặp (tour, khách) đã gộp trong SQL. */
+type Cap = { key: string; cid: string; ch: string; name: string; card: Record<string, unknown> | null; cat: string | null; asks: bigint; bot: bigint; tag: bigint; first_at: Date; last_at: Date };
+
+type Tour = {
+  key: string;
+  name: string;
+  place: string | null;
+  price: number | null;
+  days: number | null;
+  nights: number | null;
+  image: string | null;
+  askers: number;
+  asks: number;
+  bot: number;
+  tag: number;
+  firstAskedAt: Date;
+  lastAskedAt: Date;
+  rank: number;
+  khach: Map<string, string>; // customerId -> kênh
+};
+
+const so = (v: unknown) => (typeof v === 'number' ? v : typeof v === 'string' && /^\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : null);
+
+/**
+ * Nhu cầu tour cho Digital: chỉ đếm nhãn sale ghim (tour_interest_tags), mỗi nhãn là một lượt, kèm tin đã ghim.
+ * Thẻ tour chatbot gửi không còn tính (chủ dự án chốt 2026-11-11: bot gợi ý sai tour so với ý khách).
+ * Gộp theo tên tour bỏ dấu (id tour trên website có thể đổi theo đợt khởi hành).
+ * Khách được đếm một lần cho mỗi tour; phạm vi phòng lấy từ phiên đăng nhập.
+ */
+@Injectable()
+export class TourInterestService {
+  private log = new Logger('TourInterest');
+
+  constructor(private prisma: PrismaService, private catalog: TourCatalogService) {}
+
+  /** Mọi lượt quan tâm trong phạm vi: cid, kênh, lúc, nguồn, tên tour, thẻ bot, địa điểm nhãn, tin bằng chứng. */
+  private suKien(user: AuthUser, bo: Bo, key?: string) {
+    const pham = sqlPhamHoiThoai(phamViPhong(user));
+    const kenh = bo.kenh ? Prisma.sql`AND c.channel::text = ${bo.kenh}` : Prisma.empty;
+    const tuTag = bo.tu ? Prisma.sql`AND g."createdAt" >= ${bo.tu}` : Prisma.empty;
+    const loc = key ? Prisma.sql`WHERE lower(btt_bo_dau(e.name)) = ${key}` : Prisma.sql`WHERE e.name IS NOT NULL`;
+    // Đổi ngày 2026-11-11: bỏ thẻ tour chatbot gửi (bot gợi ý tour không có nghĩa là khách quan tâm tour đó),
+    // chỉ đếm nhãn sale ghim. Giữ cột src/card để phần gộp phía dưới không phải đổi.
+    return Prisma.sql`
+      SELECT * FROM (
+        SELECT c."customerId" AS cid, c.id AS conv_id, c.channel::text AS ch, g."createdAt" AS at, 'TAG' AS src,
+               g."tourName" AS name, NULL::jsonb AS card, g."categoryName" AS cat, g.id AS ev_id, g."messageId" AS msg_id, g."createdById" AS by_id
+        FROM tour_interest_tags g
+        JOIN conversations c ON c.id = g."conversationId"
+        WHERE ${pham} ${kenh} ${tuTag}
+      ) e ${loc}`;
+  }
+
+  /** Gộp theo (tour, khách) rồi gắn địa điểm, giá từ danh mục website. */
+  private async tours(user: AuthUser, bo: Bo): Promise<Tour[]> {
+    const caps = await this.prisma.$queryRaw<Cap[]>`
+      WITH e AS (${this.suKien(user, bo)})
+      SELECT lower(btt_bo_dau(name)) AS key, cid, (array_agg(ch ORDER BY at DESC))[1] AS ch,
+             (array_agg(name ORDER BY at DESC))[1] AS name,
+             (array_agg(card ORDER BY at DESC) FILTER (WHERE card IS NOT NULL))[1] AS card,
+             max(cat) AS cat, COUNT(*) AS asks, COUNT(*) FILTER (WHERE src = 'BOT') AS bot, COUNT(*) FILTER (WHERE src = 'TAG') AS tag,
+             MIN(at) AS first_at, MAX(at) AS last_at
+      FROM e GROUP BY 1, cid LIMIT 200000`;
+
+    let danhMuc = new Map<string, CatalogTour>();
+    try {
+      danhMuc = new Map([...(await this.catalog.danhMuc()).tours.values()].map((t) => [khoaTour(t.name), t]));
+    } catch (e) {
+      this.log.warn(`Không có danh mục tour, dùng thông tin trong thẻ bot: ${(e as Error).message}`);
+    }
+
+    const theoKey = new Map<string, Tour & { card: Record<string, unknown> | null; cat: string | null }>();
+    for (const c of caps) {
+      let t = theoKey.get(c.key);
+      if (!t) {
+        t = { key: c.key, name: c.name, place: null, price: null, days: null, nights: null, image: null, askers: 0, asks: 0, bot: 0, tag: 0, firstAskedAt: c.first_at, lastAskedAt: c.last_at, rank: 0, khach: new Map(), card: c.card, cat: c.cat };
+        theoKey.set(c.key, t);
+      }
+      t.khach.set(c.cid, c.ch);
+      t.asks += Number(c.asks);
+      t.bot += Number(c.bot);
+      t.tag += Number(c.tag);
+      if (c.first_at < t.firstAskedAt) t.firstAskedAt = c.first_at;
+      if (c.last_at > t.lastAskedAt) { t.lastAskedAt = c.last_at; t.name = c.name; }
+      t.card ??= c.card;
+      t.cat ??= c.cat;
+    }
+    const ds = [...theoKey.values()].map(({ card, cat, ...t }) => {
+      const web = danhMuc.get(t.key);
+      return {
+        ...t,
+        askers: t.khach.size,
+        place: web?.place?.name ?? cat ?? diaDiemTuTen(t.name),
+        price: web?.price ?? so(card?.gia) ?? so(card?.price),
+        days: web?.days ?? so(card?.so_ngay) ?? so(card?.days),
+        nights: web?.nights ?? null,
+        image: web?.image ?? (typeof card?.anh === 'string' ? card.anh : typeof card?.image === 'string' ? card.image : null),
+      };
+    });
+    ds.sort((a, b) => b.askers - a.askers || +b.lastAskedAt - +a.lastAskedAt);
+    // Hạng kiểu RANK(): bằng số khách thì cùng hạng.
+    ds.forEach((t, i) => (t.rank = i > 0 && ds[i - 1].askers === t.askers ? ds[i - 1].rank : i + 1));
+    return ds;
+  }
+
+  private static ra(t: Tour) {
+    const { khach: _, ...con } = t;
+    return con;
+  }
+
+  async ranking(user: AuthUser, q: { view: 'tour' | 'place'; search?: string; take: number; skip: number; moi?: boolean } & Bo) {
+    const ds = await this.tours(user, q);
+    const moiTu = Date.now() - 30 * 86_400_000;
+    const tatCaKhach = new Set(ds.flatMap((t) => [...t.khach.keys()]));
+    const noi = this.theoNoi(ds);
+    const summary = {
+      tours: ds.length,
+      customers: tatCaKhach.size,
+      asks: ds.reduce((s, t) => s + t.asks, 0),
+      newTours: ds.filter((t) => +t.firstAskedAt >= moiTu).length,
+      topPlace: noi[0] ? { name: noi[0].name, askers: noi[0].askers } : null,
+    };
+    if (q.view === 'place') {
+      const loc = q.search?.trim() ? noi.filter((p) => khopTour({ name: p.name, code: null }, q.search!) > 0 || p.children.some((t) => khopTour({ name: t.name, code: null }, q.search!) > 0)) : noi;
+      return { summary, total: loc.length, items: loc.slice(q.skip, q.skip + q.take) };
+    }
+    const loc = ds.filter((t) => (!q.moi || +t.firstAskedAt >= moiTu) && (!q.search?.trim() || khopTour({ name: t.name, code: null }, q.search) > 0));
+    return { summary, total: loc.length, items: loc.slice(q.skip, q.skip + q.take).map(TourInterestService.ra) };
+  }
+
+  /** Theo địa điểm: khách đếm một lần trong địa điểm dù hỏi nhiều tour. */
+  private theoNoi(ds: Tour[]) {
+    const m = new Map<string, { name: string; khach: Set<string>; asks: number; tours: Tour[] }>();
+    for (const t of ds) {
+      const ten = t.place ?? 'Địa điểm khác';
+      const p = m.get(ten) ?? { name: ten, khach: new Set<string>(), asks: 0, tours: [] };
+      t.khach.forEach((_, cid) => p.khach.add(cid));
+      p.asks += t.asks;
+      p.tours.push(t);
+      m.set(ten, p);
+    }
+    const noi = [...m.values()].map((p) => ({
+      name: p.name, askers: p.khach.size, asks: p.asks, tours: p.tours.length, rank: 0,
+      children: p.tours.map((t) => ({ key: t.key, name: t.name, askers: t.askers, asks: t.asks, rank: t.rank, days: t.days, nights: t.nights, price: t.price, image: t.image })),
+    }));
+    noi.sort((a, b) => b.askers - a.askers || b.asks - a.asks);
+    noi.forEach((p, i) => (p.rank = i > 0 && noi[i - 1].askers === p.askers ? noi[i - 1].rank : i + 1));
+    return noi;
+  }
+
+  /** Hộp "Thống kê tour": tổng quan một tour trong phạm vi và kỳ đang chọn. */
+  async detail(user: AuthUser, key: string, bo: Bo) {
+    const ds = await this.tours(user, bo);
+    const t = ds.find((x) => x.key === key);
+    if (!t) throw new NotFoundException('Không có lượt quan tâm cho tour này trong kỳ đã chọn');
+    const pham = sqlPhamHoiThoai(phamViPhong(user));
+    const tuDeal = bo.tu ? Prisma.sql`AND d."closedAt" >= ${bo.tu}` : Prisma.empty;
+    const kenhDeal = bo.kenh ? Prisma.sql`AND c.channel::text = ${bo.kenh}` : Prisma.empty;
+    const [[chot], ngay, sale] = await Promise.all([
+      this.prisma.$queryRaw<{ n: bigint; tien: bigint | null }[]>`
+        SELECT COUNT(*) AS n, SUM(d.amount) AS tien FROM deals d JOIN conversations c ON c.id = d."conversationId"
+        WHERE d.status = 'CONFIRMED' AND d."voidedAt" IS NULL AND lower(btt_bo_dau(d."tourName")) = ${key} AND ${pham} ${tuDeal} ${kenhDeal}`,
+      // 7 ngày gần nhất theo giờ Việt Nam, kể cả ngày không có lượt nào.
+      this.prisma.$queryRaw<{ d: string; n: bigint }[]>`
+        WITH e AS (${this.suKien(user, { kenh: bo.kenh, tu: new Date(Date.now() - 8 * 86_400_000) }, key)})
+        SELECT to_char(g.d, 'YYYY-MM-DD') AS d, COUNT(e.at) AS n
+        FROM generate_series((now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date - 6, (now() AT TIME ZONE 'Asia/Ho_Chi_Minh')::date, interval '1 day') g(d)
+        LEFT JOIN e ON (e.at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Ho_Chi_Minh')::date = g.d::date
+        GROUP BY g.d ORDER BY g.d`,
+      this.prisma.$queryRaw<{ name: string | null; dept: string | null; n: bigint }[]>`
+        WITH e AS (${this.suKien(user, bo, key)})
+        SELECT u."fullName" AS name, dp.name AS dept, COUNT(*) AS n FROM e
+        LEFT JOIN users u ON u.id = e.by_id LEFT JOIN departments dp ON dp.id = u."departmentId"
+        WHERE e.src = 'TAG' GROUP BY 1, 2 ORDER BY 3 DESC LIMIT 3`,
+    ]);
+    const kenh: Record<string, number> = {};
+    t.khach.forEach((ch) => (kenh[ch] = (kenh[ch] ?? 0) + 1));
+    const daChot = Number(chot?.n ?? 0);
+    return {
+      ...TourInterestService.ra(t),
+      totalTours: ds.length,
+      newCustomers7d: await this.khachMoi(user, key, bo),
+      closed: daChot,
+      revenue: Number(chot?.tien ?? 0),
+      closeRate: t.askers ? daChot / t.askers : 0,
+      daily: ngay.map((r) => ({ date: r.d, count: Number(r.n) })),
+      channels: kenh,
+      topTaggers: sale.map((s) => ({ name: s.name ?? 'Nhân viên đã nghỉ', department: s.dept, count: Number(s.n) })),
+    };
+  }
+
+  /** Khách lần đầu quan tâm tour này trong 7 ngày qua. */
+  private async khachMoi(user: AuthUser, key: string, bo: Bo) {
+    const [r] = await this.prisma.$queryRaw<{ n: bigint }[]>`
+      WITH e AS (${this.suKien(user, { kenh: bo.kenh }, key)})
+      SELECT COUNT(*) AS n FROM (SELECT cid FROM e GROUP BY cid HAVING MIN(at) >= now() - interval '7 days') x`;
+    return Number(r?.n ?? 0);
+  }
+
+  /**
+   * Khách quan tâm một tour: mỗi khách một mục, mỗi lượt một dòng (Lần 1, Lần 2...).
+   * Thẻ bot: tin của khách ngay trước thẻ. Nhãn sale: đúng tin đã ghim và người gắn.
+   */
+  async askers(user: AuthUser, key: string, bo: Bo = {}) {
+    type A = { cid: string; conv_id: string; name: string; phone: string | null; ch: string; at: Date; src: 'BOT' | 'TAG'; message_id: string | null; text: string | null; msg_at: Date | null; by_name: string | null };
+    const rows = await this.prisma.$queryRaw<A[]>`
+      WITH e AS (${this.suKien(user, bo, key)})
+      SELECT DISTINCT ON (e.src, e.ev_id) e.cid, e.conv_id, cu.name, cu.phone, e.ch, e.at, e.src,
+             COALESCE(pin.id, q.id) AS message_id, COALESCE(pin.text, q.text) AS text, COALESCE(pin."createdAt", q."createdAt") AS msg_at, u."fullName" AS by_name
+      FROM e
+      JOIN customers cu ON cu.id = e.cid
+      LEFT JOIN messages pin ON pin.id = e.msg_id
+      LEFT JOIN users u ON u.id = e.by_id
+      LEFT JOIN LATERAL (
+        SELECT id, text, "createdAt" FROM messages
+        WHERE e.src = 'BOT' AND "conversationId" = e.conv_id AND "senderType" = 'CUSTOMER' AND "createdAt" <= e.at
+        ORDER BY "createdAt" DESC LIMIT 1
+      ) q ON TRUE
+      ORDER BY e.src, e.ev_id
+      LIMIT 5000`;
+    type Lan = { messageId: string | null; conversationId: string; text: string; at: Date; source: 'BOT' | 'TAG'; by: string | null; time: number };
+    const theoKhach = new Map<string, { customerId: string; name: string; phone: string | null; channel: string; lastAskedAt: Date; asks: Lan[] }>();
+    for (const r of rows) {
+      let k = theoKhach.get(r.cid);
+      if (!k) theoKhach.set(r.cid, (k = { customerId: r.cid, name: r.name, phone: r.phone, channel: r.ch, lastAskedAt: r.at, asks: [] }));
+      if (r.at > k.lastAskedAt) k.lastAskedAt = r.at;
+      k.asks.push({ messageId: r.message_id, conversationId: r.conv_id, text: r.text ?? '', at: r.at, source: r.src, by: r.by_name, time: 0 });
+    }
+    return [...theoKhach.values()]
+      .map((k) => {
+        const asks = k.asks.sort((a, b) => +a.at - +b.at).map((a, i) => ({ ...a, time: i + 1 }));
+        return { ...k, asks: asks.reverse() };
+      })
+      .sort((a, b) => +b.lastAskedAt - +a.lastAskedAt);
+  }
+}

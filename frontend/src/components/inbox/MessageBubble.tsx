@@ -94,7 +94,25 @@ function NutTraLoi({ onClick, align }: { onClick: () => void; align: 'left' | 'r
   );
 }
 
-export function MessageBubble({ message: m, onReply, seen }: { message: Message; onReply?: (m: Message) => void; seen?: boolean }) {
+/** Icon ghim: lưu tin này làm bằng chứng khách quan tâm một tour. */
+function NutGhim({ onClick, daGhim }: { onClick: () => void; daGhim: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Ghim tour quan tâm"
+      aria-label="Ghim tour quan tâm cho tin này"
+      className={`grid size-8 place-items-center rounded-md hover:bg-fill hover:text-brand-text ${daGhim ? 'text-brand-text' : 'text-muted'}`}
+    >
+      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill={daGhim ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+        <path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3-1-6Z" />
+      </svg>
+    </button>
+  );
+}
+
+export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen }: { message: Message; onReply?: (m: Message) => void; onPin?: (m: Message) => void; pinned?: boolean; seen?: boolean }) {
+  const ghim = onPin && !m.internal ? <NutGhim daGhim={pinned} onClick={() => onPin(m)} /> : null;
   if (m.senderType === 'SYSTEM') {
     return (
       <div
@@ -109,14 +127,15 @@ export function MessageBubble({ message: m, onReply, seen }: { message: Message;
       <div className="min-w-0 max-w-[88%] self-start sm:max-w-[72%]">
         {m.isTrigger && <div className="mb-[3px] text-xs font-semibold text-brand-text">Yêu cầu gặp nhân viên</div>}
         <div
-          className={`whitespace-pre-line break-words rounded-[14px_14px_14px_4px] bg-surface px-4 py-3 text-sm leading-relaxed ${m.isTrigger ? 'border-2 border-brand' : 'border border-line'}`}
+          className={`whitespace-pre-line break-words rounded-[14px_14px_14px_4px] bg-surface px-3 py-2 text-sm leading-normal ${m.isTrigger ? 'border-2 border-brand' : 'border border-line'}`}
         >
           {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} />}
           {m.text}
         </div>
-        <div className="mt-[3px] flex items-center text-[0.6875rem] text-muted">
+        <div className="mt-0.5 flex items-center text-[0.6875rem] text-muted">
           Khách · {gioTin(m.createdAt)}
           {onReply && <NutTraLoi align="right" onClick={() => onReply(m)} />}
+          {ghim}
         </div>
       </div>
     );
@@ -125,7 +144,7 @@ export function MessageBubble({ message: m, onReply, seen }: { message: Message;
   const ai = m.senderType === 'STAFF' ? (m.staffLabel ?? 'Nhân viên') : m.senderType === 'AUTO' ? `Tự động · ${m.ruleName}` : CHANNEL.WEB.bot;
   return (
     <div className="min-w-0 max-w-[88%] self-end sm:max-w-[72%]">
-      <div className={`whitespace-pre-line break-words rounded-[14px_14px_4px_14px] px-4 py-3 text-sm leading-relaxed ${mau}`}>
+      <div className={`whitespace-pre-line break-words rounded-[14px_14px_4px_14px] px-3 py-2 text-sm leading-normal ${mau}`}>
         {m.replyTo && <Trich m={m.replyTo} light={m.senderType === 'STAFF'} />}
         {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} />}
         {m.text}
@@ -139,9 +158,12 @@ export function MessageBubble({ message: m, onReply, seen }: { message: Message;
           );
         })}
       </div>
-      <div className="mt-[3px] text-right text-[0.6875rem] text-muted">
-        {ai} · {gioTin(m.createdAt)}
-        {seen && <span className="ml-1 font-medium text-green-ink">· Khách đã xem</span>}
+      <div className="mt-0.5 flex items-center justify-end text-[0.6875rem] text-muted">
+        {ghim}
+        <span>
+          {ai} · {gioTin(m.createdAt)}
+          {seen && <span className="ml-1 font-medium text-green-ink">· Khách đã xem</span>}
+        </span>
       </div>
     </div>
   );

@@ -37,7 +37,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnModuleDestroy {
       if (!token) throw new Error('no token');
       const { sub } = await this.jwt.verifyAsync<{ sub: string }>(token);
       const user = await this.prisma.user.findUnique({ where: { id: sub }, select: { id: true, role: true, isActive: true, fullName: true } });
-      if (!user?.isActive || (user.role !== Role.SALE && user.role !== Role.ADMIN)) throw new Error('forbidden');
+      if (!user?.isActive || user.role === Role.DIGITAL) throw new Error('forbidden');
       client.data.user = user;
       await client.join(ROOM);
       await client.join(`user:${user.id}`);

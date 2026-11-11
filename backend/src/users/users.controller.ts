@@ -2,11 +2,12 @@ import { BadRequestException, Body, ConflictException, Controller, Get, NotFound
 import { Role } from '../generated/prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsBoolean, IsEmail, IsIn, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { AuthUser, CurrentUser, Roles } from '../auth/auth.decorators';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { canChangeActive, canResetPassword } from '../common/accounts';
+import { CHUA_PHAN, kiemTraTaoTaiKhoan, phamViPhong } from '../common/scope';
 
 const rong = ({ value }: { value: unknown }) => (typeof value === 'string' && value.trim() === '' ? undefined : typeof value === 'string' ? value.trim() : value);
 
@@ -16,6 +17,10 @@ class CreateUserDto {
   @IsString() @MinLength(8, { message: 'Mật khẩu cần ít nhất 8 ký tự' }) @MaxLength(200) password: string;
   @Transform(rong) @IsOptional() @IsString() @MaxLength(40) employeeCode?: string;
   @Transform(rong) @IsOptional() @IsString() @MaxLength(80) position?: string;
+  @IsOptional() @IsIn([Role.SALE, Role.DEPT_ADMIN, Role.DIGITAL], { message: 'Vai trò không hợp lệ' }) role?: Role;
+  @Transform(rong) @IsOptional() @IsString() @MaxLength(60) departmentId?: string;
+  /** Digital: các phòng được xem (id phòng hoặc CHUA_PHAN). */
+  @IsOptional() @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) scopeIds?: string[];
 }
 
 class DutyDto {
@@ -24,25 +29,36 @@ class DutyDto {
 class ActiveDto { @IsBoolean() isActive: boolean; }
 class ResetPasswordDto { @IsString() @MinLength(8, { message: 'Mật khẩu cần ít nhất 8 ký tự' }) @MaxLength(200) password: string; }
 
-const COT = { id: true, email: true, fullName: true, employeeCode: true, position: true, role: true, isActive: true, onDuty: true, lastLoginAt: true, createdAt: true } as const;
+const COT = { id: true, email: true, fullName: true, employeeCode: true, position: true, role: true, isActive: true, onDuty: true, lastLoginAt: true, createdAt: true, departmentId: true, scopeIds: true, department: { select: { name: true } } } as const;
 
 @Controller('users')
 export class UsersController {
   constructor(private prisma: PrismaService, private realtime: RealtimeGateway) {}
 
-  /** Danh sách tài khoản: chỉ admin. */
-  @Roles(Role.ADMIN)
+  /** Danh sách tài khoản: admin toàn quyền thấy hết, admin phòng chỉ thấy tài khoản phòng mình. */
+  @Roles(Role.ADMIN, Role.DEPT_ADMIN)
   @Get()
-  async list() {
-    const users = await this.prisma.user.findMany({ select: COT, orderBy: { createdAt: 'desc' } });
+  async list(@CurrentUser() me: AuthUser) {
+    const phong = me.role === Role.ADMIN ? null : phamViPhong(me);
+    const users = await this.prisma.user.findMany({ where: phong === null ? {} : { departmentId: { in: phong } }, select: COT, orderBy: { createdAt: 'desc' } });
     const giu = await this.prisma.conversation.groupBy({ by: ['assigneeId'], where: { assigneeId: { not: null }, status: { in: ['CONTACT', 'PENDING'] } }, _count: { _all: true } });
     return users.map((x) => ({ ...x, holding: giu.find((g) => g.assigneeId === x.id)?._count._all ?? 0 }));
   }
 
-  /** Không có đăng ký công khai: chỉ admin tạo được tài khoản sale. */
-  @Roles(Role.ADMIN)
+  /** Không có đăng ký công khai. Admin tạo mọi tài khoản; admin phòng chỉ tạo sale trong phòng mình. */
+  @Roles(Role.ADMIN, Role.DEPT_ADMIN)
   @Post()
-  async create(@Body() dto: CreateUserDto) {
+  async create(@CurrentUser() me: AuthUser, @Body() dto: CreateUserDto) {
+    const role = dto.role ?? Role.SALE;
+    const departmentId = role === Role.DIGITAL ? null : (dto.departmentId ?? (me.role === Role.DEPT_ADMIN ? me.departmentId : null));
+    const loi = kiemTraTaoTaiKhoan(me, role, departmentId);
+    if (loi) throw new BadRequestException(loi);
+    if (departmentId && !(await this.prisma.department.findUnique({ where: { id: departmentId } }))) throw new BadRequestException('Phòng ban không tồn tại');
+    const scopeIds = role === Role.DIGITAL ? [...new Set(dto.scopeIds ?? [])] : [];
+    if (scopeIds.length) {
+      const hop = await this.prisma.department.count({ where: { id: { in: scopeIds.filter((x) => x !== CHUA_PHAN) } } });
+      if (hop !== scopeIds.filter((x) => x !== CHUA_PHAN).length) throw new BadRequestException('Có phòng ban không tồn tại');
+    }
     const email = dto.email.toLowerCase();
     if (await this.prisma.user.findUnique({ where: { email } })) throw new ConflictException('Email này đã có tài khoản');
     if (dto.employeeCode && (await this.prisma.user.findUnique({ where: { employeeCode: dto.employeeCode } })))
@@ -53,11 +69,19 @@ export class UsersController {
         fullName: dto.fullName.trim(),
         employeeCode: dto.employeeCode,
         position: dto.position,
-        role: Role.SALE,
+        role,
+        departmentId,
+        scopeIds,
         passwordHash: await bcrypt.hash(dto.password, 12),
       },
       select: COT,
     });
+  }
+
+  /** Admin phòng chỉ đụng được tài khoản sale trong phòng mình. */
+  private chamDuocTaiKhoan(me: AuthUser, target: { role: Role; departmentId: string | null }) {
+    if (me.role === Role.ADMIN) return;
+    if (target.role !== Role.SALE || !me.departmentId || target.departmentId !== me.departmentId) throw new NotFoundException('Không tìm thấy tài khoản');
   }
 
   /** Đồng nghiệp để chọn khi "Nhờ đồng nghiệp". */
@@ -75,11 +99,12 @@ export class UsersController {
     return this.prisma.user.update({ where: { id: me.id }, data: { onDuty: dto.onDuty }, select: { onDuty: true } });
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.DEPT_ADMIN)
   @Patch(':id/active')
   async active(@Param('id') id: string, @CurrentUser() me: AuthUser, @Body() dto: ActiveDto) {
     const target = await this.prisma.user.findUnique({ where: { id }, select: COT });
     if (!target) throw new NotFoundException('Không tìm thấy tài khoản');
+    this.chamDuocTaiKhoan(me, target);
     const { updated, heldIds } = await this.prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(738202)`;
       const activeAdmins = await tx.user.count({ where: { role: Role.ADMIN, isActive: true } });
@@ -100,11 +125,12 @@ export class UsersController {
     return updated;
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.DEPT_ADMIN)
   @Post(':id/reset-password')
   async resetPassword(@Param('id') id: string, @CurrentUser() me: AuthUser, @Body() dto: ResetPasswordDto) {
-    const target = await this.prisma.user.findUnique({ where: { id }, select: { id: true, role: true } });
+    const target = await this.prisma.user.findUnique({ where: { id }, select: { id: true, role: true, departmentId: true } });
     if (!target) throw new NotFoundException('Không tìm thấy tài khoản');
+    this.chamDuocTaiKhoan(me, target);
     const error = canResetPassword(me.id, target);
     if (error) throw new BadRequestException(error);
     await this.prisma.user.update({ where: { id }, data: { passwordHash: await bcrypt.hash(dto.password, 12) } });

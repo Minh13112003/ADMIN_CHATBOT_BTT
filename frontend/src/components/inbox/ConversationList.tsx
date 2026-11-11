@@ -119,9 +119,17 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
               ))}
             </div>
 
-            <div role="group" aria-label="Lọc theo trạng thái" className="[scrollbar-width:none] [&::-webkit-scrollbar]:hidden flex flex-wrap gap-1.5 pb-1">
-              <button type="button" aria-pressed={!status} onClick={() => setStatus(null)} className={`min-h-11 shrink-0 rounded-lg px-3 text-xs font-semibold ${!status ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>Tất cả ({tong})</button>
-              {STATUS_LIST.map((s) => <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)} className={`min-h-10 shrink-0 rounded-lg px-3 text-xs font-semibold ${status === s ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>{STATUS[s].label} ({data?.counts[s] ?? 0})</button>)}
+            <div
+              role="group"
+              aria-label="Lọc theo trạng thái"
+              className="-mx-4 flex snap-x scroll-px-4 gap-1.5 overflow-x-auto overscroll-x-contain px-4 pb-1.5 [scrollbar-width:thin]"
+              onWheel={(e) => {
+                // Lăn chuột dọc thì cuộn ngang hàng trạng thái.
+                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) e.currentTarget.scrollLeft += e.deltaY;
+              }}
+            >
+              <button type="button" aria-pressed={!status} onClick={() => setStatus(null)} className={`min-h-10 shrink-0 snap-start whitespace-nowrap rounded-lg px-3 text-xs font-semibold ${!status ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>Tất cả ({tong})</button>
+              {STATUS_LIST.map((s) => <button key={s} type="button" aria-pressed={status === s} onClick={(e) => { setStatus(s); e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); }} className={`min-h-10 shrink-0 snap-start whitespace-nowrap rounded-lg px-3 text-xs font-semibold ${status === s ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>{STATUS[s].label} ({data?.counts[s] ?? 0})</button>)}
             </div>
           </>
         )}

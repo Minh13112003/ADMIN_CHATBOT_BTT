@@ -4,12 +4,13 @@ import { Cron } from '@nestjs/schedule';
 import { Channel, ConversationStatus, Prisma, Role } from '../generated/prisma/client';
 import { AuthUser } from '../auth/auth.decorators';
 import { tomTatDinhKem } from '../common/attachments';
-import { chuanHoaMaTour } from '../common/deals';
 import { dongNghiepDangNhan, nguoiPhuTrachSauKhiGui, vaiTro } from '../common/locks';
 import { khoaTimKiem, tomTat, truyVanTin } from '../common/text';
+import { locHoiThoai, phamViPhong, sqlPhamHoiThoai } from '../common/scope';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { AttachmentsService } from '../storage/attachments.service';
+import { PricingService } from '../tours/pricing.service';
 
 const INCLUDE = {
   customer: { select: { id: true, name: true, aliases: true, phone: true, phoneVerified: true } },
@@ -42,14 +43,14 @@ const MESSAGE_SELECT = {
   replyTo: { select: { id: true, text: true, senderType: true } },
 } satisfies Prisma.MessageSelect;
 
-export type CloseInput = { dealId?: string; tourName: string; tourCode: string; guests: number; amount: number; orderCode?: string };
+export type CloseInput = { dealId?: string; tourKey?: string; dayCode: string; guests: number; voucherCode?: string; orderCode?: string };
 export type PatchInput = { tags?: string[]; note?: string; interest?: string; autoReplyOn?: boolean; followUpAt?: string | null; followUpNote?: string };
 
 @Injectable()
 export class ConversationsService {
   private log = new Logger('Conversations');
 
-  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService) {}
+  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService) {}
 
   /** Bỏ đường dẫn lưu trữ, thêm `attachment` (link xem có hạn) trước khi gửi ra ngoài. */
   private ra<T extends { id: string; attachmentPath: string | null; attachmentType: string | null; attachmentName: string | null; attachmentSize: number | null }>(m: T) {
@@ -103,6 +104,7 @@ export class ConversationsService {
   async list(user: AuthUser, q: { status?: ConversationStatus; channel?: Channel; search?: string; take?: number; tag?: string; followUp?: boolean }) {
     const tim = timKhach(q.search);
     const where: Prisma.ConversationWhereInput = {
+      ...this.pham(user),
       ...(q.channel ? { channel: q.channel } : {}),
       ...(tim ? { customer: tim } : {}),
       ...(q.tag ? { tags: { has: q.tag } } : {}),
@@ -141,6 +143,11 @@ export class ConversationsService {
     };
   }
 
+  /** Admin phòng chỉ thấy hội thoại của phòng mình; sale và admin toàn quyền như cũ. */
+  private pham(user: AuthUser): Prisma.ConversationWhereInput {
+    return user.role === Role.DEPT_ADMIN ? locHoiThoai(phamViPhong(user)) : {};
+  }
+
   private async lay(id: string): Promise<ConvRow> {
     const c = await this.prisma.conversation.findUnique({ where: { id }, include: INCLUDE });
     if (!c) throw new NotFoundException('Không tìm thấy hội thoại');
@@ -151,9 +158,19 @@ export class ConversationsService {
     return this.toDto(await this.lay(id), user.id, await this.tenNhanVien());
   }
 
-  async messages(id: string, before?: string, take = 100) {
+  async messages(id: string, before?: string, take = 100, around?: string) {
     await this.lay(id);
     const n = Math.min(take, 200);
+    if (around) {
+      // Mở thẳng tới một tin: 20 tin trước nó, chính nó và các tin sau.
+      const dich = await this.prisma.message.findFirst({ where: { id: around, conversationId: id }, select: { createdAt: true } });
+      if (!dich) throw new NotFoundException('Không tìm thấy tin nhắn này');
+      const [truoc, sau] = await Promise.all([
+        this.prisma.message.findMany({ where: { conversationId: id, createdAt: { lt: dich.createdAt } }, orderBy: { createdAt: 'desc' }, take: 21, select: MESSAGE_SELECT }),
+        this.prisma.message.findMany({ where: { conversationId: id, createdAt: { gte: dich.createdAt } }, orderBy: { createdAt: 'asc' }, take: n, select: MESSAGE_SELECT }),
+      ]);
+      return { items: [...truoc.slice(0, 20).reverse(), ...sau].map((m) => this.ra(m)), hasMore: truoc.length > 20 };
+    }
     const rows = await this.prisma.message.findMany({
       where: { conversationId: id, ...(before ? { createdAt: { lt: new Date(before) } } : {}) },
       orderBy: { createdAt: 'desc' },
@@ -304,26 +321,53 @@ export class ConversationsService {
    */
   async close(user: AuthUser, id: string, dto: CloseInput) {
     const c = await this.lay(id);
-    const tourCode = chuanHoaMaTour(dto.tourCode);
-    if (!tourCode) throw new BadRequestException('Mã tour chưa đúng. Nhập mã đợt khởi hành, ví dụ A06.FIT.TW.070227.A');
     if (dto.orderCode) {
       const trung = await this.prisma.deal.findUnique({ where: { orderCode: dto.orderCode }, select: { id: true } });
       if (trung && trung.id !== dto.dealId) throw new ConflictException('Mã đơn này đã được ghi nhận');
     }
-    const tien = dto.amount.toLocaleString('vi-VN');
-    const data = { tourName: dto.tourName.trim(), tourCode, guests: dto.guests, amount: BigInt(dto.amount), status: 'CONFIRMED' as const, closedById: user.id, closedAt: new Date() };
-    let log: string;
     if (dto.dealId) {
-      const don = await this.prisma.deal.findFirst({ where: { id: dto.dealId, conversationId: id } });
+      const don = await this.prisma.deal.findFirst({ where: { id: dto.dealId, conversationId: id }, select: { status: true } });
       if (!don) throw new NotFoundException('Không tìm thấy đơn này');
       if (don.status !== 'PENDING') throw new ConflictException(don.status === 'CONFIRMED' ? 'Đơn này đã được chốt' : 'Đơn này đã huỷ');
-      await this.prisma.deal.update({ where: { id: don.id }, data: { ...data, ...(dto.orderCode ? { orderCode: dto.orderCode } : {}) } });
-      log = `${user.fullName} xác nhận đơn khách đặt qua bttAI: ${data.tourName} (${tourCode}), ${dto.guests} khách, ${tien} đ`;
-    } else {
-      await this.prisma.deal.create({ data: { ...data, conversationId: id, customerId: c.customerId, channel: c.channel, source: 'STAFF', orderCode: dto.orderCode } });
-      log = `${user.fullName} chốt tour ${data.tourName} (${tourCode}), ${dto.guests} khách, ${tien} đ`;
     }
+    const gia = await this.pricing.bao({ ...dto, conversationId: id });
+    if (gia.voucherError) throw new BadRequestException(gia.voucherError);
+    const tourCode = gia.dayCode;
+    const data = {
+      tourName: gia.tourName, tourCode, tourKey: gia.tourKey, guests: gia.guests,
+      departureDate: gia.departureDate ? new Date(`${gia.departureDate}T00:00:00Z`) : null,
+      unitPrice: BigInt(gia.unitPrice), subtotal: BigInt(gia.subtotal), discount: BigInt(gia.discount), amount: BigInt(gia.total),
+      voucherId: gia.voucher?.id ?? null, voucherCode: gia.voucher?.code ?? null,
+      status: 'CONFIRMED' as const, closedById: user.id, closedAt: new Date(),
+    };
+    const tien = gia.total.toLocaleString('vi-VN');
+    const voucherLog = gia.voucher ? `, voucher ${gia.voucher.code} giảm ${gia.discount.toLocaleString('vi-VN')} đ` : '';
+    await this.prisma.$transaction(async (tx) => {
+      if (gia.voucher) {
+        // Hai sale cùng dùng voucher sắp hết lượt: khoá theo voucher rồi đếm lại.
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'voucher:' + gia.voucher.id}))`;
+        const v = await tx.voucher.findUnique({ where: { id: gia.voucher.id }, select: { maxUses: true } });
+        if (v?.maxUses !== null && v?.maxUses !== undefined && (await this.pricing.daDung(gia.voucher.id, tx, dto.dealId)) >= v.maxUses) {
+          throw new ConflictException('Voucher này vừa dùng hết lượt');
+        }
+      }
+      if (dto.dealId) await tx.deal.update({ where: { id: dto.dealId }, data: { ...data, ...(dto.orderCode ? { orderCode: dto.orderCode } : {}) } });
+      else await tx.deal.create({ data: { ...data, conversationId: id, customerId: c.customerId, channel: c.channel, source: 'STAFF', orderCode: dto.orderCode } });
+    });
+    const log = dto.dealId
+      ? `${user.fullName} xác nhận đơn khách đặt qua bttAI: ${data.tourName} (${tourCode}), ${gia.guests} khách${voucherLog}, còn ${tien} đ`
+      : `${user.fullName} chốt tour ${data.tourName} (${tourCode}), ${gia.guests} khách${voucherLog}, còn ${tien} đ`;
     return this.capNhat(user, id, { status: 'CLOSED' }, log);
+  }
+
+  /** Tìm đơn theo mã đơn trong hội thoại này (đơn khách đặt qua chatbot có mã booking). */
+  async dealByOrder(id: string, code: string) {
+    const d = await this.prisma.deal.findFirst({
+      where: { conversationId: id, orderCode: { equals: code.trim(), mode: 'insensitive' } },
+      select: { id: true, orderCode: true, tourCode: true, tourKey: true, tourName: true, guests: true, amount: true, status: true, voidedAt: true, createdAt: true },
+    });
+    if (!d) throw new NotFoundException('Không tìm thấy đơn có mã này trong hội thoại');
+    return { ...d, amount: Number(d.amount) };
   }
 
   /** Khách báo không đi nữa: đơn chờ xác nhận chuyển sang huỷ, không tính doanh thu. */
@@ -388,11 +432,14 @@ export class ConversationsService {
     }
   }
 
-  async customers(search?: string, take = 200) {
+  async customers(user: AuthUser, search?: string, take = 200) {
+    const pham = this.pham(user);
+    const coPham = Object.keys(pham).length > 0;
     return this.prisma.customer.findMany({
-      where: timKhach(search) ?? {},
+      where: { ...(timKhach(search) ?? {}), ...(coPham ? { conversations: { some: pham } } : {}) },
       include: {
         conversations: {
+          where: pham,
           orderBy: { lastMessageAt: 'desc' },
           select: { id: true, channel: true, status: true, interest: true, lastMessageAt: true, assignee: { select: { fullName: true } } },
         },
@@ -403,9 +450,10 @@ export class ConversationsService {
   }
 
   /** Lịch sử đơn của khách ở mọi kênh, mới nhất trước. */
-  async customerDeals(customerId: string) {
+  async customerDeals(user: AuthUser, customerId: string) {
+    const pham = this.pham(user);
     const rows = await this.prisma.deal.findMany({
-      where: { customerId },
+      where: { customerId, ...(Object.keys(pham).length ? { conversation: pham } : {}) },
       orderBy: { createdAt: 'desc' },
       take: 50,
       select: {
@@ -419,6 +467,11 @@ export class ConversationsService {
         tourName: true,
         guests: true,
         amount: true,
+        unitPrice: true,
+        subtotal: true,
+        discount: true,
+        voucherCode: true,
+        departureDate: true,
         bookingStatus: true,
         createdAt: true,
         closedAt: true,
@@ -426,20 +479,24 @@ export class ConversationsService {
         closedBy: { select: { fullName: true } },
       },
     });
-    return rows.map((d) => ({ ...d, amount: Number(d.amount) }));
+    const so = (v: bigint | null) => (v === null ? null : Number(v));
+    return rows.map((d) => ({ ...d, amount: Number(d.amount), unitPrice: so(d.unitPrice), subtotal: so(d.subtotal), discount: so(d.discount) }));
   }
 
   /** Tìm trong nội dung tin, không phân biệt dấu. Biểu thức WHERE phải giống chỉ mục messages_text_fts_idx (migration sale_workflow). */
-  async searchMessages(q: string, take = 50) {
+  async searchMessages(user: AuthUser, q: string, take = 50, conversationId?: string) {
     const tsq = truyVanTin(q);
     if (!tsq) return [];
+    const pham = conversationId
+      ? Prisma.sql`${sqlPhamHoiThoai(user.role === Role.DEPT_ADMIN ? phamViPhong(user) : null)} AND m."conversationId" = ${conversationId}`
+      : sqlPhamHoiThoai(user.role === Role.DEPT_ADMIN ? phamViPhong(user) : null);
     return this.prisma.$queryRaw<{ id: string; conversationId: string; senderType: string; text: string; internal: boolean; createdAt: Date; channel: Channel; name: string; phone: string | null }[]>`
       SELECT m.id, m."conversationId", m."senderType", m.text, m.internal, m."createdAt", c.channel, cu.name, cu.phone
       FROM messages m
       JOIN conversations c ON c.id = m."conversationId"
       JOIN customers cu ON cu.id = c."customerId"
-      WHERE to_tsvector('simple'::regconfig, btt_bo_dau(m.text)) @@ to_tsquery('simple'::regconfig, ${tsq})
+      WHERE to_tsvector('simple'::regconfig, btt_bo_dau(m.text)) @@ to_tsquery('simple'::regconfig, ${tsq}) AND ${pham}
       ORDER BY m."createdAt" DESC
-      LIMIT ${Math.min(take, 100)}`;
+      LIMIT ${Math.min(take, 200)}`;
   }
 }

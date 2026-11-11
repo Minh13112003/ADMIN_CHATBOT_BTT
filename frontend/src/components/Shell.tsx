@@ -31,6 +31,7 @@ const NAV = [
     href: '/stats',
     label: 'Thống kê',
     admin: true,
+    dept: true,
     icon: (
       <>
         <path d="M5 20V11" />
@@ -39,12 +40,13 @@ const NAV = [
       </>
     ),
   },
-  { href: '/performance', label: 'Hiệu suất sale', admin: true, icon: <><path d="M3 18 9 12l4 3 8-9" /><path d="M16 6h5v5" /></> },
+  { href: '/performance', label: 'Hiệu suất sale', admin: true, dept: true, icon: <><path d="M3 18 9 12l4 3 8-9" /><path d="M16 6h5v5" /></> },
   { href: '/channels', label: 'Kênh kết nối', admin: true, icon: <><circle cx="12" cy="12" r="2" /><circle cx="4" cy="5" r="2" /><circle cx="20" cy="5" r="2" /><circle cx="12" cy="21" r="2" /><path d="m6 6 5 5m7-5-5 5m-1 3v5" /></> },
   {
     href: '/accounts',
     label: 'Quản trị tài khoản',
     admin: true,
+    dept: true,
     icon: (
       <>
         <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z" />
@@ -52,7 +54,25 @@ const NAV = [
       </>
     ),
   },
-] as { href: string; label: string; icon: ReactNode; admin?: boolean }[];
+  { href: '/vouchers', label: 'Voucher', admin: true, dept: true, icon: <><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" /><circle cx="7.5" cy="7.5" r="1.5" /></> },
+  { href: '/tour-interest', label: 'Nhu cầu tour', admin: true, dept: true, icon: <><path d="M3 20h18" /><path d="M6 20V10M12 20V4M18 20v-8" /></> },
+] as { href: string; label: string; icon: ReactNode; admin?: boolean; dept?: boolean }[];
+
+type NavItem = (typeof NAV)[number];
+/** Mục nào hiện với vai trò nào. Chỉ để dễ dùng, quyền thật do backend kiểm tra. */
+function hienMuc(n: NavItem, role: Me['role']) {
+  if (role === 'ADMIN') return true;
+  if (role === 'DIGITAL') return n.href === '/tour-interest' || n.href === '/settings';
+  if (role === 'DEPT_ADMIN') return !n.admin || !!n.dept;
+  return !n.admin;
+}
+
+function tenVaiTro(me: Me) {
+  if (me.role === 'ADMIN') return 'Quản trị hệ thống';
+  if (me.role === 'DEPT_ADMIN') return `Admin phòng${me.department?.name ? ` ${me.department.name}` : ''}`;
+  if (me.role === 'DIGITAL') return 'Digital (chỉ xem)';
+  return 'Nhân viên tư vấn';
+}
 
 function noiDungPing(p: Ping) {
   const kenh = p.channel ? ` (${CHANNEL[p.channel as Channel]?.label ?? p.channel})` : '';
@@ -98,6 +118,8 @@ export function Shell({ children }: { children: ReactNode }) {
   };
 
   if (!me) return <p className="p-6 text-sm text-muted">Đang tải...</p>;
+  const dsNav = NAV.filter((n) => hienMuc(n, me.role));
+  const tabDuoi = dsNav.filter((n) => !n.admin).slice(0, 4);
 
   return (
     <div className="workspace flex h-dvh min-w-0 flex-col md:flex-row">
@@ -112,7 +134,7 @@ export function Shell({ children }: { children: ReactNode }) {
               </span>
             )}
           </Link>
-          {[{ caption: 'BẢNG ĐIỀU KHIỂN', label: 'Điều hướng', items: NAV.filter((n) => !n.admin) }, ...(me.role === 'ADMIN' ? [{ caption: 'QUẢN TRỊ (ADMIN)', label: 'Quản trị', items: NAV.filter((n) => n.admin) }] : [])].map((group) => (
+          {[{ caption: 'BẢNG ĐIỀU KHIỂN', label: 'Điều hướng', items: dsNav.filter((n) => !n.admin) }, ...(dsNav.some((n) => n.admin) ? [{ caption: me.role === 'ADMIN' ? 'QUẢN TRỊ (ADMIN)' : me.role === 'DEPT_ADMIN' ? 'QUẢN TRỊ PHÒNG' : 'BÁO CÁO', label: 'Quản trị', items: dsNav.filter((n) => n.admin) }] : [])].map((group) => (
             <div key={group.caption} className="px-3 pt-4">
               {thu ? <div className="mb-2 h-px bg-line-soft" /> : <p className="px-3 pb-2 text-[0.6875rem] font-bold uppercase tracking-wider text-muted">{group.caption}</p>}
               <nav aria-label={group.label} className="space-y-1">
@@ -142,7 +164,7 @@ export function Shell({ children }: { children: ReactNode }) {
             {!thu && (
               <div className="min-w-0">
                 <strong className="block truncate text-sm">{me.fullName}</strong>
-                <small className="text-xs text-muted">{me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</small>
+                <small className="text-xs text-muted">{tenVaiTro(me)}</small>
               </div>
             )}
           </div>
@@ -217,19 +239,35 @@ export function Shell({ children }: { children: ReactNode }) {
               {me.fullName.trim().split(' ').pop()?.charAt(0)}
             </button>
             {menu === 'me' && (
-              <div className="absolute right-0 top-12 flex w-72 max-w-[calc(100vw-32px)] flex-col gap-2.5 rounded-2xl border border-line bg-surface shadow-sm p-3.5 shadow-xl">
-                <div className="text-[0.9375rem] font-semibold">{me.fullName}</div>
-                <dl className="grid grid-cols-[96px_minmax(0,1fr)] gap-x-2 gap-y-1 text-[0.8125rem]">
+              <div className="fixed right-4 top-20 w-[340px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl border border-line bg-surface shadow-xl sm:absolute sm:right-0 sm:top-12">
+                <div className="flex items-center gap-3 border-b border-line-soft bg-brand-soft/60 p-4">
+                  <span className="grid size-12 shrink-0 place-items-center rounded-full bg-strong text-lg font-bold text-on-strong">{me.fullName.trim().split(' ').pop()?.charAt(0)}</span>
+                  <div className="min-w-0">
+                    <div className="truncate text-base font-bold">{me.fullName}</div>
+                    <div className="truncate text-sm text-muted">{me.email}</div>
+                    <span className="mt-1 inline-block rounded-full bg-surface px-2 py-0.5 text-xs font-semibold text-brand-text">{tenVaiTro(me)}</span>
+                  </div>
+                </div>
+                <dl className="grid grid-cols-[110px_minmax(0,1fr)] gap-x-3 gap-y-2 p-4 text-sm">
+                  <dt className="text-muted">Phòng ban</dt>
+                  <dd className="font-medium">{me.department?.name ?? (me.role === 'ADMIN' ? 'Toàn công ty' : 'Chưa gán')}</dd>
                   <dt className="text-muted">Mã nhân viên</dt>
-                  <dd>{me.employeeCode ?? 'Chưa có'}</dd>
-                  <dt className="text-muted">Vị trí</dt>
-                  <dd>{me.position ?? 'Chưa có'}</dd>
-                  <dt className="text-muted">Đang giữ</dt>
-                  <dd>{me.load} khách</dd>
+                  <dd className="font-medium">{me.employeeCode ?? <span className="text-muted">Chưa có</span>}</dd>
+                  <dt className="text-muted">Chức vụ</dt>
+                  <dd className="font-medium">{me.position ?? <span className="text-muted">Chưa có</span>}</dd>
+                  {me.role !== 'DIGITAL' && (
+                    <>
+                      <dt className="text-muted">Đang giữ</dt>
+                      <dd className="font-medium" title="Khách Liên hệ và Chờ xử lý bạn đang phụ trách">{me.load} khách cần xử lý</dd>
+                    </>
+                  )}
                 </dl>
                 {me.role === 'SALE' && (
-                  <div className="flex items-center gap-2.5 border-t border-line-soft pt-2.5">
-                    <span className="flex-1 text-sm">Đang trực (nhận khách tự động)</span>
+                  <div className="mx-4 mb-3 flex items-center gap-2.5 rounded-xl bg-fill px-3 py-2.5">
+                    <span className="flex-1 text-sm">
+                      <strong className="block font-semibold">{me.onDuty ? 'Đang trực' : 'Đang nghỉ'}</strong>
+                      <small className="text-xs text-muted">{me.onDuty ? 'Đang nhận khách tự động' : 'Không nhận khách mới'}</small>
+                    </span>
                     <Switch
                       checked={me.onDuty}
                       label="Đang trực"
@@ -240,13 +278,10 @@ export function Shell({ children }: { children: ReactNode }) {
                     />
                   </div>
                 )}
-                <div className="flex gap-2 border-t border-line-soft pt-2.5">
-                  <Link
-                    to="/settings"
-                    onClick={() => setMenu(null)}
-                    className="flex min-h-11 flex-1 items-center justify-center rounded-lg border border-field text-[0.8125rem] hover:bg-fill"
-                  >
-                    Cài đặt
+                <div className="flex flex-col border-t border-line-soft p-2 [&>*]:flex [&>*]:min-h-11 [&>*]:items-center [&>*]:gap-3 [&>*]:rounded-lg [&>*]:px-3 [&>*]:text-left [&>*]:text-sm [&>*]:font-medium [&>*:hover]:bg-fill">
+                  <Link to="/settings" onClick={() => setMenu(null)}>
+                    <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" {...stroke}><circle cx="12" cy="12" r="3" /><path d="M4 7h4M16 7h4M4 17h4M16 17h4" /></svg>
+                    Cài đặt hiển thị
                   </Link>
                   <button
                     type="button"
@@ -254,11 +289,12 @@ export function Shell({ children }: { children: ReactNode }) {
                       setMenu(null);
                       setDoiMk(true);
                     }}
-                    className="min-h-9 flex-1 rounded-lg border border-field text-[0.8125rem] hover:bg-fill"
                   >
+                    <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" {...stroke}><rect x="4" y="10" width="16" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
                     Đổi mật khẩu
                   </button>
-                  <button type="button" onClick={dangXuat} className="min-h-9 flex-1 rounded-lg border border-field text-[0.8125rem] hover:bg-fill">
+                  <button type="button" onClick={dangXuat} className="text-brand-text">
+                    <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" {...stroke}><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></svg>
                     Đăng xuất
                   </button>
                 </div>
@@ -283,8 +319,8 @@ export function Shell({ children }: { children: ReactNode }) {
           {children}
         </div>
       </div>
-      <nav aria-label="Điều hướng điện thoại" className="z-25 flex h-[calc(56px+env(safe-area-inset-bottom))] shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden [&>a]:relative [&>a]:flex [&>a]:min-h-14 [&>a]:min-w-0 [&>a]:flex-1 [&>a]:flex-col [&>a]:items-center [&>a]:justify-center [&>a]:gap-px [&>a]:text-[0.6875rem] [&>a]:font-semibold [&>a]:text-muted [&>button]:relative [&>button]:flex [&>button]:min-h-14 [&>button]:min-w-0 [&>button]:flex-1 [&>button]:flex-col [&>button]:items-center [&>button]:justify-center [&>button]:gap-px [&>button]:text-[0.6875rem] [&>button]:font-semibold [&>button]:text-muted [&>a[aria-current=page]]:text-brand-text [&_i]:absolute [&_i]:right-[20%] [&_i]:top-px [&_i]:grid [&_i]:h-[17px] [&_i]:min-w-[17px] [&_i]:place-items-center [&_i]:rounded-[9px] [&_i]:bg-brand-button [&_i]:text-[0.6rem] [&_i]:not-italic [&_i]:text-white md:hidden">{NAV.slice(0, 4).map((n) => <Link key={n.href} to={n.href} aria-current={pathname.startsWith(n.href) ? 'page' : undefined}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.href === '/deals' ? 'Đơn tour' : n.href === '/reminders' ? 'Hẹn' : n.label}</span>{n.href === '/inbox' && soCho > 0 && <i>{soCho}</i>}</Link>)}<button type="button" aria-expanded={moreOpen} onClick={() => setMoreOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>Thêm</span></button></nav>
-      {moreOpen && <Dialog title="Thêm" variant="drawer" onClose={() => setMoreOpen(false)}><nav aria-label="Mục khác" className="flex flex-col gap-0.5">{NAV.slice(4).filter((n) => !n.admin || me.role === 'ADMIN').map((n) => <Link key={n.href} to={n.href} onClick={() => setMoreOpen(false)} aria-current={pathname.startsWith(n.href) ? 'page' : undefined} className="flex min-h-11 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text aria-[current=page]:shadow-[inset_3px_0_var(--color-brand)] [&_svg]:shrink-0"><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.label}</span></Link>)}</nav></Dialog>}
+      <nav aria-label="Điều hướng điện thoại" className="z-25 flex h-[calc(56px+env(safe-area-inset-bottom))] shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden [&>a]:relative [&>a]:flex [&>a]:min-h-14 [&>a]:min-w-0 [&>a]:flex-1 [&>a]:flex-col [&>a]:items-center [&>a]:justify-center [&>a]:gap-px [&>a]:text-[0.6875rem] [&>a]:font-semibold [&>a]:text-muted [&>button]:relative [&>button]:flex [&>button]:min-h-14 [&>button]:min-w-0 [&>button]:flex-1 [&>button]:flex-col [&>button]:items-center [&>button]:justify-center [&>button]:gap-px [&>button]:text-[0.6875rem] [&>button]:font-semibold [&>button]:text-muted [&>a[aria-current=page]]:text-brand-text [&_i]:absolute [&_i]:right-[20%] [&_i]:top-px [&_i]:grid [&_i]:h-[17px] [&_i]:min-w-[17px] [&_i]:place-items-center [&_i]:rounded-[9px] [&_i]:bg-brand-button [&_i]:text-[0.6rem] [&_i]:not-italic [&_i]:text-white md:hidden">{tabDuoi.map((n) => <Link key={n.href} to={n.href} aria-current={pathname.startsWith(n.href) ? 'page' : undefined}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.href === '/deals' ? 'Đơn tour' : n.href === '/reminders' ? 'Hẹn' : n.label}</span>{n.href === '/inbox' && soCho > 0 && <i>{soCho}</i>}</Link>)}<button type="button" aria-expanded={moreOpen} onClick={() => setMoreOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>Thêm</span></button></nav>
+      {moreOpen && <Dialog title="Thêm" variant="drawer" onClose={() => setMoreOpen(false)}><nav aria-label="Mục khác" className="flex flex-col gap-0.5">{dsNav.filter((n) => !tabDuoi.includes(n)).map((n) => <Link key={n.href} to={n.href} onClick={() => setMoreOpen(false)} aria-current={pathname.startsWith(n.href) ? 'page' : undefined} className="flex min-h-11 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text aria-[current=page]:shadow-[inset_3px_0_var(--color-brand)] [&_svg]:shrink-0"><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.label}</span></Link>)}</nav></Dialog>}
       {doiMk && <ChangePasswordDialog onClose={() => setDoiMk(false)} />}
     </div>
   );

@@ -4,15 +4,22 @@ export type Channel = 'WEB' | 'APP' | 'ZALO' | 'FACEBOOK';
 export type Role = 'OWNER' | 'SUPPORT' | 'UNASSIGNED';
 export type RuleType = 'FIRST_MESSAGE' | 'KEYWORD' | 'OFF_HOURS';
 
+/** ADMIN toàn quyền · DEPT_ADMIN admin phòng ban · DIGITAL chỉ xem nhu cầu tour · SALE tư vấn. */
+export type UserRole = 'ADMIN' | 'SALE' | 'DEPT_ADMIN' | 'DIGITAL';
+export type Department = { id: string; name: string; members: number };
+
 export type Me = {
   id: string;
   email: string;
   fullName: string;
-  role: 'ADMIN' | 'SALE';
+  role: UserRole;
   employeeCode: string | null;
   position: string | null;
   onDuty: boolean;
   load: number;
+  departmentId?: string | null;
+  department?: { name: string } | null;
+  scopeIds?: string[];
 };
 
 export type Person = { id: string; fullName: string };
@@ -76,6 +83,11 @@ export type Deal = {
   closedAt: string;
   voidedAt: string | null;
   closedBy: { fullName: string } | null;
+  unitPrice?: number | null;
+  subtotal?: number | null;
+  discount?: number | null;
+  voucherCode?: string | null;
+  departureDate?: string | null;
 };
 
 export type MessageHit = { id: string; conversationId: string; senderType: Message['senderType']; text: string; internal: boolean; createdAt: string; channel: Channel; name: string; phone: string | null };
@@ -102,6 +114,11 @@ export type CustomerRow = {
 
 export type Stats = {
   updatedAt: string;
+  closeRate: number | null;
+  conversion?: { respondedCustomers: number; closedCustomers: number };
+  cancelled: { count: number; tours: { name: string; count: number; amount: number }[] };
+  /** Chỉ admin toàn quyền (không lọc phòng) mới có. */
+  departments: { id: string | null; name: string; deals: number; revenue: number; guests: number }[];
   customers: number;
   phones: number;
   contact: number;
@@ -110,7 +127,7 @@ export type Stats = {
   revenue: Record<Channel, number>;
   totalRevenue: number;
   tours: { name: string; orders: number; guests: number; revenue: number }[];
-  staff: { name: string; contact: number; closed: number; revenue: number; responses: number; avgSeconds: number | null; medianSeconds: number | null; within5MinRate: number | null; onDuty: boolean; load: number; isSale: boolean }[];
+  staff: { id: string; departmentName: string; name: string; contact: number; closed: number; closedCustomers?: number; guests?: number; revenue: number; responses: number; avgSeconds: number | null; medianSeconds: number | null; within5MinRate: number | null; onDuty: boolean; load: number; isSale: boolean }[];
   pending: { count: number; amount: number };
   responseTime: { count: number; avgSeconds: number | null; medianSeconds: number | null; within5MinRate: number | null };
   topCustomers: { id: string; name: string; phone: string | null; orders: number; guests: number; revenue: number; lastClosedAt: string; channels: { channel: Channel; revenue: number }[] }[];
@@ -126,8 +143,81 @@ export type Account = {
   fullName: string;
   employeeCode: string | null;
   position: string | null;
-  role: 'ADMIN' | 'SALE';
+  role: UserRole;
+  departmentId?: string | null;
+  department?: { name: string } | null;
+  scopeIds?: string[];
   isActive: boolean;
   lastLoginAt: string | null;
   holding?: number;
 };
+
+/** Tour trong danh mục benthanhtourist.com (backend lưu tạm 1 giờ). Giá, mã, ngày là của đợt gần nhất. */
+export type CatalogTour = {
+  key: string;
+  code: string | null;
+  name: string;
+  image: string | null;
+  days: number | null;
+  nights: number | null;
+  price: number | null;
+  departureDate: string | null;
+  categoryIds: number[];
+  place: { id: number; name: string } | null;
+  matchedDay?: TourDay;
+};
+export type TourDay = { id: string; code: string; departureDate: string; returnDate: string | null; price: number; stock: number | null; available: boolean };
+export type TourDetail = CatalogTour & { tourDays: TourDay[] };
+export type Place = { id: number; name: string; tours: number };
+
+export type Quote = {
+  tourKey: string | null;
+  tourName: string;
+  place: string | null;
+  image: string | null;
+  dayCode: string;
+  departureDate: string | null;
+  unitPrice: number;
+  guests: number;
+  subtotal: number;
+  voucher: { id: string; code: string; label: string } | null;
+  voucherError: string | null;
+  discount: number;
+  total: number;
+  priceFromDeal: boolean;
+};
+
+export type TourTag = {
+  id: string;
+  tourKey: string;
+  tourName: string;
+  categoryName: string | null;
+  createdAt: string;
+  createdBy: { fullName: string } | null;
+  /** Lần thứ mấy tour này được gắn trong hội thoại. */
+  time: number;
+  message: { id: string; text: string; senderType: Message['senderType']; staffLabel: string | null; createdAt: string };
+};
+
+export type VoucherStatus = 'ACTIVE' | 'SCHEDULED' | 'EXPIRED' | 'PAUSED' | 'USED_UP';
+export type Voucher = {
+  id: string;
+  code: string;
+  type: 'AMOUNT' | 'PERCENT';
+  value: number;
+  maxDiscount: number | null;
+  scope: 'TOUR' | 'CATEGORY' | 'ALL';
+  tourKey: string | null;
+  tourName: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+  startsAt: string;
+  endsAt: string;
+  maxUses: number | null;
+  used: number;
+  note: string | null;
+  isActive: boolean;
+  label: string;
+  status: VoucherStatus;
+};
+export type VoucherList = { summary: { active: number; usedThisMonth: number; expiringSoon: number }; items: Voucher[] };

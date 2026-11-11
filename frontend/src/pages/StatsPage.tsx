@@ -1,229 +1,70 @@
 import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
 import useSWR from 'swr';
-import { Segmented } from '@/components/ui';
+import { Dialog } from '@/components/ui';
 import { StatsCharts } from '@/components/stats/StatsCharts';
+import { Metric, Panel, RankingBars, ReportIcon, exportCsv, initials, number, percent } from '@/components/stats/AnalyticsUI';
+import { CustomerFunnel, CustomersReport, DepartmentPanel, OrdersPanel, SalesTable, TourTable } from '@/components/stats/ReportSections';
 import { fetcher } from '@/lib/api';
-import { CHANNEL, CHANNEL_LIST, dinhDangSo, thoiLuong, trieu, vnd } from '@/lib/labels';
-import type { Stats } from '@/lib/types';
+import { thoiLuong, trieu, vnd } from '@/lib/labels';
+import type { Department, Me, Stats } from '@/lib/types';
+import TourInterestPage from './TourInterestPage';
+import '@/components/stats/analytics.css';
 
 type Period = 'today' | 'week' | 'month' | 'all';
-const so = (n: number) => n.toLocaleString('vi-VN');
-const tok = (n: number) => (n < 1e6 ? so(n) : `${(n / 1e6).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} triệu`);
-const pct = (n: number, tong: number) => (tong ? `${((n / tong) * 100).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%` : '0%');
+type View = 'overview' | 'customers' | 'sales' | 'revenue' | 'digital';
+const periods: { value: Period; label: string }[] = [{ value: 'today', label: 'Hôm nay' }, { value: 'week', label: '7 ngày gần đây' }, { value: 'month', label: 'Tháng này' }, { value: 'all', label: 'Từ trước đến nay' }];
+const views: { id: View; label: string; icon: Parameters<typeof ReportIcon>[0]['type'] }[] = [{ id: 'overview', label: 'Tổng quan', icon: 'chart' }, { id: 'customers', label: 'Khách & Tour', icon: 'people' }, { id: 'sales', label: 'Hiệu suất sale', icon: 'ratio' }, { id: 'revenue', label: 'Doanh thu đã chốt', icon: 'money' }, { id: 'digital', label: 'Nhu cầu tour (Digital)', icon: 'search' }];
 
-export default function StatsPage() {
-  const [period, setPeriod] = useState<Period>('month');
-  // Backend chỉ tính lại mỗi 5 phút, nên trang cũng làm mới theo nhịp đó.
-  const { data: s, error } = useSWR<Stats>(`/stats?period=${period}`, fetcher, { refreshInterval: 5 * 60_000 });
-
-  return (
-    <section className="mx-auto flex w-full min-w-0 max-w-[1440px] flex-col gap-6 px-8 py-6 max-[1199px]:px-6 max-md:gap-5 max-md:px-4 max-md:py-5 [&_table_thead]:bg-fill [&_table_thead]:text-xs [&_table_th]:whitespace-nowrap [&_table_td]:py-[18px] stats-page">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <header className="flex flex-wrap items-center justify-between gap-5 [&_.eyebrow]:hidden [&_h1]:hidden [&_p]:mt-0 [&_p]:max-w-[660px] [&_p]:text-sm [&_p]:leading-[1.65] [&_p]:text-muted min-w-48 flex-1">
-          <div>
-            <p className="eyebrow">HIỆU QUẢ KINH DOANH</p>
-            <h1>Báo cáo hiệu suất kinh doanh &amp; hội thoại đa kênh</h1>
-            <p>Theo dõi lượng khách, yêu cầu tư vấn, đơn tour và doanh thu trong kỳ.</p>
-          </div>
-        </header>
-        <Segmented
-          label="Khoảng thời gian"
-          value={period}
-          onChange={setPeriod}
-          items={[
-            { key: 'today', label: 'Hôm nay' },
-            { key: 'week', label: '7 ngày' },
-            { key: 'month', label: 'Tháng này' },
-            { key: 'all', label: 'Tất cả' },
-          ]}
-        />
-      </div>
-
-      {error && <p className="text-sm text-brand-text">Không tải được thống kê.</p>}
-      {!s && !error && <p className="text-sm text-muted">Đang tải...</p>}
-      {s && (
-        <>
-          <div className="grid grid-cols-5 gap-3 max-[1250px]:grid-cols-3 max-md:grid-cols-2 max-md:gap-2.5">
-            <Kpi label="Khách nhắn tin" value={so(s.customers)} sub={`${so(s.phones)} người để lại số`} />
-            <Kpi label="Số điện thoại để lại" value={so(s.phones)} sub={`${pct(s.phones, s.customers)} khách nhắn tin`} />
-            <Kpi label="Yêu cầu gặp nhân viên" value={so(s.contact)} sub={s.contact ? `Phản hồi trung vị ${thoiLuong(s.responseTime.medianSeconds)}` : 'Chưa có yêu cầu trong kỳ'} />
-            <Kpi label="Đơn đã chốt" value={so(s.closed)} sub={`${so(s.guests)} khách đi tour`} />
-            <Kpi
-              label="Doanh thu đã chốt"
-              value={trieu(s.totalRevenue)}
-              sub={s.pending.count ? `Chưa gồm ${s.pending.count} đơn chờ xác nhận` : 'Từ đơn đã chốt gắn hội thoại'}
-            />
-          </div>
-
-          <StatsCharts period={period} />
-
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(340px,100%),1fr))] gap-2.5">
-            <Card title="Doanh thu theo kênh">
-              {CHANNEL_LIST.map((k) => (
-                <Bar
-                  key={k}
-                  label={CHANNEL[k].label}
-                  value={trieu(s.revenue[k])}
-                  ratio={s.revenue[k] / Math.max(...CHANNEL_LIST.map((c) => s.revenue[c]), 1)}
-                  tip={vnd(s.revenue[k])}
-                  color="bg-brand"
-                />
-              ))}
-            </Card>
-            <Card title="Từ tin nhắn đến chốt tour">
-              {(
-                [
-                  ['Khách nhắn tin', s.customers],
-                  ['Để lại số điện thoại', s.phones],
-                  ['Đòi gặp nhân viên', s.contact],
-                  ['Chốt tour', s.closed],
-                ] as const
-              ).map(([l, n]) => (
-                <Bar key={l} label={l} value={so(n)} ratio={s.customers ? n / s.customers : 0} tip={`${l}: ${so(n)}`} color="bg-ink" wide />
-              ))}
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(340px,100%),1fr))] gap-2.5">
-            <Card title="Theo tour">
-              <Table
-                heads={['Tour', 'Đơn', 'Khách', 'Doanh thu']}
-                rows={s.tours.map((t) => [t.name, so(t.orders), so(t.guests), trieu(t.revenue)])}
-                empty="Chưa có đơn nào trong kỳ này."
-              />
-            </Card>
-            <Card title="Theo người chốt">
-              <Table
-                heads={['Người chốt', 'Liên hệ', 'Trả lời TB', 'Chốt', 'Doanh thu']}
-                rows={s.staff.map((t) => [t.name, so(t.contact), t.responses ? thoiLuong(t.avgSeconds) : 'Chưa có', so(t.closed), trieu(t.revenue)])}
-                empty="Chưa có số liệu trong kỳ này."
-              />
-              <p className="text-xs text-muted">Trả lời TB: thời gian trung bình từ lúc khách đòi gặp nhân viên tới tin trả lời đầu tiên.</p>
-            </Card>
-          </div>
-
-          <Card title="Khách chi nhiều nhất">
-            {s.topCustomers.length ? (
-              <ol className="flex flex-col">
-                {s.topCustomers.map((k, i) => (
-                  <li key={k.id} className="flex items-start gap-3 border-t border-line-soft py-2 text-[0.8125rem] first:border-t-0 first:pt-0">
-                    <span className="w-5 shrink-0 text-right font-semibold tabular-nums text-muted">{i + 1}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="break-words font-medium">{k.name}</div>
-                      <div className="text-muted">{k.phone ? dinhDangSo(k.phone) : 'Chưa có số điện thoại'}</div>
-                      <div className="text-muted" title={k.channels.map((c) => `${CHANNEL[c.channel].label}: ${vnd(c.revenue)}`).join(', ')}>
-                        {k.channels.map((c) => CHANNEL[c.channel].label).join(', ')}
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right tabular-nums">
-                      <div className="font-semibold">{trieu(k.revenue)}</div>
-                      <div className="text-muted">
-                        {so(k.orders)} đơn · {so(k.guests)} khách
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="text-sm text-muted">Chưa có đơn nào trong kỳ này.</p>
-            )}
-            <p className="text-xs text-muted">
-              Cộng các đơn đã chốt ở mọi kênh, trừ đơn bị huỷ khi mở lại hội thoại. Chưa trừ đơn huỷ hoặc hoàn tiền bên hệ thống đặt tour.
-            </p>
-          </Card>
-
-          <div className="flex flex-col gap-2.5 rounded-[14px] border border-line bg-surface shadow-sm p-3.5">
-            <div className="flex flex-wrap items-baseline gap-2">
-              <h3 className="min-w-52 flex-1 text-[0.9375rem] font-semibold">Chi phí Gemini của bttAI</h3>
-              <span className="text-xs text-muted">
-                Cập nhật lúc {new Date(s.updatedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · tự làm mới mỗi 5 phút
-              </span>
-            </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2.5">
-              <Mini label="Token vào" value={tok(s.gemini.inputTokens)} sub={`$${s.gemini.inputUsd.toFixed(2)}`} />
-              <Mini label="Token ra" value={tok(s.gemini.outputTokens)} sub={`$${s.gemini.outputUsd.toFixed(2)}`} />
-              <Mini label="Tổng chi phí" value={vnd(s.gemini.vnd)} sub={`$${s.gemini.usd.toFixed(2)}`} />
-              <Mini label="Chi phí mỗi đơn chốt" value={s.closed ? vnd(s.gemini.vnd / s.closed) : 'Chưa có đơn'} sub={`${so(s.closed)} đơn`} />
-            </div>
-            <p className="text-xs text-muted">
-              Số ước tính: token thật nhân giá ${s.gemini.priceInput} và ${s.gemini.priceOutput} mỗi 1 triệu token vào và ra, tỷ giá {so(s.gemini.usdVndRate)}{' '}
-              đ/USD đặt trong cấu hình. Đối soát với hoá đơn Google cuối tháng.
-            </p>
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
-
-function Kpi({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return (
-    <div className="min-h-[152px] rounded-xl border border-line bg-surface shadow-sm p-[19px] max-md:p-3.5 last:border-l-4 last:border-l-brand [&>div:nth-child(2)]:mb-2 [&>div:nth-child(2)]:mt-3.5 [&>div:nth-child(2)]:text-[1.8rem] [&>div:nth-child(2)]:tracking-[-0.04em] max-md:[&>div:nth-child(2)]:text-[1.45rem]">
-      <div className="text-[0.8125rem] text-body">{label}</div>
-      <div className="mt-1 text-2xl font-semibold tabular-nums">{value}</div>
-      <div className="mt-0.5 text-xs text-muted">{sub}</div>
-    </div>
-  );
-}
-
-function Mini({ label, value, sub }: { label: string; value: string; sub: string }) {
-  return (
-    <div>
-      <div className="text-[0.8125rem] text-body">{label}</div>
-      <div className="mt-0.5 text-xl font-semibold tabular-nums">{value}</div>
-      <div className="text-xs text-muted">{sub}</div>
-    </div>
-  );
-}
-
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="overflow-x-auto rounded-[14px] border border-line bg-surface shadow-sm p-3.5">
-      <h3 className="mb-3 text-[0.9375rem] font-semibold">{title}</h3>
-      <div className="flex flex-col gap-2.5">{children}</div>
-    </div>
-  );
-}
-
-function Bar({ label, value, ratio, tip, color, wide }: { label: string; value: string; ratio: number; tip: string; color: string; wide?: boolean }) {
-  return (
-    <div
-      title={tip}
-      className={`grid items-center gap-2 text-[0.8125rem] ${wide ? 'grid-cols-[132px_minmax(0,1fr)_52px]' : 'grid-cols-[82px_minmax(0,1fr)_88px]'}`}
-    >
-      <span className="text-body">{label}</span>
-      <span className="h-3 overflow-hidden rounded-r bg-fill">
-        <span className={`block h-3 rounded-r ${color}`} style={{ width: `${Math.round(ratio * 100)}%` }} />
-      </span>
-      <span className="text-right font-medium tabular-nums">{value}</span>
-    </div>
-  );
-}
-
-function Table({ heads, rows, empty }: { heads: string[]; rows: string[][]; empty: string }) {
-  if (!rows.length) return <p className="text-sm text-muted">{empty}</p>;
-  return (
-    <table className="w-full border-collapse text-[0.8125rem] tabular-nums">
-      <thead>
-        <tr className="text-body">
-          {heads.map((h, i) => (
-            <th key={h} scope="col" className={`px-1 py-1.5 font-medium ${i ? 'text-right' : 'text-left'}`}>
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => (
-          <tr key={r[0]}>
-            {r.map((v, i) => (
-              <td key={i} className={`border-t border-line-soft px-1 py-1.5 ${i ? 'text-right' : ''}`}>
-                {v}
-              </td>
-            ))}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
+export default function StatsPage({ forcedView }: { forcedView?: View }) {
+  const [params, setParams] = useSearchParams();
+  const period = periods.some(p => p.value === params.get('period')) ? params.get('period') as Period : 'month';
+  const departmentId = params.get('departmentId') ?? '';
+  const view = forcedView ?? (views.some(v => v.id === params.get('view')) ? params.get('view') as View : 'overview');
+  const { data: me } = useSWR<Me>('/auth/me', fetcher);
+  const owner = me?.role === 'ADMIN';
+  const { data: departments } = useSWR<Department[]>(owner ? '/departments' : null, fetcher);
+  const scope = owner ? departmentId : '';
+  const query = new URLSearchParams({ period, ...(scope ? { departmentId: scope } : {}) }).toString();
+  const { data: s, error, mutate, isValidating } = useSWR<Stats>(me ? `/stats?${query}` : null, fetcher, { refreshInterval: 300_000 });
+  const [selectedSale, setSelectedSale] = useState<Stats['staff'][number] | null>(null);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const departmentName = owner ? departments?.find(p => p.id === scope)?.name ?? (scope ? 'Phòng đang chọn' : 'Toàn công ty') : me?.department?.name ?? 'Phòng của bạn';
+  const changeFilter = (key: string, value: string) => { const next = new URLSearchParams(params); value ? next.set(key, value) : next.delete(key); setSelectedSale(null); setParams(next); };
+  const tabUrl = (tab: View) => { const next = new URLSearchParams({ period, ...(scope ? { departmentId: scope } : {}) }); if (tab !== 'sales') next.set('view', tab); return `${tab === 'sales' ? '/performance' : '/stats'}?${next}`; };
+  const exportReport = () => {
+    if (!s) return;
+    exportCsv(`bao-cao-${view}-${period}.csv`, [['Báo cáo', views.find(v => v.id === view)!.label], ['Phạm vi', departmentName], ['Kỳ', periods.find(p => p.value === period)!.label], ['Cập nhật', s.updatedAt], [], ...(view === 'sales'
+      ? [['Nhân viên', 'Phòng ban', 'Lượt trả lời', 'Khách chốt', 'Đơn chốt', 'Doanh thu (VND)'], ...s.staff.filter(p => p.isSale).map(p => [p.name, p.departmentName ?? '', p.responses, p.closedCustomers ?? '', p.closed, p.revenue])]
+      : [['Tour', 'Đơn xác nhận', 'Hành khách', 'Doanh thu (VND)'], ...s.tours.map(t => [t.name, t.orders, t.guests, t.revenue])])]);
+  };
+  const sales = s?.staff.filter(p => p.isSale) ?? [];
+  const refresh = () => { void mutate(); setRefreshVersion(v => v + 1); };
+  const departmentPanel = s && <DepartmentPanel s={s} owner={!!owner} scope={scope} name={departmentName} onSelect={id => changeFilter('departmentId', id)} />;
+  return <div className="analytics-page">
+    <header className="report-heading"><div><div className="report-eyebrow">BÁO CÁO KINH DOANH <span>/</span> {departmentName}</div><h1>{view === 'digital' ? 'Nhu cầu tour (Digital)' : view === 'sales' ? 'Hiệu suất đội ngũ tư vấn' : view === 'revenue' ? 'Doanh thu đã chốt' : view === 'customers' ? 'Khách hàng & Tour' : owner && !scope ? 'Tổng quan kinh doanh' : `Thống kê phòng ${departmentName}`}</h1><p>{view === 'digital' ? 'Tour khách quan tâm, tính theo tour sale ghim trên tin nhắn. Bấm "Xem thống kê" để xem chi tiết từng tour.' : view === 'sales' ? 'Theo dõi chất lượng phản hồi và kết quả chốt tour của từng nhân viên.' : 'Từ cuộc hội thoại đến đơn tour — mọi chỉ số trong cùng phạm vi quản lý.'}</p></div><div className="report-actions"><button className="report-button" onClick={refresh} disabled={isValidating}><ReportIcon type="refresh" />{isValidating ? 'Đang cập nhật' : 'Làm mới'}</button>{view !== 'digital' && <button className="report-button primary" onClick={exportReport} disabled={!s}><ReportIcon type="download" />Xuất báo cáo CSV</button>}</div></header>
+    <nav className="report-tabs" aria-label="Báo cáo quản trị">{views.map(tab => <Link key={tab.id} to={tabUrl(tab.id)} aria-current={view === tab.id ? 'page' : undefined}><ReportIcon type={tab.icon} />{tab.label}</Link>)}</nav>
+    {view === 'digital' ? <TourInterestPage embedded /> : <>
+    <section className="report-filters" aria-label="Bộ lọc báo cáo"><div className="report-filter-fields"><label><span>Kỳ báo cáo</span><select value={period} onChange={e => changeFilter('period', e.target.value)}>{periods.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}</select></label>{owner ? <label><span>Phòng ban</span><select aria-label="Lọc theo phòng ban" value={departmentId} onChange={e => changeFilter('departmentId', e.target.value)}><option value="">Tất cả phòng ban</option>{departments?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label> : <div className="report-scope"><ReportIcon type="lock" /><span>Phạm vi cố định<strong>{departmentName}</strong></span></div>}</div><div className="report-filter-meta"><span className={`report-badge ${owner ? 'green' : 'blue'}`}><ReportIcon type="lock" />{owner ? 'Admin toàn quyền' : 'Admin phòng ban'}</span><small>{s ? `Cập nhật ${new Date(s.updatedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · Tự làm mới mỗi 5 phút` : 'Đang lấy số liệu'}</small></div></section>
+    {error ? <div className="report-error" role="alert">Không tải được báo cáo. <button onClick={refresh}>Thử lại</button></div> : !s ? <div className="report-loading" role="status"><div /><div /><div /><span>Đang tải báo cáo…</span></div> : <>
+      {view === 'overview' && <>
+        <div className="report-kpis six"><Metric label="Khách nhắn tin" value={number(s.customers)} note={`${number(s.phones)} khách có số điện thoại`} icon="people" /><Metric label="Khách được phản hồi" value={s.conversion ? number(s.conversion.respondedCustomers) : '—'} note="Đã phản hồi yêu cầu gặp nhân viên" tone="blue" icon="message" /><Metric label="Khách chốt tour" value={s.conversion ? number(s.conversion.closedCustomers) : '—'} note="Trong nhóm khách nhắn tin của kỳ" tone="green" icon="check" /><Metric label="Tỷ lệ chốt khách" value={s.conversion ? percent(s.closeRate) : '—'} note="Khách chốt / khách nhắn tin" tone="purple" icon="ratio" /><Metric label="Đơn đã xác nhận" value={number(s.closed)} note={`${number(s.guests)} hành khách đi tour`} tone="amber" icon="check" /><Metric label="Doanh thu đã chốt" value={trieu(s.totalRevenue)} note="Loại trừ đơn chờ và đơn hủy" tone="red" icon="money" /></div>
+        {s.pending.count > 0 && <div className="report-notice"><span className="notice-icon">!</span><div><strong>{number(s.pending.count)} đơn tour đang chờ xác nhận</strong><p>Tổng giá trị {vnd(s.pending.amount)} · Tất cả thời gian, chưa tính vào doanh thu đã chốt.</p></div><Link to={tabUrl('revenue')}>Xem báo cáo đơn →</Link></div>}
+        <div className="report-grid overview-grid"><Panel title="Hành trình chuyển đổi" description="Cùng nhóm khách nhắn tin trong kỳ"><CustomerFunnel s={s} /><div className="report-panel-foot">Phản hồi yêu cầu tư vấn trung vị <strong>{thoiLuong(s.responseTime.medianSeconds)}</strong></div></Panel><StatsCharts key={`${query}:${refreshVersion}:overview`} period={period} departmentId={scope} showCost={false} compact /></div>
+        <div className="report-grid">{departmentPanel}<Panel title="Tour đóng góp doanh thu cao nhất" description="Top 5 tour từ đơn đã xác nhận" action={<Link className="report-text-link" to={tabUrl('revenue')}>Xem tất cả →</Link>}><RankingBars rows={s.tours.slice(0, 5).map(t => ({ key: t.name, label: t.name, value: t.revenue, detail: `${number(t.orders)} đơn · ${number(t.guests)} hành khách` }))} format={trieu} /></Panel></div><TourTable s={s} />
+      </>}
+      {view === 'revenue' && <>
+        <div className="report-kpis four"><Metric label="Doanh thu đã chốt" value={trieu(s.totalRevenue)} note="Tổng tiền đơn xác nhận còn hiệu lực" tone="red" icon="money" /><Metric label="Đơn đã xác nhận" value={number(s.closed)} note="Không bao gồm đơn chờ và đơn hủy" icon="check" /><Metric label="Tổng hành khách" value={number(s.guests)} note="Số người đi tour trên đơn đã chốt" tone="blue" icon="people" /><Metric label="Giá trị bình quân đơn" value={s.closed ? vnd(s.totalRevenue / s.closed) : '—'} note="Doanh thu / số đơn đã xác nhận" tone="green" icon="money" /></div>
+        <div className="report-grid overview-grid"><StatsCharts key={`${query}:${refreshVersion}:revenue`} period={period} departmentId={scope} showCost={false} revenueOnly compact />{departmentPanel}</div><TourTable s={s} /><OrdersPanel key={`${query}:${refreshVersion}`} query={query} />
+      </>}
+      {view === 'customers' && <CustomersReport s={s} query={query} refreshVersion={refreshVersion} />}
+      {view === 'sales' && <>
+        <div className="report-kpis four"><Metric label="Phản hồi trung vị" value={thoiLuong(s.responseTime.medianSeconds)} note={`${number(s.responseTime.count)} lượt yêu cầu được phản hồi`} icon="message" tone="blue" /><Metric label="Phản hồi trong 5 phút" value={percent(s.responseTime.within5MinRate)} note="Tính trên các lượt yêu cầu đã phản hồi" icon="ratio" tone="green" /><Metric label="Đội ngũ tư vấn" value={number(sales.length)} note={`${sales.filter(p => p.onDuty).length} nhân viên đang trực`} icon="people" /><Metric label="Doanh thu của sale" value={trieu(sales.reduce((v, p) => v + p.revenue, 0))} note={`${number(sales.reduce((v, p) => v + p.closed, 0))} đơn do sale xác nhận`} tone="red" icon="money" /></div>
+        <div className="report-grid"><Panel title="Doanh thu chốt theo nhân sự" description="Nhấp tên để xem chi tiết tư vấn viên"><RankingBars rows={sales.slice(0, 6).map(p => ({ key: p.id ?? p.name, label: p.name, value: p.revenue, onClick: () => setSelectedSale(p) }))} format={trieu} /></Panel><Panel title="Chất lượng phản hồi khách hàng" description="Tỷ lệ phản hồi yêu cầu tư vấn trong 5 phút"><RankingBars rows={sales.filter(p => p.within5MinRate !== null).slice(0, 6).map(p => ({ key: p.id ?? p.name, label: p.name, value: p.within5MinRate! * 100, detail: `${number(p.responses)} lượt trả lời · Trung vị ${thoiLuong(p.medianSeconds)}`, onClick: () => setSelectedSale(p) }))} format={n => percent(n / 100)} color="var(--color-on)" /></Panel></div><SalesTable sales={sales} onSelect={setSelectedSale} />
+      </>}
+      <footer className="report-footer"><span><span className="report-dot" />Dữ liệu trong phạm vi {departmentName.toLocaleLowerCase('vi')}</span><span>Doanh thu từ đơn đã xác nhận · Không phải tiền thực thu</span></footer>
+    </>}
+    </>}
+    {selectedSale && <Dialog title="Chi tiết hiệu suất tư vấn viên" onClose={() => setSelectedSale(null)} variant="drawer"><div className="analytics-page report-sale-detail"><div className="sale-profile"><span className="report-avatar large">{initials(selectedSale.name)}</span><div><h2>{selectedSale.name}</h2><p>{selectedSale.departmentName ?? departmentName}</p><span className={`report-badge ${selectedSale.onDuty ? 'green' : ''}`}>{selectedSale.onDuty ? 'Đang trực' : 'Đang nghỉ'}</span></div></div><div className="report-detail-kpis">{[['Khách chốt', selectedSale.closedCustomers == null ? '—' : number(selectedSale.closedCustomers)], ['Đơn xác nhận', number(selectedSale.closed)], ['Hành khách', selectedSale.guests == null ? '—' : number(selectedSale.guests)], ['Lượt trả lời', number(selectedSale.responses)], ['Trung vị phản hồi', thoiLuong(selectedSale.medianSeconds)], ['Trong 5 phút', percent(selectedSale.within5MinRate)]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div><div className="report-sale-revenue"><span>Doanh thu đã chốt</span><strong>{vnd(selectedSale.revenue)}</strong></div>{selectedSale.id && <OrdersPanel key={`${query}:${selectedSale.id}`} query={`${query}&staffId=${encodeURIComponent(selectedSale.id)}`} compact />}</div></Dialog>}
+  </div>;
 }

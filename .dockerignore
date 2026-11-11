@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+**/coverage
+.git
+.agents
+.claude
+docs
+deploy/.env
+*.md
+**/.env
+**/.env.*
+!**/.env.example
+backend/src/generated
+**/*.log

@@ -4,17 +4,21 @@ import { Segmented } from '@/components/ui';
 import { fetcher } from '@/lib/api';
 import { trieu, vnd } from '@/lib/labels';
 import type { CostSource, StatsSeriesPoint } from '@/lib/types';
+import { Panel } from './AnalyticsUI';
 
 type Granularity = 'day' | 'week' | 'month' | 'quarter';
 const format = (n: number) => n.toLocaleString('vi-VN');
 const CHART_HEIGHT = 250;
 const TOP = 18, BOTTOM = 42, LEFT = 62, RIGHT = 16;
 
-export function StatsCharts({ period }: { period: 'today' | 'week' | 'month' | 'all' }) {
+export function StatsCharts({ period, departmentId = '', showCost = true, compact = false, revenueOnly = false }: { period: 'today' | 'week' | 'month' | 'all'; departmentId?: string; showCost?: boolean; compact?: boolean; revenueOnly?: boolean }) {
   const [granularity, setGranularity] = useState<Granularity>('day');
   const [metric, setMetric] = useState<'revenue' | 'deals'>('revenue');
-  const series = useSWR<StatsSeriesPoint[]>(`/stats/series?granularity=${granularity}`, fetcher, { refreshInterval: 300_000 });
-  const cost = useSWR<CostSource[]>(`/stats/cost-by-source?period=${period}`, fetcher, { refreshInterval: 300_000 });
+  const [chart, setChart] = useState<'revenue' | 'activity'>('revenue');
+  const series = useSWR<StatsSeriesPoint[]>(`/stats/series?granularity=${granularity}&period=${period}${departmentId ? `&departmentId=${departmentId}` : ''}`, fetcher, { refreshInterval: 300_000 });
+  const cost = useSWR<CostSource[]>(showCost && !departmentId ? `/stats/cost-by-source?period=${period}` : null, fetcher, { refreshInterval: 300_000 });
+
+  if (compact) return <Panel className="report-chart" title={chart === 'activity' ? 'Diễn biến tương tác' : 'Doanh thu theo thời gian'} description={period === 'all' ? '60 mốc gần nhất · Theo phạm vi phòng đang chọn' : 'Trong kỳ báo cáo và phạm vi phòng đang chọn'}><div className="report-chart-controls">{!revenueOnly && <div className="report-segments"><button aria-pressed={chart === 'revenue'} onClick={() => setChart('revenue')}>Doanh thu</button><button aria-pressed={chart === 'activity'} onClick={() => setChart('activity')}>Tương tác</button></div>}<select aria-label="Mốc biểu đồ" value={granularity} onChange={e => setGranularity(e.target.value as Granularity)}><option value="day">Theo ngày</option><option value="week">Theo tuần</option><option value="month">Theo tháng</option><option value="quarter">Theo quý</option></select></div><small>{chart === 'revenue' ? 'Đơn vị: triệu đồng · Đơn xác nhận còn hiệu lực' : 'Khách nhắn tin (đỏ) · Yêu cầu tư vấn (xanh)'}</small>{series.error ? <p role="alert" className="report-empty">Không tải được biểu đồ.</p> : !series.data ? <p className="report-empty" role="status">Đang tải biểu đồ…</p> : !series.data.length || series.data.every(p => chart === 'revenue' ? p.revenue === 0 : p.customers === 0 && p.contacts === 0) ? <p className="report-empty">Chưa có dữ liệu trong kỳ này.</p> : chart === 'revenue' ? <BarChart key={`${granularity}:${period}`} data={series.data} metric="revenue" /> : <LineChart key={`${granularity}:${period}`} data={series.data} />}</Panel>;
 
   return <div className="grid min-w-0 gap-3.5">
     <div className="flex flex-wrap items-center gap-3"><div className="flex-1"><h3 className="font-semibold">Diễn biến theo thời gian</h3><p className="text-xs text-muted">Các mốc gần nhất; khoảng này có thể khác kỳ của thẻ tổng.</p></div><Segmented label="Mốc biểu đồ" value={granularity} onChange={setGranularity} items={[{ key: 'day', label: 'Ngày' }, { key: 'week', label: 'Tuần' }, { key: 'month', label: 'Tháng' }, { key: 'quarter', label: 'Quý' }]} /></div>
@@ -33,10 +37,10 @@ export function StatsCharts({ period }: { period: 'today' | 'week' | 'month' | '
         <SeriesTable data={series.data} columns={[{ key: 'customers', label: 'Khách nhắn tin' }, { key: 'contacts', label: 'Yêu cầu gặp nhân viên' }]} />
       </section>
     </div>}
-    <section className="min-w-0 rounded-2xl border border-line bg-surface shadow-sm p-3.5" aria-label="Chi phí theo nguồn">
+    {showCost && !departmentId && <section className="min-w-0 rounded-2xl border border-line bg-surface shadow-sm p-3.5" aria-label="Chi phí theo nguồn">
       <h4 className="font-semibold">Tỷ lệ chi phí theo nguồn</h4><p className="mt-1 text-xs text-muted">Theo kỳ thống kê đang chọn. Chi phí AI là ước tính từ token đã gắn với hội thoại.</p>
       {cost.error ? <p role="alert" className="mt-3 text-sm text-brand-text">Không tải được chi phí theo nguồn.</p> : !cost.data ? <p className="mt-3 text-sm text-muted">Đang tải chi phí...</p> : <CostDonut data={cost.data} />}
-    </section>
+    </section>}
   </div>;
 }
 

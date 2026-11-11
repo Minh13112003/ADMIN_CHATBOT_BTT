@@ -5,6 +5,7 @@ import { loiCua, post } from '@/lib/api';
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [hienMk, setHienMk] = useState(false);
   const [loi, setLoi] = useState('');
   const [dangGui, setDangGui] = useState(false);
 
@@ -45,14 +46,29 @@ export default function LoginPage() {
             <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
           </Field>
           <Field label="Mật khẩu">
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                type={hienMk ? 'text' : 'password'}
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`${inputClass} w-full pr-12`}
+              />
+              <button
+                type="button"
+                onClick={() => setHienMk(!hienMk)}
+                aria-label={hienMk ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-pressed={hienMk}
+                className="absolute right-0 top-1/2 grid size-11 -translate-y-1/2 place-items-center rounded-lg text-muted hover:text-ink"
+              >
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" />
+                  <circle cx="12" cy="12" r="3" />
+                  {hienMk && <path d="m3 3 18 18" />}
+                </svg>
+              </button>
+            </div>
           </Field>
           <ErrorText>{loi}</ErrorText>
           <button type="submit" disabled={dangGui} className={primaryClass}>

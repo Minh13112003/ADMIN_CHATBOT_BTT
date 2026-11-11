@@ -43,6 +43,16 @@ export function tenTepAnToan(ten: string | undefined | null, ext: string): strin
 /** Đường dẫn trong bucket: tháng + UUID + đuôi do mình quyết định (không bao giờ dùng tên file người gửi). Chia theo tháng cho dễ dọn về sau. */
 export const duongDanLuuTru = (tepId: string, ext: string, luc: Date) => `${luc.getUTCFullYear()}-${String(luc.getUTCMonth() + 1).padStart(2, '0')}/${tepId}.${ext}`;
 
+/**
+ * Đường dẫn tuyệt đối của file trong thư mục lưu trữ trên ổ đĩa, hoặc null nếu `duongDan` không đúng dạng
+ * `2026-11/<uuid>.jpg` (có `..`, bắt đầu bằng `/`, ký tự lạ). Đường dẫn do backend tự sinh nhưng vẫn kiểm tra
+ * vì nó đi từ database ra ổ đĩa.
+ */
+export function duongDanTrongThuMuc(thuMuc: string, duongDan: string): string | null {
+  if (!/^[A-Za-z0-9][A-Za-z0-9_-]*\/[A-Za-z0-9][A-Za-z0-9_-]*\.[a-z0-9]{2,5}$/.test(duongDan)) return null;
+  return `${thuMuc.replace(/[\\/]+$/, '')}/${duongDan}`;
+}
+
 /** Dòng tóm tắt ở danh sách hội thoại khi tin có file. */
 export const tomTatDinhKem = (text: string, loai: string, ten: string) => {
   const t = text.trim();

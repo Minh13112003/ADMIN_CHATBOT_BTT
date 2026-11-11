@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import useSWR from 'swr';
 import { ApiError, fetcher, loiCua, patch, post, postForm } from '@/lib/api';
 import { CHANNEL, dinhDangSo, STATUS, trieu } from '@/lib/labels';
 import { useRealtime } from '@/lib/realtime';
-import type { Conversation, Deal, Me, Message, Person, Template } from '@/lib/types';
+import type { Conversation, Deal, Me, Message, MessageHit, Person, Template, TourTag } from '@/lib/types';
+import { TagTourDialog, xemTinTrongChat } from './TourTags';
 import { insertAtCursor, prepareQuickReply } from '@/lib/quick-reply';
 import { chipClass, Dialog, ErrorText, Field, inputClass, primaryClass, secondaryClass, Switch } from '../ui';
-import { CloseDealDialog, InfoPanel } from './InfoPanel';
+import { InfoPanel } from './InfoPanel';
+import { CloseDealDialog } from './CloseDealDialog';
 import { dungLuong, MessageBubble } from './MessageBubble';
 import { QuickReplyPicker } from './QuickReplyPicker';
 
@@ -21,24 +23,36 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
   const [chatMenu, setChatMenu] = useState(false);
   const [headerHandover, setHeaderHandover] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const [ghimTin, setGhimTin] = useState<Message | null>(null);
+  const [timTin, setTimTin] = useState(false);
+  const { data: tags, mutate: mutateTags } = useSWR<TourTag[]>(`/conversations/${id}/tour-tags`, fetcher);
   const { clearPing } = useRealtime();
   const daDoc = useRef(false);
+  const { data: me } = useSWR<Me>('/auth/me', fetcher);
+  // Digital chỉ được xem: không có khung soạn tin, không đánh dấu đã đọc.
+  const chiXem = me?.role === 'DIGITAL';
+  const [sp] = useSearchParams();
+  const focusId = sp.get('m');
 
   useEffect(() => {
-    if (conv && conv.status === 'UNREAD' && !daDoc.current) {
+    if (conv && me && !chiXem && conv.status === 'UNREAD' && !daDoc.current) {
       daDoc.current = true;
       void post<Conversation>(`/conversations/${id}/read`).then((c) => mutate(c, { revalidate: false }));
     }
   }, [conv, id, mutate]);
 
   useEffect(() => clearPing(id), [clearPing, id]);
-  useEffect(() => setReplyTo(null), [id]);
+  useEffect(() => {
+    setReplyTo(null);
+    setTimTin(false);
+  }, [id]);
 
   if (error) return <p className="m-auto p-6 text-sm text-brand-text">Không tải được hội thoại này.</p>;
   if (!conv) return <p className="m-auto p-6 text-sm text-muted">Đang tải...</p>;
 
   const refresh = (c: Conversation) => mutate(c, { revalidate: false });
-  const donCho = deals?.find((d) => d.status === 'PENDING' && d.conversationId === id);
+  const donChoTatCa = deals?.filter((d) => d.status === 'PENDING' && d.conversationId === id) ?? [];
+  const donCho = donChoTatCa[0];
   const choNhanVien = conv.status === 'CONTACT' && conv.mode === 'BOT';
 
   return (
@@ -72,7 +86,12 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
             </div>
             <div className="truncate text-[0.8125rem] text-muted">{dinhDangSo(conv.customer.phone)} · {CHANNEL[conv.channel].label}</div>
           </div>
-          <span className={`hidden rounded-xl px-2.5 py-1 text-[0.8125rem] font-semibold sm:inline ${STATUS[conv.status].className}`}>{STATUS[conv.status].label}</span>
+          <span className={`hidden shrink-0 whitespace-nowrap rounded-xl px-2.5 py-1 text-[0.8125rem] font-semibold 2xl:inline ${STATUS[conv.status].className}`}>{STATUS[conv.status].label}</span>
+          {!chiXem && (
+            <button type="button" onClick={() => setTimTin(!timTin)} aria-label="Tìm tin nhắn trong hội thoại" aria-pressed={timTin} title="Tìm tin nhắn" className={`grid size-11 shrink-0 place-items-center rounded-lg border border-line hover:bg-fill ${timTin ? 'bg-fill' : ''}`}>
+              <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            </button>
+          )}
           <button className="hidden min-h-11 rounded-lg bg-brand-button px-4 text-sm font-semibold text-white sm:block" onClick={() => setCloseNew(true)}>Chốt tour</button>
           <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-11 place-items-center rounded-lg border border-line text-xl">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-surface shadow-sm p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button></div>}</div>
           <button
@@ -93,19 +112,102 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
 
         {(choNhanVien || donCho) && <div className="flex min-h-12 items-center gap-2 border-b border-amber-line bg-auto-soft px-3 py-1.5 text-sm text-amber-ink"><strong className="shrink-0">Cần làm:</strong><span className="min-w-0 flex-1 truncate">{donCho ? `Gọi khách xác nhận đơn ${donCho.tourName} (${trieu(donCho.amount)})` : conv.assignee ? `Khách chờ nhân viên ${conv.assignee.fullName}` : 'Khách đang chờ nhân viên'}</span>{conv.customer.phone && <a className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" href={`tel:${conv.customer.phone}`}>Gọi khách</a>}{donCho && <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => setXacNhan(donCho)}>Xác nhận đơn</button>}</div>}
 
-        <MessageList id={id} seenAt={conv.customerSeenAt} onReply={setReplyTo} />
-        <Composer conv={conv} onChange={refresh} replyTo={replyTo} clearReply={() => setReplyTo(null)} />
+        {timTin && <TimTinTrongChat id={id} onClose={() => setTimTin(false)} />}
+        <MessageList id={id} seenAt={conv.customerSeenAt} onReply={setReplyTo} onPin={chiXem ? undefined : setGhimTin} focusId={focusId} />
+        {chiXem ? <p className="border-t border-line bg-fill px-4 py-3 text-center text-sm text-muted">Bạn chỉ được xem hội thoại này.</p> : <Composer conv={conv} onChange={refresh} replyTo={replyTo} clearReply={() => setReplyTo(null)} />}
       </section>
       {panelOpen && <InfoPanel conv={conv} deals={deals} onChange={refresh} onClose={() => setPanelOpen(false)} />}
-      {xacNhan && <CloseDealDialog conv={conv} deal={xacNhan} onClose={() => setXacNhan(null)} onDone={refresh} />}
-      {closeNew && <CloseDealDialog conv={conv} deal={null} onClose={() => setCloseNew(false)} onDone={refresh} />}
+      {xacNhan && <CloseDealDialog conv={conv} deal={xacNhan} pending={donChoTatCa} onClose={() => setXacNhan(null)} onDone={refresh} />}
+      {closeNew && <CloseDealDialog conv={conv} deal={null} pending={donChoTatCa} onClose={() => setCloseNew(false)} onDone={refresh} />}
       {headerHandover && <HandoverDialog conv={conv} onClose={() => setHeaderHandover(false)} onDone={refresh} />}
+      {ghimTin && <TagTourDialog conv={conv} tags={tags ?? []} ghimSan={ghimTin} onClose={() => setGhimTin(null)} onDone={() => void mutateTags()} />}
     </div>
   );
 }
 
-function MessageList({ id, seenAt, onReply }: { id: string; seenAt: string | null; onReply: (m: Message) => void }) {
-  const { data, error } = useSWR<{ items: Message[]; hasMore: boolean }>(`/conversations/${id}/messages`, fetcher);
+/** Dòng tìm tin trong hội thoại đang mở: tìm cả tin cũ chưa tải (qua backend), mũi tên lên/xuống nhảy giữa các kết quả. */
+function TimTinTrongChat({ id, onClose }: { id: string; onClose: () => void }) {
+  const [go, setGo] = useState('');
+  const [q, setQ] = useState('');
+  const [viTri, setViTri] = useState(0);
+  useEffect(() => {
+    const t = setTimeout(() => setQ(go.trim()), 300);
+    return () => clearTimeout(t);
+  }, [go]);
+  const { data, error, isLoading } = useSWR<MessageHit[]>(q.length >= 2 ? `/messages/search?q=${encodeURIComponent(q)}&conversationId=${id}` : null, fetcher);
+  // API trả mới nhất trước; kết quả 1 là tin mới nhất, mũi tên lên đi về tin cũ hơn.
+  const kq = data ?? [];
+  useEffect(() => setViTri(0), [q]);
+  useEffect(() => {
+    const m = data?.[viTri];
+    if (m) xemTinTrongChat(m.id);
+  }, [data, viTri]);
+  const dem = q.length < 2 ? 'Gõ từ 2 ký tự' : isLoading ? 'Đang tìm...' : error ? 'Lỗi tìm kiếm' : kq.length ? `${viTri + 1} / ${kq.length}` : '0 kết quả';
+  return (
+    <div role="search" className="flex items-center gap-1 border-b border-line bg-surface px-3 py-1.5 sm:px-4">
+      <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-muted"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+      <input
+        autoFocus
+        value={go}
+        onChange={(e) => setGo(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onClose();
+          if (e.key === 'Enter' && kq.length) setViTri((v) => (e.shiftKey ? (v - 1 + kq.length) % kq.length : (v + 1) % kq.length));
+        }}
+        placeholder="Tìm tin nhắn trong hội thoại này (không cần dấu)"
+        aria-label="Tìm tin nhắn trong hội thoại này"
+        className="min-h-10 min-w-0 flex-1 bg-transparent px-1 text-sm outline-none"
+      />
+      <span aria-live="polite" className="shrink-0 whitespace-nowrap text-xs font-semibold text-body">{dem}</span>
+      <button type="button" aria-label="Kết quả cũ hơn" disabled={!kq.length} onClick={() => setViTri((v) => (v + 1) % kq.length)} className="grid size-10 shrink-0 place-items-center rounded-lg hover:bg-fill disabled:opacity-40">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m18 15-6-6-6 6" /></svg>
+      </button>
+      <button type="button" aria-label="Kết quả mới hơn" disabled={!kq.length} onClick={() => setViTri((v) => (v - 1 + kq.length) % kq.length)} className="grid size-10 shrink-0 place-items-center rounded-lg hover:bg-fill disabled:opacity-40">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
+      <button type="button" aria-label="Đóng tìm tin" onClick={onClose} className="grid size-10 shrink-0 place-items-center rounded-lg hover:bg-fill">
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 6 12 12M6 18 18 6" /></svg>
+      </button>
+    </div>
+  );
+}
+
+function MessageList({ id, seenAt, onReply, onPin, focusId }: { id: string; seenAt: string | null; onReply: (m: Message) => void; onPin?: (m: Message) => void; focusId?: string | null }) {
+  // Mở từ báo cáo nhu cầu tour: tải quanh đúng tin được trỏ tới, rồi cuộn tới và làm nổi bật.
+  const { data, error } = useSWR<{ items: Message[]; hasMore: boolean }>(focusId ? `/conversations/${id}/messages?around=${focusId}` : `/conversations/${id}/messages`, fetcher);
+  const daCuon = useRef<string | null>(null);
+  const [, setSp] = useSearchParams();
+  const { data: tags } = useSWR<TourTag[]>(`/conversations/${id}/tour-tags`, fetcher);
+  const ghim = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const t of tags ?? []) m.set(t.message.id, [...(m.get(t.message.id) ?? []), t.tourName]);
+    return m;
+  }, [tags]);
+  const [noiBat, setNoiBat] = useState<string | null>(null);
+  useEffect(() => {
+    const nghe = (e: Event) => {
+      const mid = (e as CustomEvent<string>).detail;
+      const el = document.getElementById(`msg-${mid}`);
+      if (el) {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        setNoiBat(mid);
+        setTimeout(() => setNoiBat((x) => (x === mid ? null : x)), 2000);
+      } else {
+        // Tin cũ chưa tải: tải lại quanh tin đó.
+        setSp((cur) => { const n = new URLSearchParams(cur); n.set('m', mid); return n; }, { replace: true });
+      }
+    };
+    window.addEventListener('btt:xem-tin', nghe);
+    return () => window.removeEventListener('btt:xem-tin', nghe);
+  }, [setSp]);
+  useEffect(() => {
+    if (!focusId || !data || daCuon.current === focusId) return;
+    const el = document.getElementById(`msg-${focusId}`);
+    if (el) {
+      daCuon.current = focusId;
+      el.scrollIntoView({ block: 'center' });
+    }
+  }, [focusId, data]);
   const [older, setOlder] = useState<Message[]>([]);
   const [hasOlder, setHasOlder] = useState<boolean | null>(null);
   const [dangTai, setDangTai] = useState(false);
@@ -137,14 +239,22 @@ function MessageList({ id, seenAt, onReply }: { id: string; seenAt: string | nul
   return (
     // column-reverse giữ khung cuộn ở tin mới nhất mà không cần tự cuộn bằng JS.
     <div className="flex min-h-0 min-w-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto p-3 sm:p-4">
-      <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-4">
+      <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-2">
         {coThem && (
           <button type="button" onClick={taiCu} disabled={dangTai} className={`${chipClass} self-center`}>
             {dangTai ? 'Đang tải...' : 'Xem tin cũ hơn'}
           </button>
         )}
         {tatCa.map((m) => (
-          <MessageBubble key={m.id} message={m} onReply={onReply} seen={daXem && m.id === tinNhanVienCuoi?.id} />
+          <div key={m.id} id={`msg-${m.id}`} className={`flex min-w-0 flex-col transition-colors duration-500 ${focusId === m.id || noiBat === m.id ? 'rounded-xl bg-amber-soft/60 p-1.5 ring-2 ring-amber-line' : ''}`}>
+            <MessageBubble message={m} onReply={onReply} onPin={onPin} pinned={ghim.has(m.id)} seen={daXem && m.id === tinNhanVienCuoi?.id} />
+            {ghim.get(m.id)?.map((ten, i) => (
+              <span key={i} className={`mt-1 inline-flex max-w-full items-center gap-1.5 self-start rounded-lg border border-alert-line bg-brand-faint px-2 py-1 text-xs font-semibold text-brand-text ${m.senderType === 'CUSTOMER' ? '' : 'self-end'}`}>
+                <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="shrink-0"><path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3-1-6Z" /></svg>
+                <span className="truncate">Tour: {ten}</span>
+              </span>
+            ))}
+          </div>
         ))}
         {!data && !error && <p className="text-center text-sm text-muted">Đang tải tin nhắn...</p>}
         {error && <p className="text-center text-sm text-brand-text">Không tải được tin nhắn.</p>}
@@ -200,6 +310,14 @@ function Composer({
     setLoi('');
     setTep(null);
   }, [id]);
+
+  // Khung gõ 1 dòng, tự cao theo nội dung (tối đa max-h-40 rồi cuộn).
+  useEffect(() => {
+    const el = textarea.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [draft]);
 
   /** Kiểm tra sơ bộ cho người dùng khỏi chờ tải lên rồi mới biết lỗi. Backend kiểm tra lại theo nội dung file. */
   const nhanTep = (f: File | undefined | null) => {
@@ -280,28 +398,30 @@ function Composer({
         : null;
 
   return (
-    <div className="chat-composer max-h-[55%] overflow-y-auto max-md:max-h-1/2 max-md:pb-[max(12px,env(safe-area-inset-bottom))] flex min-w-0 shrink-0 flex-col gap-2 border-t border-line bg-surface p-3 sm:p-4">
-      <div className="flex flex-wrap items-center gap-2 rounded-[10px] bg-fill py-1 pl-2.5 pr-2">
-        <span className="min-w-0 flex-1 basis-40 text-[0.8125rem] text-body">
-          <strong className="font-semibold">Trả lời tự động</strong> · {autoText}
+    <div className="chat-composer max-h-[55%] overflow-y-auto max-md:max-h-1/2 max-md:pb-[max(8px,env(safe-area-inset-bottom))] flex min-w-0 shrink-0 flex-col gap-1.5 border-t border-line bg-surface px-3 py-2 sm:px-4">
+      <div className="flex min-w-0 items-center gap-2 text-xs text-body">
+        <span className="-my-2 flex shrink-0 origin-left scale-[0.8]">
+          <Switch
+            checked={conv.autoReplyOn}
+            label="Bật trả lời tự động cho hội thoại này"
+            onChange={(v) => patch<Conversation>(`/conversations/${id}`, { autoReplyOn: v }).then(onChange)}
+          />
         </span>
-        <Link to="/templates" className="flex min-h-9 items-center px-1.5 text-[0.8125rem] text-body underline">
-          Soạn ở Mẫu nhanh
+        <span className="-ml-1.5 shrink-0 whitespace-nowrap">
+          <strong className="font-semibold">Tự động</strong> · {autoText}
+        </span>
+        {goiY && <span className="hidden min-w-0 flex-1 truncate text-muted md:inline" title={goiY}>· {goiY}</span>}
+        <Link to="/templates" className="ml-auto flex min-h-8 shrink-0 items-center px-1 text-xs text-body underline">
+          Mẫu nhanh
         </Link>
-        <Switch
-          checked={conv.autoReplyOn}
-          label="Bật trả lời tự động cho hội thoại này"
-          onChange={(v) => patch<Conversation>(`/conversations/${id}`, { autoReplyOn: v }).then(onChange)}
-        />
       </div>
 
       {(dangSoan || conv.activeOther) && (
-        <div role="status" className="flex items-center gap-2 text-[0.8125rem] font-medium text-amber-ink">
+        <div role="status" className="flex items-center gap-2 text-xs font-medium text-amber-ink">
           <span aria-hidden="true" className="size-2 shrink-0 animate-pulse rounded-full bg-typing" />
           {dangSoan ? `${dangSoan} đang soạn tin cho khách này` : `${conv.activeOther?.fullName} đang nhắn với khách này`}
         </div>
       )}
-      {goiY && <div className="text-[0.8125rem] text-body">{goiY}</div>}
 
       {replyTo && (
         <div className="flex items-center gap-2 rounded-[10px] border-l-4 border-brand bg-page py-1 pl-2.5 pr-1 text-[0.8125rem]">
@@ -348,7 +468,7 @@ function Composer({
         </div>
       )}
       {goiPhimTat.length > 0 && <ul aria-label="Gợi ý phím tắt" className="mb-2 overflow-hidden rounded-xl border border-line bg-surface shadow-sm">{goiPhimTat.map((t) => <li key={t.id}><button type="button" onClick={() => chonGoiY(t)} className="flex min-h-11 w-full items-center gap-3 px-3 text-left text-sm hover:bg-brand-soft"><code className="rounded bg-fill px-1.5 font-mono text-xs">/{t.shortcut}</code><strong className="truncate">{t.title}</strong></button></li>)}</ul>}
-      <form onSubmit={gui} className="composer-input flex items-end gap-2 rounded-xl border border-field bg-surface p-2 focus-within:border-brand">
+      <form onSubmit={gui} className="composer-input flex items-end gap-1.5 rounded-xl border border-field bg-surface p-1.5 focus-within:border-brand">
         <input
           ref={chonTep}
           type="file"
@@ -381,7 +501,7 @@ function Composer({
         </button>
         <textarea
           ref={textarea}
-          rows={2}
+          rows={1}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing && window.matchMedia('(pointer: fine)').matches) {
               e.preventDefault();
@@ -401,7 +521,7 @@ function Composer({
             }
           }}
           maxLength={4000}
-          className="min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2 text-sm leading-relaxed"
+          className="max-h-40 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2.5 text-sm leading-normal"
         />
         <button type="button" title="Câu trả lời nhanh" aria-label="Câu trả lời nhanh" className="grid size-11 shrink-0 place-items-center rounded-[10px] border border-line bg-surface shadow-sm text-brand-text hover:bg-brand-soft" onClick={() => setQuickOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></button>
         <button type="submit" disabled={dangGui || (!draft.trim() && !tep)} className={primaryClass}>

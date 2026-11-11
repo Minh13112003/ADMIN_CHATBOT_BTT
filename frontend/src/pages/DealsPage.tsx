@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import useSWR from "swr";
-import { CloseDealDialog } from "@/components/inbox/InfoPanel";
+import { CloseDealDialog } from "@/components/inbox/CloseDealDialog";
 import { ErrorText, Segmented } from "@/components/ui";
 import { fetcher, loiCua, post } from "@/lib/api";
 import { Icon } from "@/components/icons";
@@ -180,6 +180,7 @@ export default function DealsPage() {
         <CloseDealDialog
           conv={conv}
           deal={selected}
+          pending={[selected]}
           onClose={() => setSelected(null)}
           onDone={() => {
             void mutate();

@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { tomTatPhanHoi } from '../common/response-time';
 import { Granularity, seriesBuckets, seriesEnd } from '../common/stats-series';
+import { Prisma } from '../generated/prisma/client';
+import { locHoiThoai, sqlPhamHoiThoai } from '../common/scope';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type Period = 'today' | 'week' | 'month' | 'all';
@@ -23,16 +25,18 @@ export function dauKy(period: Period, now = new Date()): Date {
 /** Thống kê lưu tạm 5 phút theo yêu cầu: không cần thời gian thực. */
 @Injectable()
 export class StatsService {
-  private cache = new Map<Period, { at: number; data: unknown }>();
+  private cache = new Map<string, { at: number; data: unknown }>();
   private seriesCache = new Map<string, { at: number; data: unknown }>();
 
   constructor(private prisma: PrismaService, private config: ConfigService) {}
 
-  async get(period: Period) {
-    const c = this.cache.get(period);
+  /** Lưu tạm theo kỳ và theo phạm vi phòng, để admin phòng không bao giờ nhận số của phòng khác. */
+  async get(period: Period, scope: string[] | null = null) {
+    const key = `${period}:${scope === null ? '*' : [...scope].sort().join(',')}`;
+    const c = this.cache.get(key);
     if (c && Date.now() - c.at < CACHE_MS) return c.data;
-    const data = await this.tinh(period);
-    this.cache.set(period, { at: Date.now(), data });
+    const data = await this.tinh(period, scope);
+    this.cache.set(key, { at: Date.now(), data });
     return data;
   }
 
@@ -44,13 +48,43 @@ export class StatsService {
     };
   }
 
+  /** Chi tiết báo cáo dùng cùng phạm vi với KPI, không gọi danh sách đơn toàn hệ thống. */
+  async getOrders(period: Period, scope: string[] | null, query: { status?: 'CONFIRMED' | 'PENDING' | 'CANCELLED'; search?: string; staffId?: string; page?: number }) {
+    const status = query.status ?? 'CONFIRMED';
+    const from = dauKy(period);
+    const search = query.search?.trim();
+    const where: Prisma.DealWhereInput = {
+      conversation: locHoiThoai(scope),
+      ...(query.staffId ? { closedById: query.staffId } : {}),
+      AND: [
+        status === 'CANCELLED'
+          ? { OR: [{ status: 'CANCELLED' }, { voidedAt: { not: null } }], createdAt: { gte: from } }
+          : { status, voidedAt: null, ...(status === 'CONFIRMED' ? { closedAt: { gte: from } } : { createdAt: { gte: from } }) },
+        ...(search ? [{ OR: [{ tourName: { contains: search, mode: 'insensitive' as const } }, { orderCode: { contains: search, mode: 'insensitive' as const } }, { customer: { name: { contains: search, mode: 'insensitive' as const } } }, { customer: { phone: { contains: search } } }] }] : []),
+      ],
+    };
+    const page = query.page ?? 1;
+    const [total, rows] = await Promise.all([
+      this.prisma.deal.count({ where }),
+      this.prisma.deal.findMany({ where, orderBy: [{ closedAt: 'desc' }, { id: 'desc' }], skip: (page - 1) * 20, take: 20,
+        select: { id: true, orderCode: true, tourName: true, tourCode: true, guests: true, amount: true, status: true, voidedAt: true, closedAt: true, createdAt: true, channel: true, conversationId: true,
+          customer: { select: { name: true, phone: true } }, closedBy: { select: { fullName: true } },
+          conversation: { select: { assignee: { select: { department: { select: { name: true } } } } } },
+        },
+      }),
+    ]);
+    return { total, page, pageSize: 20, items: rows.map((row) => ({ ...row, amount: Number(row.amount), departmentName: row.conversation.assignee?.department?.name ?? 'Chưa phân phòng', conversation: undefined })) };
+  }
+
   /** Mọi phép đếm diễn ra ở PostgreSQL, chỉ lấy một dòng cho mỗi mốc; không đọc bảng messages. */
-  async getSeries(granularity: Granularity, periods: number) {
-    const buckets = seriesBuckets(granularity, periods);
-    const key = `${granularity}:${periods}:${buckets.at(-1)?.start}`;
+  async getSeries(granularity: Granularity, periods: number, scope: string[] | null = null, period?: Period) {
+    const periodStart = period ? dauKy(period) : null;
+    const buckets = seriesBuckets(granularity, period ? 60 : periods).filter(b => !periodStart || seriesEnd(granularity, b.start) > periodStart);
+    const key = `${granularity}:${periods}:${period ?? 'rolling'}:${buckets.at(-1)?.start}:${scope === null ? '*' : [...scope].sort().join(',')}`;
+    const pham = sqlPhamHoiThoai(scope);
     const cached = this.seriesCache.get(key);
     if (cached && Date.now() - cached.at < CACHE_MS) return cached.data;
-    const from = new Date(buckets[0].start);
+    const from = new Date(Math.max(new Date(buckets[0].start).getTime(), periodStart?.getTime() ?? 0));
     const to = seriesEnd(granularity, buckets.at(-1)!.start);
     type CountRow = { start: Date; count: bigint };
     type DealRow = { start: Date; deals: bigint; revenue: bigint | null };
@@ -60,25 +94,25 @@ export class StatsService {
         SELECT date_trunc(${granularity}, (c."lastCustomerMessageAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Ho_Chi_Minh') AT TIME ZONE 'Asia/Ho_Chi_Minh' AT TIME ZONE 'UTC' AS start,
                COUNT(DISTINCT c."customerId") AS count
         FROM conversations c
-        WHERE c."lastCustomerMessageAt" >= ${from} AND c."lastCustomerMessageAt" < ${to}
+        WHERE c."lastCustomerMessageAt" >= ${from} AND c."lastCustomerMessageAt" < ${to} AND ${pham}
         GROUP BY 1`,
       this.prisma.$queryRaw<CountRow[]>`
         SELECT date_trunc(${granularity}, (c."contactRequestedAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Ho_Chi_Minh') AT TIME ZONE 'Asia/Ho_Chi_Minh' AT TIME ZONE 'UTC' AS start,
                COUNT(*) AS count
         FROM conversations c
-        WHERE c."contactRequestedAt" >= ${from} AND c."contactRequestedAt" < ${to}
+        WHERE c."contactRequestedAt" >= ${from} AND c."contactRequestedAt" < ${to} AND ${pham}
         GROUP BY 1`,
       this.prisma.$queryRaw<DealRow[]>`
         SELECT date_trunc(${granularity}, (d."closedAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Ho_Chi_Minh') AT TIME ZONE 'Asia/Ho_Chi_Minh' AT TIME ZONE 'UTC' AS start,
                COUNT(*) AS deals, COALESCE(SUM(d.amount), 0) AS revenue
-        FROM deals d
-        WHERE d.status = 'CONFIRMED' AND d."voidedAt" IS NULL AND d."closedAt" >= ${from} AND d."closedAt" < ${to}
+        FROM deals d JOIN conversations c ON c.id = d."conversationId"
+        WHERE d.status = 'CONFIRMED' AND d."voidedAt" IS NULL AND d."closedAt" >= ${from} AND d."closedAt" < ${to} AND ${pham}
         GROUP BY 1`,
       this.prisma.$queryRaw<UsageRow[]>`
         SELECT date_trunc(${granularity}, (u."createdAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Ho_Chi_Minh') AT TIME ZONE 'Asia/Ho_Chi_Minh' AT TIME ZONE 'UTC' AS start,
                COALESCE(SUM(u."inputTokens"), 0) AS input, COALESCE(SUM(u."outputTokens"), 0) AS output
-        FROM ai_usage u
-        WHERE u."createdAt" >= ${from} AND u."createdAt" < ${to}
+        FROM ai_usage u JOIN conversations c ON c.id = u."conversationId"
+        WHERE u."createdAt" >= ${from} AND u."createdAt" < ${to} AND ${pham}
         GROUP BY 1`,
     ]);
     const byStart = <T extends { start: Date }>(rows: T[]) => new Map(rows.map((r) => [r.start.toISOString(), r]));
@@ -136,8 +170,8 @@ export class StatsService {
    * 10 khách có tổng tiền đơn đã chốt lớn nhất trong kỳ, mọi kênh. Chỉ tính đơn CONFIRMED (sale xác nhận hoặc booking đã thanh toán);
    * đơn chờ xác nhận, đã huỷ, hoặc bị huỷ khi mở lại hội thoại (voidedAt) không tính.
    */
-  private async khachChiNhieuNhat(from: Date) {
-    const where = { closedAt: { gte: from }, voidedAt: null, status: 'CONFIRMED' as const };
+  private async khachChiNhieuNhat(from: Date, hoiThoai: Prisma.ConversationWhereInput = {}) {
+    const where = { closedAt: { gte: from }, voidedAt: null, status: 'CONFIRMED' as const, conversation: hoiThoai };
     const top = await this.prisma.deal.groupBy({
       by: ['customerId'],
       where,
@@ -169,40 +203,64 @@ export class StatsService {
     }));
   }
 
-  private async tinh(period: Period) {
+  /** Doanh thu đã chốt theo phòng (chỉ admin toàn quyền xem), tính theo phòng của người phụ trách. */
+  private async theoPhong(from: Date) {
+    type R = { id: string | null; name: string | null; deals: bigint; revenue: bigint | null; guests: bigint | null };
+    const rows = await this.prisma.$queryRaw<R[]>`
+      SELECT dp.id, dp.name, COUNT(d.id) AS deals, COALESCE(SUM(d.amount), 0) AS revenue, COALESCE(SUM(d.guests), 0) AS guests
+      FROM deals d
+      JOIN conversations c ON c.id = d."conversationId"
+      LEFT JOIN users u ON u.id = c."assigneeId"
+      LEFT JOIN departments dp ON dp.id = u."departmentId"
+      WHERE d.status = 'CONFIRMED' AND d."voidedAt" IS NULL AND d."closedAt" >= ${from}
+      GROUP BY dp.id, dp.name ORDER BY revenue DESC`;
+    return rows.map((r) => ({ id: r.id, name: r.name ?? 'Chưa phân phòng', deals: Number(r.deals), revenue: Number(r.revenue ?? 0), guests: Number(r.guests ?? 0) }));
+  }
+
+  private async tinh(period: Period, scope: string[] | null) {
     const from = dauKy(period);
-    const where = { createdAt: { gte: from } };
+    const hoiThoai = locHoiThoai(scope);
+    const pham = sqlPhamHoiThoai(scope);
 
     // Khách có tin trong kỳ = hội thoại có tin gần nhất của khách từ đầu kỳ (cột do trigger điền), không phải quét bảng tin nhắn.
-    const khachRows = await this.prisma.$queryRaw<{ customers: bigint; phones: bigint }[]>`
+    const khachRows = await this.prisma.$queryRaw<{ customers: bigint; phones: bigint; responded: bigint; converted: bigint }[]>`
       SELECT COUNT(DISTINCT c."customerId") AS customers,
-             COUNT(DISTINCT c."customerId") FILTER (WHERE cu.phone IS NOT NULL) AS phones
+             COUNT(DISTINCT c."customerId") FILTER (WHERE cu.phone IS NOT NULL) AS phones,
+             COUNT(DISTINCT c."customerId") FILTER (WHERE EXISTS (
+               SELECT 1 FROM contact_responses r WHERE r."conversationId" = c.id AND r."respondedAt" >= ${from}
+             )) AS responded,
+             COUNT(DISTINCT c."customerId") FILTER (WHERE EXISTS (
+               SELECT 1 FROM deals d WHERE d."conversationId" = c.id AND d.status = 'CONFIRMED' AND d."voidedAt" IS NULL AND d."closedAt" >= ${from}
+             )) AS converted
       FROM conversations c
       JOIN customers cu ON cu.id = c."customerId"
-      WHERE c."lastCustomerMessageAt" >= ${from}`;
+      WHERE c."lastCustomerMessageAt" >= ${from} AND ${pham}`;
 
     const [contact, deals, usage, sales, topCustomers, pending, responses] = await Promise.all([
-      this.prisma.conversation.findMany({ where: { contactRequestedAt: { gte: from } }, select: { lastHandlerId: true } }),
+      this.prisma.conversation.findMany({ where: { contactRequestedAt: { gte: from }, ...hoiThoai }, select: { lastHandlerId: true } }),
       this.prisma.deal.findMany({
-        where: { closedAt: { gte: from }, voidedAt: null, status: 'CONFIRMED' },
-        select: { channel: true, tourName: true, guests: true, amount: true, closedById: true },
+        where: { closedAt: { gte: from }, voidedAt: null, status: 'CONFIRMED', conversation: hoiThoai },
+        select: { channel: true, tourName: true, guests: true, amount: true, closedById: true, customerId: true },
       }),
-      this.prisma.aiUsage.aggregate({ where, _sum: { inputTokens: true, outputTokens: true } }),
-      this.prisma.user.findMany({ where: { role: 'SALE' }, select: { id: true, fullName: true, onDuty: true, _count: { select: { assigned: { where: { status: { in: ['CONTACT', 'PENDING'] } } } } } } }),
-      this.khachChiNhieuNhat(from),
+      this.prisma.$queryRaw<{ input: bigint; output: bigint }[]>`
+        SELECT COALESCE(SUM(u."inputTokens"), 0) AS input, COALESCE(SUM(u."outputTokens"), 0) AS output
+        FROM ai_usage u LEFT JOIN conversations c ON c.id = u."conversationId"
+        WHERE u."createdAt" >= ${from} AND ${pham}`,
+      this.prisma.user.findMany({ where: { role: 'SALE', ...(scope === null ? {} : { departmentId: { in: scope } }) }, select: { id: true, fullName: true, onDuty: true, department: { select: { name: true } }, _count: { select: { assigned: { where: { status: { in: ['CONTACT', 'PENDING'] } } } } } } }),
+      this.khachChiNhieuNhat(from, hoiThoai),
       // Đơn đang chờ xác nhận: tính mọi lúc, không theo kỳ, vì đây là việc sale còn phải làm.
-      this.prisma.deal.aggregate({ where: { status: 'PENDING', voidedAt: null }, _count: { _all: true }, _sum: { amount: true } }),
-      this.prisma.contactResponse.findMany({ where: { respondedAt: { gte: from } }, select: { staffId: true, seconds: true } }),
+      this.prisma.deal.aggregate({ where: { status: 'PENDING', voidedAt: null, conversation: hoiThoai }, _count: { _all: true }, _sum: { amount: true } }),
+      this.prisma.contactResponse.findMany({ where: { respondedAt: { gte: from }, conversation: hoiThoai }, select: { staffId: true, seconds: true } }),
     ]);
 
     const revenue = { WEB: 0, APP: 0, ZALO: 0, FACEBOOK: 0 };
     const tours = new Map<string, { name: string; orders: number; guests: number; revenue: number }>();
-    const staff = new Map<string, { name: string; contact: number; closed: number; revenue: number; responses: number; avgSeconds: number | null; medianSeconds: number | null; within5MinRate: number | null; onDuty: boolean; load: number; isSale: boolean }>();
-    for (const s of sales) staff.set(s.id, { name: s.fullName, contact: 0, closed: 0, revenue: 0, responses: 0, avgSeconds: null, medianSeconds: null, within5MinRate: null, onDuty: s.onDuty, load: s._count.assigned, isSale: true });
+    const staff = new Map<string, { id: string; departmentName: string; name: string; contact: number; closed: number; closedCustomers: number; guests: number; revenue: number; responses: number; avgSeconds: number | null; medianSeconds: number | null; within5MinRate: number | null; onDuty: boolean; load: number; isSale: boolean }>();
+    for (const s of sales) staff.set(s.id, { id: s.id, departmentName: s.department?.name ?? 'Chưa phân phòng', name: s.fullName, contact: 0, closed: 0, closedCustomers: 0, guests: 0, revenue: 0, responses: 0, avgSeconds: null, medianSeconds: null, within5MinRate: null, onDuty: s.onDuty, load: s._count.assigned, isSale: true });
     const TU_DAT = 'self';
     const nhomStaff = (id: string | null) => {
       const key = id ?? TU_DAT;
-      if (!staff.has(key)) staff.set(key, { name: id ? 'Tài khoản khác' : 'Booking tự thanh toán', contact: 0, closed: 0, revenue: 0, responses: 0, avgSeconds: null, medianSeconds: null, within5MinRate: null, onDuty: false, load: 0, isSale: false });
+      if (!staff.has(key)) staff.set(key, { id: key, departmentName: '—', name: id ? 'Tài khoản khác' : 'Booking tự thanh toán', contact: 0, closed: 0, closedCustomers: 0, guests: 0, revenue: 0, responses: 0, avgSeconds: null, medianSeconds: null, within5MinRate: null, onDuty: false, load: 0, isSale: false });
       return staff.get(key)!;
     };
     const theoNguoi = new Map<string, number[]>();
@@ -214,6 +272,7 @@ export class StatsService {
 
     for (const c of contact) if (c.lastHandlerId) nhomStaff(c.lastHandlerId).contact += 1;
     let guests = 0;
+    const staffCustomers = new Map<string, Set<string>>();
     for (const d of deals) {
       const tien = Number(d.amount);
       revenue[d.channel] += tien;
@@ -226,10 +285,19 @@ export class StatsService {
       const s = nhomStaff(d.closedById);
       s.closed += 1;
       s.revenue += tien;
+      s.guests += d.guests;
+      const customers = staffCustomers.get(s.id) ?? new Set<string>();
+      customers.add(d.customerId);
+      staffCustomers.set(s.id, customers);
+      s.closedCustomers = customers.size;
     }
 
-    const inputTokens = usage._sum.inputTokens ?? 0;
-    const outputTokens = usage._sum.outputTokens ?? 0;
+    const [huy, theoPhong] = await Promise.all([
+      this.prisma.deal.groupBy({ by: ['tourName'], where: { OR: [{ status: 'CANCELLED' }, { voidedAt: { not: null } }], createdAt: { gte: from }, conversation: hoiThoai }, _count: { _all: true }, _sum: { amount: true }, orderBy: { _count: { tourName: 'desc' } } }),
+      scope === null ? this.theoPhong(from) : Promise.resolve([]),
+    ]);
+    const inputTokens = Number(usage[0]?.input ?? 0);
+    const outputTokens = Number(usage[0]?.output ?? 0);
     const giaVao = Number(this.config.get('GEMINI_PRICE_INPUT_PER_M') ?? 0.25);
     const giaRa = Number(this.config.get('GEMINI_PRICE_OUTPUT_PER_M') ?? 1.5);
     const tyGia = Number(this.config.get('USD_VND_RATE') ?? 26000);
@@ -245,6 +313,10 @@ export class StatsService {
       phones: Number(khachRows[0]?.phones ?? 0),
       contact: contact.length,
       closed: deals.length,
+      closeRate: Number(khachRows[0]?.customers ?? 0) ? Number(khachRows[0]?.converted ?? 0) / Number(khachRows[0]?.customers ?? 0) : null,
+      conversion: { respondedCustomers: Number(khachRows[0]?.responded ?? 0), closedCustomers: Number(khachRows[0]?.converted ?? 0) },
+      cancelled: { count: huy.reduce((a, h) => a + h._count._all, 0), tours: huy.map((h) => ({ name: h.tourName, count: h._count._all, amount: Number(h._sum.amount ?? 0) })) },
+      departments: theoPhong,
       guests,
       revenue,
       totalRevenue: Object.values(revenue).reduce((a, b) => a + b, 0),

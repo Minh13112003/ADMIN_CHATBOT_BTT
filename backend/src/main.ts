@@ -27,6 +27,11 @@ async function bootstrap() {
   const config = app.get(ConfigService);
   const origins = (config.get<string>('FRONTEND_URL') ?? 'http://localhost:3002').split(',').map((s) => s.trim());
 
+  // Chạy sau nginx: số tầng proxy tin cậy (1 = chỉ nginx kế bên). Không có thì mọi khách trông như cùng một IP
+  // và giới hạn tốc độ (đăng nhập 10 lần/phút) sẽ tính chung cho cả công ty.
+  const proxy = Number(config.get('TRUST_PROXY'));
+  if (Number.isInteger(proxy) && proxy > 0) app.getHttpAdapter().getInstance().set('trust proxy', proxy);
+
   app.setGlobalPrefix('api/v1');
   app.use(cookieParser());
   app.enableCors({ origin: origins, credentials: true });

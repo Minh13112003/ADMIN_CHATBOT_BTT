@@ -1,4 +1,4 @@
-import { duongDanLuuTru, kiemLinkTep, kyLinkTep, loiTep, nhanRaLoaiTep, tenTepAnToan, tomTatDinhKem } from './attachments';
+import { duongDanLuuTru, duongDanTrongThuMuc, kiemLinkTep, kyLinkTep, loiTep, nhanRaLoaiTep, tenTepAnToan, tomTatDinhKem } from './attachments';
 
 const JPG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10]);
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(8)]);
@@ -78,4 +78,14 @@ describe('link xem file có hạn', () => {
   });
   it.each([[undefined], [''], [123], ['abc']])('thiếu hoặc sai chữ ký %j', (sig) => expect(kiemLinkTep(S, 'm1', '2000', sig, 1000)).toBe(false));
   it.each([['abc'], [undefined], ['1.5']])('exp không hợp lệ %j', (exp) => expect(kiemLinkTep(S, 'm1', exp, 'x', 1000)).toBe(false));
+});
+
+describe('duongDanTrongThuMuc', () => {
+  it('nhận đường dẫn do backend sinh', () => {
+    expect(duongDanTrongThuMuc('/data/files', '2026-11/3f2a-bc.jpg')).toBe('/data/files/2026-11/3f2a-bc.jpg');
+    expect(duongDanTrongThuMuc('/data/files/', '2026-11/a.pdf')).toBe('/data/files/2026-11/a.pdf');
+  });
+  it.each(['../etc/passwd', '2026-11/../x.jpg', '/abs/x.jpg', '2026-11/a/b.jpg', '2026-11/.hidden', 'x.jpg', '', 'a\\b.jpg'])('từ chối %j', (p) => {
+    expect(duongDanTrongThuMuc('/data/files', p)).toBeNull();
+  });
 });

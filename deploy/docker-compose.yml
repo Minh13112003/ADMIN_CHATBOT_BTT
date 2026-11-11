@@ -1,0 +1,74 @@
+# Dự án btt-chat-admin chạy cạnh VinhSang trên cùng server.
+# Chạy từ thư mục deploy/:   cp .env.example .env   (điền giá trị)   rồi   docker compose up -d --build
+name: btt
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: btt
+      POSTGRES_USER: btt
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Thiếu DB_PASSWORD trong deploy/.env}
+    # Cấu hình gọn cho server 2-4 GB RAM dùng chung với VinhSang.
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c effective_cache_size=768MB
+      -c work_mem=8MB
+      -c max_connections=40
+      -c timezone=UTC
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    # KHÔNG mở cổng ra ngoài: chỉ container cùng mạng `internal` mới nối được.
+    networks: [internal]
+    mem_limit: 700m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U btt -d btt"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
+
+  backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      DATABASE_URL: postgresql://btt:${DB_PASSWORD}@postgres:5432/btt
+      # Đứng sau nginx của VinhSang: lấy IP khách thật từ X-Forwarded-For (cần cho giới hạn tốc độ).
+      TRUST_PROXY: "1"
+      # Ảnh/PDF lưu trên ổ đĩa server, trong volume `files-data` (sao lưu cùng database).
+      STORAGE_DIR: /data/files
+    volumes:
+      - files-data:/data/files
+    networks: [internal, vinhsang]
+    mem_limit: 700m
+    logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
+
+  web:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    restart: unless-stopped
+    networks: [vinhsang]
+    mem_limit: 64m
+    logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
+
+networks:
+  internal: {}
+  # Mạng của VinhSang (compose project `vinhsang`, mạng `vinhsang` => tên thật `vinhsang_vinhsang`).
+  # Gắn vào đây để nginx của VinhSang gọi được `btt-backend` và `btt-web` mà không phải sửa compose của VinhSang.
+  vinhsang:
+    external: true
+    name: vinhsang_vinhsang
+
+volumes:
+  pg-data: {}
+  files-data: {}

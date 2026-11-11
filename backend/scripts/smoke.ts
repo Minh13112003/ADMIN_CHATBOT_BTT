@@ -180,13 +180,16 @@ async function main() {
 
   // Sale gọi khách rồi xác nhận đúng đơn đó
   check('không chốt được bằng đổi trạng thái', (await khac.call('POST', `/conversations/${cid}/status`, { status: 'CLOSED' })).status === 400);
-  check('thiếu mã tour thì không chốt được', (await khac.call('POST', `/conversations/${cid}/close`, { dealId: donBot.id, tourName: 'Đài Loan 5N4Đ', tourCode: 'Tour Đài Loan', guests: 2, amount: 31_980_000 })).status === 400);
-  const xn = await khac.call('POST', `/conversations/${cid}/close`, { dealId: donBot.id, tourName: 'Đài Loan 5N4Đ', tourCode: 'A06.FIT.TW.070227.A', guests: 3, amount: 47_970_000 });
-  check('xác nhận đơn chatbot (khách đổi thành 3 người)', xn.status === 200 && xn.data.status === 'CLOSED', xn);
+  check('thiếu mã tour thì không chốt được', (await khac.call('POST', `/conversations/${cid}/close`, { dealId: donBot.id, dayCode: 'Tour Đài Loan', guests: 2 })).status === 400);
+  // Sale không gửi giá: backend lấy giá/người theo ngày khởi hành (đợt này không có trên website nên giữ giá lúc khách đặt) × 3 khách.
+  const xn = await khac.call('POST', `/conversations/${cid}/close`, { dealId: donBot.id, dayCode: 'A06.FIT.TW.070227.A', guests: 3, amount: 1 });
+  check('không nhận tổng tiền từ trình duyệt', xn.status === 400, xn);
+  const xn2 = await khac.call('POST', `/conversations/${cid}/close`, { dealId: donBot.id, dayCode: 'A06.FIT.TW.070227.A', guests: 3 });
+  check('xác nhận đơn chatbot (khách đổi thành 3 người)', xn2.status === 200 && xn2.data.status === 'CLOSED', xn2);
   dons = (await khac.call('GET', `/customers/${customerId}/deals`)).data;
   const daXn = dons.find((d: { id: string }) => d.id === donBot.id);
   check('xác nhận sửa đúng đơn cũ, không tạo đơn thứ hai', daXn.status === 'CONFIRMED' && daXn.guests === 3 && daXn.amount === 47_970_000 && dons.filter((d: { orderCode: string }) => d.orderCode === `BK-${stamp}`).length === 1, dons);
-  check('xác nhận lần hai bị chặn', (await khac.call('POST', `/conversations/${cid}/close`, { dealId: donBot.id, tourName: 'X Y', tourCode: 'A06.FIT.TW.070227.A', guests: 1, amount: 1 })).status === 409);
+  check('xác nhận lần hai bị chặn', (await khac.call('POST', `/conversations/${cid}/close`, { dealId: donBot.id, dayCode: 'A06.FIT.TW.070227.A', guests: 1 })).status === 409);
   const sauXn = (await admin.call('GET', '/stats?period=all')).data;
   check('xác nhận rồi mới tính doanh thu', sauXn.totalRevenue === truoc.totalRevenue + 47_970_000, { truoc: truoc.totalRevenue, sau: sauXn.totalRevenue });
 
@@ -204,10 +207,16 @@ async function main() {
   check('huỷ đơn chờ xác nhận', (await khac.call('POST', `/conversations/${cid}/deals/${don2.id}/cancel`, { reason: 'Khách đổi lịch' })).status === 200);
   check('đơn đã huỷ không huỷ lại được', (await khac.call('POST', `/conversations/${cid}/deals/${don2.id}/cancel`, {})).status === 409);
 
-  // Sale tự chốt đơn mới
-  const chot = await khac.call('POST', `/conversations/${cid}/close`, { tourName: 'Du lịch Đà Lạt', tourCode: 'A06.FIT.92.220926.B', guests: 2, amount: 7580000, orderCode: `DH-${stamp}` });
-  check('chốt tour mới', chot.data.status === 'CLOSED', chot);
-  check('trùng mã đơn bị chặn', (await khac.call('POST', `/conversations/${cid}/close`, { tourName: 'X Y', tourCode: 'A06.FIT.92.220926.B', guests: 1, amount: 1, orderCode: `DH-${stamp}` })).status === 409);
+  // Chốt tour mới: ngày khởi hành phải có trên website (đợt đã qua thì bị chặn)
+  check('ngày khởi hành không có trên website thì không chốt được', (await khac.call('POST', `/conversations/${cid}/close`, { dayCode: 'A06.FIT.92.220926.B', guests: 2 })).status === 400);
+  await bot.call('POST', '/ingest/deal', { ...web, tourName: 'Du lịch Đà Lạt', guests: 2, amount: 7_580_000, orderCode: `DH-${stamp}`, tourCode: 'A06.FIT.92.220926.B' });
+  const don3 = (await khac.call('GET', `/customers/${customerId}/deals`)).data.find((d: { orderCode: string }) => d.orderCode === `DH-${stamp}`);
+  const tim3 = await khac.call('GET', `/conversations/${cid}/deals/by-order/dh-${stamp}`);
+  check('tìm đơn theo mã đơn (không phân biệt hoa thường)', tim3.status === 200 && tim3.data.id === don3.id, tim3);
+  const chot = await khac.call('POST', `/conversations/${cid}/close`, { dealId: don3.id, dayCode: 'A06.FIT.92.220926.B', guests: 2 });
+  check('chốt theo mã đơn', chot.data.status === 'CLOSED', chot);
+  check('voucher không tồn tại thì không chốt', (await khac.call('POST', '/tours/quote', { dayCode: 'A06.FIT.92.220926.B', guests: 2, dealId: don3.id, voucherCode: 'KHONG-CO' })).data.voucherError === 'Mã voucher không tồn tại');
+  check('trùng mã đơn bị chặn', (await khac.call('POST', `/conversations/${cid}/close`, { dayCode: 'A06.FIT.92.220926.B', guests: 1, orderCode: `DH-${stamp}` })).status === 409);
 
   // Hẹn nhắc, nhãn, tìm trong tin
   const hen = await khac.call('PATCH', `/conversations/${cid}`, { followUpAt: new Date(Date.now() + 3600_000).toISOString(), followUpNote: 'Gọi lại báo giá đoàn' });

@@ -20,6 +20,15 @@ import { StatsController } from './stats/stats.controller';
 import { StatsService } from './stats/stats.service';
 import { AutoRepliesController, TemplatesController } from './templates/templates.controller';
 import { UsersController } from './users/users.controller';
+import { DepartmentsController } from './users/departments.controller';
+import { TourInterestController } from './tour-interest/tour-interest.controller';
+import { TourInterestService } from './tour-interest/tour-interest.service';
+import { ConversationScopeGuard } from './conversations/scope.guard';
+import { TourTagsController } from './tour-interest/tour-tags.controller';
+import { ToursController } from './tours/tours.controller';
+import { TourCatalogService } from './tours/tour-catalog.service';
+import { PricingService } from './tours/pricing.service';
+import { VouchersController } from './vouchers/vouchers.controller';
 
 @Module({
   imports: [
@@ -42,6 +51,11 @@ import { UsersController } from './users/users.controller';
     HealthController,
     AuthController,
     UsersController,
+    DepartmentsController,
+    TourInterestController,
+    TourTagsController,
+    ToursController,
+    VouchersController,
     ConversationsController,
     CustomersController,
     DealsController,
@@ -56,6 +70,10 @@ import { UsersController } from './users/users.controller';
     { provide: APP_GUARD, useClass: AuthGuard },
     IngestKeyGuard,
     IngestService,
+    TourInterestService,
+    TourCatalogService,
+    PricingService,
+    ConversationScopeGuard,
     ConversationsService,
     AssignmentService,
     StatsService,

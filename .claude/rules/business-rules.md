@@ -12,12 +12,21 @@
 
 - Chỉ khi khách **muốn gặp nhân viên** mới ping lên admin. Câu như "nhân viên hướng dẫn có đi cùng không" không tính. Danh sách cụm từ ở `common/text.ts`, khớp với `TU_KHOA_CAN_NHAN_VIEN` của chatbot; chatbot có thể tự gửi cờ `wantsHuman`.
 - Nhân viên trả lời xong thì Liên hệ chuyển thành Chờ xử lý.
-- Chuyển sang Đã chốt phải nhập tour, **mã tour** (mã đợt khởi hành, ví dụ `A06.FIT.TW.070227.A`), số khách, tổng tiền (`close`), vì đây là nguồn số doanh thu. Mở lại hội thoại thì đơn bị đánh dấu `voidedAt`, không còn tính.
+- Chuyển sang Đã chốt qua hộp Chốt tour (`close`), vì đây là nguồn số doanh thu. Đổi ngày 2026-11-11: sale chỉ chọn tour, ngày khởi hành (mã đợt), số khách, voucher; **sale không sửa được giá**. Backend lấy giá/người của ngày khởi hành từ API tour, nhân số khách, trừ voucher (`tours/pricing.service.ts`). Tab "Theo mã đơn" xác nhận đúng đơn chatbot; đợt không còn trên website thì giữ giá/người lúc khách đặt. Mở lại hội thoại thì đơn bị đánh dấu `voidedAt`, không còn tính.
 
 ## Đơn đặt tour (chốt ngày 2026-11-06)
 - Khách tự đặt qua chatbot: đơn **Chờ xác nhận** (`PENDING`), chưa tính doanh thu, hội thoại Chờ xử lý và được chia cho một sale. Sale gọi khách rồi **xác nhận đúng đơn đó** (sửa số người, tiền nếu khách đổi), không tạo đơn mới, để không tính doanh thu hai lần. Khách không đi nữa thì bấm Khách huỷ.
 - BE Mobile báo booking `PAID` / `ONGOING` / `COMPLETED` thì đơn tự thành Đã chốt; `CANCELLED` / `REFUNDED` thì đơn huỷ dù sale đã chốt. Quy tắc ở `common/deals.ts`.
-- Mã tour chỉ kiểm tra hình thức (chữ, số, dấu . - _, có ít nhất một số): API benthanhtourist.com không có tìm theo mã. Phần đầu mã như `A06.FIT.TW` không duy nhất, nên không dùng để nhận ra tour.
+- Danh mục tour lấy từ API benthanhtourist.com qua backend, lưu tạm 1 giờ (`tours/tour-catalog.service.ts`, xem `docs/tour-api.md`). API không có tìm theo mã đợt nên backend tải chi tiết các tour cùng phần đầu mã rồi so đúng mã. Phần đầu mã như `A06.FIT.TW` không duy nhất, nên không dùng để nhận ra tour. Địa điểm của tour = thể loại ít tour nhất chứa nó.
+
+## Voucher (chốt ngày 2026-11-11)
+- Chỉ `ADMIN` và `DEPT_ADMIN` (admin chi nhánh) tạo, sửa, tạm khoá; admin phòng chỉ thấy voucher của phòng mình. Không xoá voucher. Sale nhập mã khi chốt, mã dùng được cho mọi sale.
+- Hai loại: giảm số tiền, hoặc phần trăm có mức trần. Phạm vi: một tour, một địa điểm, mọi tour. Giảm **một lần trên tổng đơn**, không nhân theo khách, không quá tổng đơn (giả định, chưa hỏi lại chủ dự án). Quy tắc ở `common/vouchers.ts`.
+- Số lần đã dùng đếm từ đơn `CONFIRMED` không `voidedAt`; mở lại hội thoại thì voucher được trả lượt. Chốt có voucher khoá theo voucher (`pg_advisory_xact_lock`) để không vượt số lần tối đa.
+
+## Tour quan tâm (chốt ngày 2026-11-11)
+- Cách gắn chính (đổi ngày 2026-11-11): bấm icon ghim trên từng tin trong khung chat, hộp hiện ra chỉ còn bước chọn tour (gõ tên hoặc mã). Nút "Gắn tour quan tâm" ở tab Tour quan tâm vẫn còn (chọn tour rồi chọn tin).
+- Sale gắn nhãn tour quan tâm ở cột thông tin khách, mỗi nhãn ghim đúng một tin (không ghim log nội bộ). Gắn theo **tour**, không theo ngày khởi hành. Cùng tour gắn lại sau là nhãn mới "Lần 2". Ai trong nhóm sale cũng gắn, gỡ được; có log nội bộ. Digital chỉ xem. Trang Nhu cầu tour chỉ đếm nhãn sale ghim, không đếm thẻ tour chatbot gửi (chốt 2026-11-11).
 
 ## Chia việc
 Không có phân công tay. Khi khách đòi gặp nhân viên: khách cũ về người phụ trách cũ nếu đang trực; không thì người đang giữ ít khách nhất (`CONTACT` + `PENDING`), hoà thì người lâu chưa được chia. Sau `CONTACT_ACCEPT_MINUTES` chưa ai trả lời khách (bot vẫn chạy) thì tự chuyển người khác. Khách có đơn chờ xác nhận mà chưa ai phụ trách cũng được chia. Sale tắt "Đang trực" thì không nhận khách mới.

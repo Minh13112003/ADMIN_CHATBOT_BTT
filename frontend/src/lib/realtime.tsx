@@ -31,7 +31,7 @@ const lamMoi = (id?: string) => {
   void mutate(
     (k) =>
       typeof k === 'string' &&
-      (k.startsWith('/conversations?') || k === '/auth/me' || k.startsWith('/customers/') || (!!id && k === `/conversations/${id}`)),
+      (k.startsWith('/conversations?') || k === '/auth/me' || k.startsWith('/customers/') || (!!id && (k === `/conversations/${id}` || k === `/conversations/${id}/tour-tags`))),
   );
 };
 

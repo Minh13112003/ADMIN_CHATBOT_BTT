@@ -124,6 +124,9 @@
   --color-brand-soft: #30243f;
   --color-brand-faint: #251f2d;
 }
+html {
+  font-size: 15px;
+}
 html,
 body,
 #root {
@@ -233,5 +236,28 @@ textarea {
   }
 .app-drawer .dialog-content > header {
     top: -18px;
+  }
+}
+
+/* Hộp thoại có đầu, thân cuộn, chân hộp (Modal trong components/ui.tsx). Rộng theo biến --w. */
+.app-modal {
+  width: min(var(--w, 560px), calc(100vw - 32px));
+}
+.app-modal.app-sheet {
+  margin: 0 0 0 auto;
+  width: min(var(--w, 440px), 100vw);
+  height: 100dvh;
+  max-height: 100dvh;
+  border-radius: 20px 0 0 20px;
+}
+@media (max-width: 639px) {
+  .app-modal,
+  .app-modal.app-sheet {
+    margin: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
   }
 }

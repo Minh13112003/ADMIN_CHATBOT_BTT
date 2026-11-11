@@ -12,8 +12,20 @@ datasource db {
 }
 
 enum Role {
-  ADMIN // Chỉ tạo tài khoản
-  SALE // Nhắn tin với khách, xem thống kê
+  ADMIN // Toàn quyền: tạo mọi tài khoản, xem mọi phòng
+  SALE // Nhắn tin với khách
+  DEPT_ADMIN // Admin phòng ban: thống kê, hội thoại và tài khoản sale của phòng mình
+  DIGITAL // Admin Digital: chỉ xem nhu cầu tour trong các phòng được cấp quyền
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  users User[]
+
+  @@map("departments")
 }
 
 // ZALO và FACEBOOK để sẵn cho tích hợp sau, hiện chưa có dữ liệu đổ vào.
@@ -57,6 +69,19 @@ enum DealSource {
   STAFF // Sale nhập khi chốt
 }
 
+// Voucher giảm theo số tiền, hoặc theo phần trăm có mức trần (chủ dự án chốt 11/11/2026).
+enum VoucherType {
+  AMOUNT
+  PERCENT
+}
+
+// Phạm vi voucher: một tour, một địa điểm (thể loại tour của website), hoặc mọi tour.
+enum VoucherScope {
+  TOUR
+  CATEGORY
+  ALL
+}
+
 enum AutoReplyType {
   FIRST_MESSAGE
   KEYWORD
@@ -71,6 +96,8 @@ model User {
   employeeCode   String?   @unique
   position       String?
   role           Role      @default(SALE)
+  departmentId   String? // Phòng ban của sale / admin phòng; ADMIN và DIGITAL để trống
+  scopeIds       String[]  @default([]) // DIGITAL: các phòng được phép xem
   onDuty         Boolean   @default(true)
   isActive       Boolean   @default(true)
   lastAssignedAt DateTime?
@@ -78,6 +105,7 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   assigned  Conversation[]    @relation("Assignee")
   helping   Conversation[]    @relation("Helper")
   followUps Conversation[]    @relation("FollowUpBy")
@@ -85,7 +113,10 @@ model User {
   messages  Message[]
   deals     Deal[]
   templates QuickTemplate[]
+  tourTags  TourInterestTag[]
+  vouchers  Voucher[]
 
+  @@index([departmentId])
   @@map("users")
 }
 
@@ -161,6 +192,7 @@ model Conversation {
   responses  ContactResponse[]
   messages   Message[]
   deals      Deal[]
+  tourTags   TourInterestTag[]
 
   @@unique([customerId, channel])
   @@index([status, lastMessageAt])
@@ -195,6 +227,7 @@ model Message {
   staff        User?        @relation(fields: [staffId], references: [id], onDelete: SetNull)
   replyTo      Message?     @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
   replies      Message[]    @relation("ReplyTo")
+  tourTags     TourInterestTag[]
 
   @@index([conversationId, createdAt])
   @@map("messages")
@@ -244,6 +277,13 @@ model Deal {
   tourName         String
   guests           Int
   amount           BigInt // VND
+  tourKey          String? // id tour trên benthanhtourist.com (chung mọi ngày khởi hành)
+  departureDate    DateTime? @db.Date
+  unitPrice        BigInt? // Giá/người của ngày khởi hành, lấy từ API tour, sale không sửa
+  subtotal         BigInt? // unitPrice × guests, trước voucher
+  voucherId        String?
+  voucherCode      String?
+  discount         BigInt? // Số tiền voucher giảm; amount = subtotal - discount
   bookingStatus    String? // Trạng thái booking BE Mobile báo về: PENDING, CONFIRMED, PAID, ONGOING, COMPLETED, CANCELLED, REFUNDED
   bookingUpdatedAt DateTime?
   createdAt        DateTime   @default(now()) // Lúc khách đặt hoặc sale nhập
@@ -253,8 +293,10 @@ model Deal {
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   closedBy     User?        @relation(fields: [closedById], references: [id], onDelete: SetNull)
+  voucher      Voucher?     @relation(fields: [voucherId], references: [id], onDelete: SetNull)
 
   @@index([closedAt])
+  @@index([voucherId])
   @@index([conversationId])
   @@index([customerId])
   @@map("deals")
@@ -289,4 +331,55 @@ model AiUsage {
   // Bảng chỉ ghi nối đuôi theo thời gian: BRIN nhỏ hơn B-tree hàng trăm lần mà vẫn lọc được theo kỳ.
   @@index([createdAt], type: Brin)
   @@map("ai_usage")
+}
+
+// Sale gắn "tour quan tâm" cho hội thoại, mỗi nhãn ghim đúng một tin làm bằng chứng. Cùng tour gắn lại sau là dòng mới (lần 2, lần 3).
+model TourInterestTag {
+  id             String   @id @default(uuid())
+  conversationId String
+  messageId      String
+  tourKey        String // id tour trên benthanhtourist.com
+  tourName       String
+  categoryId     Int? // Địa điểm (thể loại cụ thể nhất của tour)
+  categoryName   String?
+  createdById    String?
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdBy    User?        @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, createdAt])
+  @@index([tourKey, createdAt])
+  @@index([createdAt])
+  @@map("tour_interest_tags")
+}
+
+// Voucher do admin phòng ban (admin chi nhánh) hoặc admin toàn quyền tạo. Số lần đã dùng đếm từ đơn đã chốt, không lưu bộ đếm.
+model Voucher {
+  id           String       @id @default(uuid())
+  code         String       @unique // Viết hoa, không dấu
+  type         VoucherType
+  value        Int // AMOUNT: số đồng; PERCENT: 1-100
+  maxDiscount  BigInt? // PERCENT: giảm tối đa
+  scope        VoucherScope
+  tourKey      String?
+  tourName     String?
+  categoryId   Int?
+  categoryName String?
+  startsAt     DateTime
+  endsAt       DateTime
+  maxUses      Int? // null = không giới hạn
+  note         String?
+  isActive     Boolean      @default(true) // false = tạm khoá
+  departmentId String? // Phòng tạo voucher; admin toàn quyền tạo thì để trống
+  createdById  String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  createdBy User?  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  deals     Deal[]
+
+  @@index([departmentId])
+  @@map("vouchers")
 }

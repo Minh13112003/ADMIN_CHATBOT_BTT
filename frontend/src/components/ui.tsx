@@ -105,6 +105,98 @@ export function Dialog({
   );
 }
 
+/**
+ * Hộp thoại theo thiết kế Stitch: chấm đỏ + tiêu đề, thân cuộn bên trong, chân hộp cố định chứa nút.
+ * `sheet` = ngăn kéo bên phải. Dưới 640 px thành toàn màn hình. Nền sau làm mờ (::backdrop của .app-dialog).
+ */
+export function Modal({
+  title,
+  subtitle,
+  onClose,
+  children,
+  footer,
+  width = 560,
+  sheet,
+  top,
+}: {
+  title: string;
+  subtitle?: ReactNode;
+  onClose: () => void;
+  children: ReactNode;
+  footer?: ReactNode;
+  width?: number;
+  sheet?: boolean;
+  /** Phần dính dưới tiêu đề, không cuộn (thanh tab, thanh bước). */
+  top?: ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  useEffect(() => {
+    const dialog = ref.current;
+    const previous = document.activeElement as HTMLElement | null;
+    dialog?.showModal();
+    return () => {
+      dialog?.close();
+      previous?.focus();
+    };
+  }, []);
+  return (
+    <dialog
+      ref={ref}
+      aria-labelledby={titleId}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      style={{ ['--w' as string]: `${width}px` }}
+      className={`app-dialog app-modal ${sheet ? 'app-sheet' : ''}`}
+    >
+      <div className={`flex flex-col ${sheet ? 'h-full' : 'max-h-[calc(100dvh-32px)] max-sm:h-dvh max-sm:max-h-dvh'}`}>
+        <header className="flex items-center gap-3 border-b border-line px-6 py-2.5 max-sm:px-4">
+          <div className="min-w-0 flex-1">
+            <h2 id={titleId} className="flex items-center gap-2 text-lg font-semibold">
+              <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-brand" />
+              {title}
+            </h2>
+            {subtitle && <div className="mt-0.5 text-[0.8125rem] text-muted">{subtitle}</div>}
+          </div>
+          <button type="button" onClick={onClose} aria-label="Đóng hộp thoại" className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-[10px] text-body hover:bg-fill">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="m6 6 12 12M6 18 18 6" />
+            </svg>
+          </button>
+        </header>
+        {top}
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 max-sm:px-4">{children}</div>
+        {footer && <footer className="flex flex-wrap items-center gap-2 border-t border-line bg-page px-6 py-3 max-sm:px-4">{footer}</footer>}
+      </div>
+    </dialog>
+  );
+}
+
+/** Thanh tab gạch chân đỏ như hộp Chốt tour của Stitch. */
+export function UnderlineTabs<T extends string>({ items, value, onChange, label }: { items: { key: T; label: ReactNode }[]; value: T; onChange: (v: T) => void; label: string }) {
+  return (
+    <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-line px-6 [scrollbar-width:none] max-sm:px-4 [&::-webkit-scrollbar]:hidden">
+      {items.map((t) => (
+        <button
+          key={t.key}
+          type="button"
+          role="tab"
+          aria-selected={value === t.key}
+          onClick={() => onChange(t.key)}
+          className={`-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 border-b-2 px-3 text-sm font-semibold ${value === t.key ? 'border-brand text-brand-text' : 'border-transparent text-muted hover:text-ink'}`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5 text-sm font-medium">
