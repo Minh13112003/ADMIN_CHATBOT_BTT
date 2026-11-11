@@ -1,17 +1,25 @@
-# Deploy btt-chat-admin cạnh VinhSang
+# Deploy btt-chat-admin cạnh VinhSang (dùng thẳng tên miền)
 
-Mọi lệnh chạy trên server. Thay `chatadmin.benthanhtourist.com` bằng tên miền thật. Tên miền (bản ghi A) phải trỏ về IP server trước bước 3.
+Mọi lệnh chạy trên server (SSH vào). Địa chỉ dùng: **https://chatadmin.benthanhtourist.com**, đi qua proxy Cloudflare (đám mây cam), bản ghi A trỏ về IP server, chế độ SSL/TLS của Cloudflare là **Full**.
 
-## 1. Đưa mã nguồn và điền cấu hình
+## 1. Tải mã và điền cấu hình
 
 ```bash
-cd /opt && git clone <địa chỉ repo> btt-chat-admin && cd btt-chat-admin/deploy
+cd /opt && sudo git clone https://github.com/Minh13112003/ADMIN_CHATBOT_BTT.git btt-chat-admin
+sudo chown -R $USER btt-chat-admin && cd btt-chat-admin && git checkout giao-dien-moi
+cd deploy
 cp .env.example .env
-nano .env        # điền DB_PASSWORD, JWT_SECRET, INGEST_API_KEY... (lệnh tạo chuỗi ngẫu nhiên có ghi chú trong file)
+nano .env
 chmod 600 .env
 ```
 
-## 2. Chạy các container (chưa có HTTPS)
+Trong `.env` điền:
+- `DB_PASSWORD`: `openssl rand -hex 24`
+- `JWT_SECRET`: `openssl rand -hex 48`
+- `INGEST_API_KEY`: `openssl rand -hex 32`
+- `FRONTEND_URL=https://chatadmin.benthanhtourist.com` (đã có sẵn trong file mẫu)
+
+## 2. Chạy các container
 
 ```bash
 docker compose up -d --build
@@ -20,56 +28,22 @@ docker compose ps          # postgres, backend, web đều phải "Up"
 
 Lần build đầu mất vài phút và làm server chậm một lúc, nên chạy lúc ít người dùng VinhSang.
 
-## 2b. Thử khi chưa có tên miền (bỏ qua nếu đã có)
+## 3. Cho nginx của VinhSang chuyển tên miền về dự án
 
-Đặt `FRONTEND_URL=http://localhost:8081` trong `deploy/.env`, rồi thay bước 2 bằng:
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build
-```
-
-Trên **máy của bạn** mở đường hầm (để cửa sổ này mở khi dùng) rồi vào http://localhost:8081:
-
-```
-ssh -L 8081:127.0.0.1:8081 <user>@<IP server>
-```
-
-Cổng 8081 chỉ mở trong server, không lộ ra internet. Khi có tên miền thì làm tiếp bước 3, đổi `FRONTEND_URL` về `https://chatadmin.benthanhtourist.com` và chạy lại bước 2 (không có file test).
-
-## 3. Nginx giai đoạn 1 và cấp chứng chỉ
-
-1. Mở `docker/nginx/vinhsang.conf` của VinhSang, dán vào cuối phần **map** và **KHỐI A** từ `nginx-vinhsang-chat.conf`.
-2. Kiểm tra và nạp lại (từ thư mục của VinhSang):
+1. Mở `docker/nginx/vinhsang.conf` của VinhSang, dán vào **cuối file** toàn bộ nội dung `deploy/nginx-vinhsang-chat.conf`.
+2. Kiểm tra cú pháp trước, đúng mới nạp lại (từ thư mục của VinhSang):
    ```bash
    docker compose -f docker-compose.prod.yml exec nginx nginx -t
    docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
    ```
-3. Cấp chứng chỉ (từ thư mục của VinhSang). Chứng chỉ ghi vào `docker/nginx/ssl`, thư mục nginx của VinhSang đã đọc:
-   ```bash
-   docker run --rm \
-     -v "$PWD/docker/nginx/ssl:/etc/letsencrypt" \
-     -v vinhsang_certbot-webroot:/var/www/certbot \
-     certbot/certbot certonly --webroot -w /var/www/certbot \
-     -d chatadmin.benthanhtourist.com --email <email của bạn> --agree-tos --no-eff-email
-   ```
+   Nếu `nginx -t` báo lỗi thì **không** nạp lại, báo mình dòng lỗi. VinhSang vẫn chạy bình thường.
+3. Kiểm tra: mở https://chatadmin.benthanhtourist.com/api/v1/health phải thấy `{"ok":true}`, và https://chatadmin.benthanhtourist.com thấy trang đăng nhập.
 
-## 4. Nginx giai đoạn 2
+## 4. Nạp dữ liệu từ Supabase
 
-Dán **KHỐI B** vào cuối `vinhsang.conf`, rồi `nginx -t` và `nginx -s reload` như trên. Mở `https://chatadmin.benthanhtourist.com`.
+Làm theo các bước nạp dữ liệu (`scp` file `.sql` lên server, nạp vào Postgres, `prisma migrate deploy`, khởi động lại backend). Sau đó đăng nhập bằng tài khoản cũ.
 
-## 5. Gia hạn chứng chỉ (90 ngày một lần)
-
-Thêm vào `crontab -e`, chạy mỗi tuần:
-
-```
-0 4 * * 1 cd /đường/dẫn/VinhSang && docker run --rm -v "$PWD/docker/nginx/ssl:/etc/letsencrypt" -v vinhsang_certbot-webroot:/var/www/certbot certbot/certbot renew --quiet && docker compose -f docker-compose.prod.yml exec -T nginx nginx -s reload
-```
-
-## 6. Dữ liệu và tài khoản admin (làm sau khi có file `.sql`)
-
-Mình sẽ đưa lệnh cụ thể. File `.sql` chứa tên và số điện thoại khách: chỉ copy bằng `scp`, không gửi qua chat hay email.
-
-## 7. Sao lưu hằng đêm
+## 5. Sao lưu hằng đêm
 
 ```bash
 chmod +x /opt/btt-chat-admin/deploy/backup.sh
@@ -85,3 +59,8 @@ cd /opt/btt-chat-admin && git pull && cd deploy
 docker compose up -d --build
 docker compose run --rm backend ./node_modules/.bin/prisma migrate deploy   # khi có migration mới
 ```
+
+## Phương án dự phòng khi tên miền chưa chạy được
+
+Dùng `docker-compose.test.yml` (cổng 8081 chỉ mở trong server) và đường hầm SSH từ máy bạn:
+`docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build`, `ssh -L 8081:127.0.0.1:8081 <user>@<IP>`, rồi mở http://localhost:8081 (đặt tạm `FRONTEND_URL=http://localhost:8081`).

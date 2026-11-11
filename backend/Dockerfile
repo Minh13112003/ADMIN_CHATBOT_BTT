@@ -19,6 +19,9 @@ COPY frontend/package.json ./frontend/
 RUN pnpm install --frozen-lockfile --filter backend...
 
 COPY backend ./backend
+# Sinh lại Prisma Client SAU khi đã có tsconfig.json: Prisma đọc tsconfig để chọn cách viết đường dẫn nhập.
+# Sinh lúc cài gói (chưa có tsconfig) thì nó viết đuôi `.ts` và bản build chạy báo "Cannot find module './internal/class.ts'".
+RUN pnpm --filter backend exec prisma generate
 RUN pnpm --filter backend build
 
 # Giữ cả devDependencies vì cần công cụ `prisma` để chạy migrate trong container này.
