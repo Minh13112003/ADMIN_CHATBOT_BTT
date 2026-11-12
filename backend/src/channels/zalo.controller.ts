@@ -49,7 +49,7 @@ export class ZaloWebhookController {
     // Tin mẫu cố định Zalo gửi khi bấm "Kiểm tra" (chữ ký của nó dùng khoá mà trang Webhook chỉ hiện sau khi lưu được URL).
     // Trả 200 để lưu được URL; không lưu gì nên giả mạo tin mẫu này cũng vô hại. Tin thật vẫn bắt buộc đúng chữ ký.
     const m = (thu.message ?? {}) as Record<string, unknown>;
-    if (thu.event_name === 'user_send_text' && m.text === 'This is testing message' && m.msg_id === 'This is testing message') return { ok: true, test: true };
+    if (thu.event_name === 'user_send_text' && m.text === 'This is testing message' && m.msg_id === 'This is message_id') return { ok: true, test: true };
     const c = await this.zalo.doc();
     // Khoá ký: OA Secret Key nếu có; không có thì thử khoá bí mật của ứng dụng (chưa chắc Zalo ký bằng khoá nào, nên thử cả hai).
     const khoaKy = [c.oaSecretKey, c.appSecret].filter((k): k is string => !!k);

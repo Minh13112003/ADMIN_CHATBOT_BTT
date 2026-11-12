@@ -64,7 +64,7 @@ describe('ZaloWebhookController', () => {
   });
   it('tin mẫu "This is testing message" của Zalo: trả 200 không cần chữ ký, không lưu gì', async () => {
     const { ctl, ingest } = tao();
-    const mau = { app_id: '111', event_name: 'user_send_text', sender: { id: 'x' }, message: { text: 'This is testing message', msg_id: 'This is testing message' }, timestamp: '1' };
+    const mau = { app_id: '111', event_name: 'user_send_text', sender: { id: 'x' }, message: { text: 'This is testing message', msg_id: 'This is message_id' }, timestamp: '1' };
     await expect(ctl.nhan({ rawBody: Buffer.from(JSON.stringify(mau)), body: mau } as never, 'mac=khongdung', undefined)).resolves.toEqual({ ok: true, test: true });
     // Chỉ đúng tin mẫu; chữ giống mà msg_id khác thì vẫn phải kiểm tra chữ ký.
     const gia = { ...mau, message: { text: 'This is testing message', msg_id: 'abc' } };
