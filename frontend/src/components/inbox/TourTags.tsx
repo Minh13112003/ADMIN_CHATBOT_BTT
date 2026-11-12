@@ -37,7 +37,6 @@ function cumTenTour(name: string) {
 export function TourTagsTab({ conv, readOnly, onJump }: { conv: Conversation; readOnly: boolean; onJump: (messageId: string) => void }) {
   const key = `/conversations/${conv.id}/tour-tags`;
   const { data, error, mutate } = useSWR<TourTag[]>(key, fetcher);
-  const [mo, setMo] = useState(false);
   const [hoiGo, setHoiGo] = useState<string | null>(null);
   const [loi, setLoi] = useState('');
   const soLan = useMemo(() => {
@@ -63,12 +62,6 @@ export function TourTagsTab({ conv, readOnly, onJump }: { conv: Conversation; re
 
   return (
     <section aria-labelledby="tour-quan-tam" className="flex flex-col gap-4">
-      {!readOnly && (
-        <button type="button" onClick={() => setMo(true)} className={`${primaryClass} inline-flex w-full items-center justify-center gap-2`}>
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8" /></svg>
-          Gắn tour quan tâm
-        </button>
-      )}
       <div className="flex items-baseline justify-between">
         <h2 id="tour-quan-tam" className="text-xs font-bold uppercase tracking-wide text-body">Lịch sử quan tâm tour</h2>
         <span className="text-xs text-muted">Mới nhất ở trên</span>
@@ -119,7 +112,6 @@ export function TourTagsTab({ conv, readOnly, onJump }: { conv: Conversation; re
           );
         })}
       </ul>
-      {mo && <TagTourDialog conv={conv} tags={data ?? []} onClose={() => setMo(false)} onDone={() => void mutate()} />}
     </section>
   );
 }

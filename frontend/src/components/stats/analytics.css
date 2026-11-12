@@ -44,3 +44,9 @@
 .report-role-matrix p{font-size:14px}.report-role-matrix strong{font-size:13px}.accounts-report table th{font-size:13px}.accounts-report table td{font-size:14px}
 @media(max-width:1000px){.report-kpis.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.report-kpis.six,.report-kpis.three{grid-template-columns:repeat(2,minmax(0,1fr))}.report-heading h1{font-size:23px}.report-metric>strong{font-size:24px}.report-metric-label{font-size:12px}.report-tabs a{font-size:14px}.report-search input{width:100%}}
+
+.report-search:focus-within{outline:2px solid var(--color-brand);outline-offset:1px}.report-search input:focus-visible{outline:none}
+
+/* Máy tính: menu con bên trái đã chuyển tab, bỏ thanh tab thứ hai. Dòng nhỏ phía trên tiêu đề cũng bỏ cho gọn. */
+@media(min-width:768px){.report-tabs{display:none}}
+.report-eyebrow{display:none}.report-heading h1{margin:0 0 4px}

@@ -41,7 +41,7 @@ export default function CustomersPage() {
           className={`${inputClass} sm:max-w-72`}
         />
       </div>
-      <div className="grid grid-cols-4 gap-3.5 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1 [&>div]:flex [&>div]:min-h-[130px] [&>div]:flex-col [&>div]:gap-2 [&>div]:rounded-[13px] [&>div]:border [&>div]:border-line [&>div]:bg-surface [&>div]:shadow-sm [&>div]:p-[18px] [&_span]:text-[0.82rem] [&_span]:text-muted [&_strong]:text-[1.8rem] [&_strong]:leading-[1.1] [&_small]:text-xs [&_small]:text-muted [&_.attention]:border-alert-line [&_.attention_strong]:text-brand-text">
+      <div className="grid grid-cols-4 gap-3.5 max-[1100px]:grid-cols-2 max-[700px]:grid-cols-1 [&>div]:flex [&>div]:min-h-[88px] [&>div]:flex-col [&>div]:gap-0.5 [&>div]:rounded-[13px] [&>div]:border [&>div]:border-line [&>div]:bg-surface [&>div]:shadow-sm [&>div]:p-[18px] [&_span]:text-[0.82rem] [&_span]:text-muted [&_strong]:text-[1.8rem] [&_strong]:leading-[1.1] [&_small]:text-xs [&_small]:text-muted [&_.attention]:border-alert-line [&_.attention_strong]:text-brand-text">
         <div><span>Khách hàng tìm thấy</span><strong>{(data ?? []).length.toLocaleString('vi-VN')}</strong><small>Trong danh sách đang tìm kiếm</small></div>
         <div><span>Hội thoại</span><strong>{allRows.length.toLocaleString('vi-VN')}</strong><small>Trên Web và ứng dụng</small></div>
         <div className="attention"><span>Cần tư vấn</span><strong>{needsHelp.toLocaleString('vi-VN')}</strong><small>Liên hệ hoặc chưa xem</small></div>

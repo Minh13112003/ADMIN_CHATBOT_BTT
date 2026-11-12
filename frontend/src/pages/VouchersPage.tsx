@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { fetcher, loiCua, patch, post } from '@/lib/api';
 import type { CatalogTour, Me, Place, Voucher, VoucherList, VoucherStatus } from '@/lib/types';
-import { ErrorText, inputClass, Modal, primaryClass } from '@/components/ui';
+import { ErrorText, inputClass, Modal, NhapNgay, primaryClass } from '@/components/ui';
 
 const TRANG_THAI: Record<VoucherStatus, { label: string; className: string }> = {
   ACTIVE: { label: 'Hiệu lực', className: 'bg-green-soft text-green-ink' },
@@ -164,6 +164,7 @@ function VoucherDrawer({ voucher, onClose, onDone }: { voucher: Voucher | null; 
     note: voucher?.note ?? '',
   });
   const [timTour, setTimTour] = useState('');
+  const [anhTour, setAnhTour] = useState<string | null>(null);
   const [loi, setLoi] = useState('');
   const [dang, setDang] = useState(false);
   const doi = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF((x) => ({ ...x, [k]: v }));
@@ -281,15 +282,21 @@ function VoucherDrawer({ voucher, onClose, onDone }: { voucher: Voucher | null; 
                 </label>
                 {k === 'TOUR' && f.scope === 'TOUR' && (
                   <div className="mb-2 ml-6 flex flex-col gap-1.5">
-                    {f.tourKey && <p className="rounded-lg bg-surface px-3 py-2 text-[0.8125rem] font-semibold ring-1 ring-brand">{f.tourName}</p>}
+                    {f.tourKey && (
+                      <p className="flex items-center gap-2.5 rounded-lg bg-surface px-3 py-2 text-[0.8125rem] font-semibold ring-1 ring-brand">
+                        {anhTour && <img src={anhTour} alt="" loading="lazy" className="size-10 shrink-0 rounded-md object-cover" />}
+                        <span className="min-w-0">{f.tourName}</span>
+                      </p>
+                    )}
                     <input value={timTour} onChange={(e) => setTimTour(e.target.value)} placeholder="Tìm tên tour hoặc mã đợt" aria-label="Tìm tour áp dụng" className={inputClass} />
                     {tours && (
                       <ul className="max-h-48 overflow-y-auto rounded-lg border border-line bg-surface">
                         {!tours.length && <li className="px-3 py-2 text-xs text-muted">Không có tour khớp</li>}
                         {tours.map((t) => (
                           <li key={t.key}>
-                            <button type="button" onClick={() => { doi('tourKey', t.key); doi('tourName', t.name); setTimTour(''); }} className="min-h-10 w-full px-3 py-1.5 text-left text-[0.8125rem] hover:bg-fill">
-                              {t.name}
+                            <button type="button" onClick={() => { doi('tourKey', t.key); doi('tourName', t.name); setAnhTour(t.image); setTimTour(''); }} className="flex min-h-12 w-full items-center gap-2.5 px-3 py-1.5 text-left text-[0.8125rem] hover:bg-fill">
+                              {t.image ? <img src={t.image} alt="" loading="lazy" className="size-10 shrink-0 rounded-md object-cover" /> : <span className="size-10 shrink-0 rounded-md bg-fill" />}
+                              <span className="min-w-0">{t.name}</span>
                             </button>
                           </li>
                         ))}
@@ -311,11 +318,11 @@ function VoucherDrawer({ voucher, onClose, onDone }: { voucher: Voucher | null; 
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label htmlFor="v-tu" className={nhan}>Ngày bắt đầu <span className="text-brand">*</span></label>
-            <input id="v-tu" type="date" value={f.startsOn} onChange={(e) => doi('startsOn', e.target.value)} className={inputClass} />
+            <NhapNgay id="v-tu" value={f.startsOn} onChange={(v) => doi('startsOn', v)} className={inputClass} />
           </div>
           <div>
             <label htmlFor="v-den" className={nhan}>Ngày kết thúc <span className="text-brand">*</span></label>
-            <input id="v-den" type="date" value={f.endsOn} min={f.startsOn} onChange={(e) => doi('endsOn', e.target.value)} className={inputClass} />
+            <NhapNgay id="v-den" value={f.endsOn} min={f.startsOn} onChange={(v) => doi('endsOn', v)} className={inputClass} />
           </div>
         </div>
 

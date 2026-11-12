@@ -15,7 +15,6 @@ import SettingsPage from '@/pages/SettingsPage';
 import ReplyLibraryPage from '@/pages/ReplyLibraryPage';
 import DealsPage from '@/pages/DealsPage';
 import RemindersPage from '@/pages/RemindersPage';
-import PerformancePage from '@/pages/PerformancePage';
 import ChannelsPage from '@/pages/ChannelsPage';
 import TourInterestPage from '@/pages/TourInterestPage';
 import VouchersPage from '@/pages/VouchersPage';
@@ -74,7 +73,7 @@ export function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/tour-interest" element={<TourInterestPage />} />
         <Route path="/stats" element={<AdminOrDept><StatsPage /></AdminOrDept>} />
-        <Route path="/performance" element={<AdminOrDept><PerformancePage /></AdminOrDept>} />
+        <Route path="/performance" element={<Navigate to="/stats?view=sales" replace />} />
         <Route path="/channels" element={<AdminOnly><ChannelsPage /></AdminOnly>} />
         <Route path="/accounts" element={<AdminOrDept><AccountsPage /></AdminOrDept>} />
         <Route path="/vouchers" element={<AdminOrDept><VouchersPage /></AdminOrDept>} />

@@ -25,7 +25,7 @@
 - Số lần đã dùng đếm từ đơn `CONFIRMED` không `voidedAt`; mở lại hội thoại thì voucher được trả lượt. Chốt có voucher khoá theo voucher (`pg_advisory_xact_lock`) để không vượt số lần tối đa.
 
 ## Tour quan tâm (chốt ngày 2026-11-11)
-- Cách gắn chính (đổi ngày 2026-11-11): bấm icon ghim trên từng tin trong khung chat, hộp hiện ra chỉ còn bước chọn tour (gõ tên hoặc mã). Nút "Gắn tour quan tâm" ở tab Tour quan tâm vẫn còn (chọn tour rồi chọn tin).
+- Cách gắn chính (đổi ngày 2026-11-11): bấm icon ghim trên từng tin trong khung chat, hộp hiện ra chỉ còn bước chọn tour (gõ tên hoặc mã). Tab Tour quan tâm chỉ xem lịch sử và gỡ nhãn, không còn nút gắn (đổi 2026-11-12).
 - Sale gắn nhãn tour quan tâm ở cột thông tin khách, mỗi nhãn ghim đúng một tin (không ghim log nội bộ). Gắn theo **tour**, không theo ngày khởi hành. Cùng tour gắn lại sau là nhãn mới "Lần 2". Ai trong nhóm sale cũng gắn, gỡ được; có log nội bộ. Digital chỉ xem. Trang Nhu cầu tour chỉ đếm nhãn sale ghim, không đếm thẻ tour chatbot gửi (chốt 2026-11-11).
 
 ## Chia việc

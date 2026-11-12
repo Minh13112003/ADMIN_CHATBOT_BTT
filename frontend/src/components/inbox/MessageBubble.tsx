@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { linkTep } from '@/lib/api';
 import { CHANNEL, gioTin } from '@/lib/labels';
 import type { Attachment, Message, TourCard } from '@/lib/types';
@@ -111,7 +112,41 @@ function NutGhim({ onClick, daGhim }: { onClick: () => void; daGhim: boolean }) 
   );
 }
 
-export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen }: { message: Message; onReply?: (m: Message) => void; onPin?: (m: Message) => void; pinned?: boolean; seen?: boolean }) {
+
+/** Bỏ dấu từng ký tự nhưng giữ nguyên độ dài chuỗi, để vị trí tìm thấy khớp với chữ gốc. */
+function boDau(t: string) {
+  return Array.from(t, (c) => (c === 'đ' ? 'd' : c === 'Đ' ? 'D' : c.normalize('NFD').charAt(0))).join('').toLowerCase();
+}
+
+/** Chữ tin nhắn, bôi vàng các từ đang tìm (không phân biệt hoa thường và dấu). */
+function VanBan({ text, tuKhoa }: { text: string; tuKhoa?: string }) {
+  const tu = (tuKhoa ?? '').split(/\s+/).map(boDau).filter(Boolean);
+  if (!tu.length) return <>{text}</>;
+  const goc = boDau(text);
+  const doan: [number, number][] = [];
+  for (const t of tu) {
+    for (let i = goc.indexOf(t); i !== -1; i = goc.indexOf(t, i + t.length)) doan.push([i, i + t.length]);
+  }
+  if (!doan.length) return <>{text}</>;
+  doan.sort((a, b) => a[0] - b[0]);
+  const gop: [number, number][] = [];
+  for (const d of doan) {
+    const cuoi = gop[gop.length - 1];
+    if (cuoi && d[0] <= cuoi[1]) cuoi[1] = Math.max(cuoi[1], d[1]);
+    else gop.push([...d]);
+  }
+  const ra: ReactNode[] = [];
+  let tu0 = 0;
+  gop.forEach(([a, b], i) => {
+    if (a > tu0) ra.push(text.slice(tu0, a));
+    ra.push(<mark key={i} className="rounded-sm bg-yellow-300/70 px-0.5 text-inherit">{text.slice(a, b)}</mark>);
+    tu0 = b;
+  });
+  if (tu0 < text.length) ra.push(text.slice(tu0));
+  return <>{ra}</>;
+}
+
+export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen, tuKhoa }: { message: Message; onReply?: (m: Message) => void; onPin?: (m: Message) => void; pinned?: boolean; seen?: boolean; tuKhoa?: string }) {
   const ghim = onPin && !m.internal ? <NutGhim daGhim={pinned} onClick={() => onPin(m)} /> : null;
   if (m.senderType === 'SYSTEM') {
     return (
@@ -130,7 +165,7 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
           className={`whitespace-pre-line break-words rounded-[14px_14px_14px_4px] bg-surface px-3 py-2 text-sm leading-normal ${m.isTrigger ? 'border-2 border-brand' : 'border border-line'}`}
         >
           {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} />}
-          {m.text}
+          <VanBan text={m.text} tuKhoa={tuKhoa} />
         </div>
         <div className="mt-0.5 flex items-center text-[0.6875rem] text-muted">
           Khách · {gioTin(m.createdAt)}
@@ -147,7 +182,7 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
       <div className={`whitespace-pre-line break-words rounded-[14px_14px_4px_14px] px-3 py-2 text-sm leading-normal ${mau}`}>
         {m.replyTo && <Trich m={m.replyTo} light={m.senderType === 'STAFF'} />}
         {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} />}
-        {m.text}
+        <VanBan text={m.text} tuKhoa={tuKhoa} />
         {m.tours?.map((t, i) => {
           const the = thongTinThe(t);
           return (

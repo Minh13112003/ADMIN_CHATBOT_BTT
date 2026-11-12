@@ -29,6 +29,7 @@ import { ToursController } from './tours/tours.controller';
 import { TourCatalogService } from './tours/tour-catalog.service';
 import { PricingService } from './tours/pricing.service';
 import { VouchersController } from './vouchers/vouchers.controller';
+import { ChannelSettingsController } from './channels/channel-settings.controller';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { VouchersController } from './vouchers/vouchers.controller';
     TourTagsController,
     ToursController,
     VouchersController,
+    ChannelSettingsController,
     ConversationsController,
     CustomersController,
     DealsController,

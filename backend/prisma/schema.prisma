@@ -355,6 +355,18 @@ model TourInterestTag {
   @@map("tour_interest_tags")
 }
 
+// Thông tin kết nối kênh (Zalo OA, Facebook) do admin nhập ở trang Kênh kết nối. Giá trị luôn mã hoá AES-256-GCM bằng ENCRYPTION_KEY trong .env.
+model ChannelSecret {
+  channel     Channel
+  name        String // Tên trường, ví dụ appSecret, accessToken
+  valueEnc    String // Đã mã hoá, không bao giờ trả về trình duyệt
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@id([channel, name])
+  @@map("channel_secrets")
+}
+
 // Voucher do admin phòng ban (admin chi nhánh) hoặc admin toàn quyền tạo. Số lần đã dùng đếm từ đơn đã chốt, không lưu bộ đếm.
 model Voucher {
   id           String       @id @default(uuid())

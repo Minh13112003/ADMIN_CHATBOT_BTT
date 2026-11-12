@@ -58,7 +58,14 @@ crontab -e   # thêm:  30 2 * * * /opt/btt-chat-admin/deploy/backup.sh >> /var/l
 cd /opt/btt-chat-admin && git pull && cd deploy
 docker compose up -d --build
 docker compose run --rm backend ./node_modules/.bin/prisma migrate deploy   # khi có migration mới
+docker compose restart backend
 ```
+
+Bản 2026-11-12 có migration mới `channel_secrets` và cần biến `ENCRYPTION_KEY` trong `deploy/.env`:
+```bash
+grep -q '^ENCRYPTION_KEY=.' .env || echo "ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env
+```
+Khoá này giữ nguyên về sau (đổi khoá thì phải nhập lại thông tin Zalo/Facebook) và nên sao lưu cùng file `.env`.
 
 ## Phương án dự phòng khi tên miền chưa chạy được
 

@@ -140,11 +140,14 @@ function TimTinTrongChat({ id, onClose }: { id: string; onClose: () => void }) {
   useEffect(() => setViTri(0), [q]);
   useEffect(() => {
     const m = data?.[viTri];
+    // Chỉ tin đang xem được bôi vàng; sang kết quả khác hoặc đóng tìm kiếm thì hết bôi.
+    window.dispatchEvent(new CustomEvent('btt:tim-chat', { detail: m ? { id: m.id, q } : null }));
     if (m) xemTinTrongChat(m.id);
-  }, [data, viTri]);
+  }, [data, viTri, q]);
+  useEffect(() => () => { window.dispatchEvent(new CustomEvent('btt:tim-chat', { detail: null })); }, []);
   const dem = q.length < 2 ? 'Gõ từ 2 ký tự' : isLoading ? 'Đang tìm...' : error ? 'Lỗi tìm kiếm' : kq.length ? `${viTri + 1} / ${kq.length}` : '0 kết quả';
   return (
-    <div role="search" className="flex items-center gap-1 border-b border-line bg-surface px-3 py-1.5 sm:px-4">
+    <div role="search" className="flex items-center gap-1 border-b focus-within:shadow-[inset_0_0_0_2px_var(--color-brand)] border-line bg-surface px-3 py-1.5 sm:px-4">
       <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-muted"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
       <input
         autoFocus
@@ -184,6 +187,12 @@ function MessageList({ id, seenAt, onReply, onPin, focusId }: { id: string; seen
     return m;
   }, [tags]);
   const [noiBat, setNoiBat] = useState<string | null>(null);
+  const [danhDau, setDanhDau] = useState<{ id: string; q: string } | null>(null);
+  useEffect(() => {
+    const nghe = (e: Event) => setDanhDau((e as CustomEvent<{ id: string; q: string } | null>).detail);
+    window.addEventListener('btt:tim-chat', nghe);
+    return () => window.removeEventListener('btt:tim-chat', nghe);
+  }, []);
   useEffect(() => {
     const nghe = (e: Event) => {
       const mid = (e as CustomEvent<string>).detail;
@@ -247,7 +256,7 @@ function MessageList({ id, seenAt, onReply, onPin, focusId }: { id: string; seen
         )}
         {tatCa.map((m) => (
           <div key={m.id} id={`msg-${m.id}`} className={`flex min-w-0 flex-col transition-colors duration-500 ${focusId === m.id || noiBat === m.id ? 'rounded-xl bg-amber-soft/60 p-1.5 ring-2 ring-amber-line' : ''}`}>
-            <MessageBubble message={m} onReply={onReply} onPin={onPin} pinned={ghim.has(m.id)} seen={daXem && m.id === tinNhanVienCuoi?.id} />
+            <MessageBubble message={m} onReply={onReply} onPin={onPin} pinned={ghim.has(m.id)} tuKhoa={danhDau?.id === m.id ? danhDau.q : undefined} seen={daXem && m.id === tinNhanVienCuoi?.id} />
             {ghim.get(m.id)?.map((ten, i) => (
               <span key={i} className={`mt-1 inline-flex max-w-full items-center gap-1.5 self-start rounded-lg border border-alert-line bg-brand-faint px-2 py-1 text-xs font-semibold text-brand-text ${m.senderType === 'CUSTOMER' ? '' : 'self-end'}`}>
                 <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="shrink-0"><path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3-1-6Z" /></svg>

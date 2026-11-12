@@ -41,7 +41,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: "4000"
-      DATABASE_URL: postgresql://btt:${DB_PASSWORD}@postgres:5432/btt
+      DATABASE_URL: postgresql://btt:${DB_PASSWORD}@postgres:5432/btt?sslmode=disable
       # Đứng sau nginx của VinhSang: lấy IP khách thật từ X-Forwarded-For (cần cho giới hạn tốc độ).
       TRUST_PROXY: "1"
       # Ảnh/PDF lưu trên ổ đĩa server, trong volume `files-data` (sao lưu cùng database).

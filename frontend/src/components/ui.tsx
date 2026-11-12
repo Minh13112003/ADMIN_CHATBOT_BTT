@@ -230,3 +230,41 @@ export function DeleteButton({ onConfirm, label }: { onConfirm: () => void; labe
     </button>
   );
 }
+
+/** "2026-12-11" -> "11/12/2026"; chuỗi rỗng hoặc sai thì trả rỗng. */
+function isoSangHienThi(iso: string) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : '';
+}
+
+/** Ô nhập ngày kiểu dd/mm/yyyy (ô ngày của trình duyệt hiện theo ngôn ngữ máy, thường là mm/dd/yyyy). Giá trị ra vào là "yyyy-mm-dd". */
+export function NhapNgay({ id, value, onChange, className, min }: { id?: string; value: string; onChange: (iso: string) => void; className?: string; min?: string }) {
+  const [chu, setChu] = useState(() => isoSangHienThi(value));
+  useEffect(() => {
+    // Chỉ đồng bộ khi giá trị bên ngoài đổi khác với chữ đang gõ (ví dụ mở sửa voucher khác).
+    setChu((cu) => {
+      const hopLe = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(cu);
+      const iso = hopLe ? `${hopLe[3]}-${hopLe[2]}-${hopLe[1]}` : '';
+      return iso === value ? cu : isoSangHienThi(value);
+    });
+  }, [value]);
+  const doi = (raw: string) => {
+    const so = raw.replace(/\D/g, '').slice(0, 8);
+    const hienThi = [so.slice(0, 2), so.slice(2, 4), so.slice(4, 8)].filter(Boolean).join('/');
+    setChu(hienThi);
+    if (so.length === 8) {
+      const [d, m, y] = [Number(so.slice(0, 2)), Number(so.slice(2, 4)), Number(so.slice(4, 8))];
+      const t = new Date(Date.UTC(y, m - 1, d));
+      const dung = t.getUTCFullYear() === y && t.getUTCMonth() === m - 1 && t.getUTCDate() === d;
+      onChange(dung ? `${so.slice(4, 8)}-${so.slice(2, 4)}-${so.slice(0, 2)}` : '');
+    } else onChange('');
+  };
+  const sai = chu.length === 10 && !value;
+  const nhoHon = !!value && !!min && value < min;
+  return (
+    <>
+      <input id={id} inputMode="numeric" autoComplete="off" placeholder="dd/mm/yyyy" maxLength={10} value={chu} onChange={(e) => doi(e.target.value)} aria-invalid={sai || nhoHon} className={className} />
+      {(sai || nhoHon) && <span className="mt-1 block text-xs text-brand-text">{sai ? 'Ngày không hợp lệ' : 'Phải sau hoặc bằng ngày bắt đầu'}</span>}
+    </>
+  );
+}

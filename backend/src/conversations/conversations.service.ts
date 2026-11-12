@@ -488,7 +488,7 @@ export class ConversationsService {
     const tsq = truyVanTin(q);
     if (!tsq) return [];
     const pham = conversationId
-      ? Prisma.sql`${sqlPhamHoiThoai(user.role === Role.DEPT_ADMIN ? phamViPhong(user) : null)} AND m."conversationId" = ${conversationId}`
+      ? Prisma.sql`${sqlPhamHoiThoai(user.role === Role.DEPT_ADMIN ? phamViPhong(user) : null)} AND m."conversationId" = ${conversationId} AND m.internal = false`
       : sqlPhamHoiThoai(user.role === Role.DEPT_ADMIN ? phamViPhong(user) : null);
     return this.prisma.$queryRaw<{ id: string; conversationId: string; senderType: string; text: string; internal: boolean; createdAt: Date; channel: Channel; name: string; phone: string | null }[]>`
       SELECT m.id, m."conversationId", m."senderType", m.text, m.internal, m."createdAt", c.channel, cu.name, cu.phone

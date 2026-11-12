@@ -31,7 +31,7 @@ export default function StatsPage({ forcedView }: { forcedView?: View }) {
   const [refreshVersion, setRefreshVersion] = useState(0);
   const departmentName = owner ? departments?.find(p => p.id === scope)?.name ?? (scope ? 'Phòng đang chọn' : 'Toàn công ty') : me?.department?.name ?? 'Phòng của bạn';
   const changeFilter = (key: string, value: string) => { const next = new URLSearchParams(params); value ? next.set(key, value) : next.delete(key); setSelectedSale(null); setParams(next); };
-  const tabUrl = (tab: View) => { const next = new URLSearchParams({ period, ...(scope ? { departmentId: scope } : {}) }); if (tab !== 'sales') next.set('view', tab); return `${tab === 'sales' ? '/performance' : '/stats'}?${next}`; };
+  const tabUrl = (tab: View) => { const next = new URLSearchParams({ period, ...(scope ? { departmentId: scope } : {}) }); next.set('view', tab); return `/stats?${next}`; };
   const exportReport = () => {
     if (!s) return;
     exportCsv(`bao-cao-${view}-${period}.csv`, [['Báo cáo', views.find(v => v.id === view)!.label], ['Phạm vi', departmentName], ['Kỳ', periods.find(p => p.value === period)!.label], ['Cập nhật', s.updatedAt], [], ...(view === 'sales'

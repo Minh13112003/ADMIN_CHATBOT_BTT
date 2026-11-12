@@ -40,7 +40,6 @@ const NAV = [
       </>
     ),
   },
-  { href: '/performance', label: 'Hiệu suất sale', admin: true, dept: true, icon: <><path d="M3 18 9 12l4 3 8-9" /><path d="M16 6h5v5" /></> },
   { href: '/channels', label: 'Kênh kết nối', admin: true, icon: <><circle cx="12" cy="12" r="2" /><circle cx="4" cy="5" r="2" /><circle cx="20" cy="5" r="2" /><circle cx="12" cy="21" r="2" /><path d="m6 6 5 5m7-5-5 5m-1 3v5" /></> },
   {
     href: '/accounts',
@@ -59,10 +58,13 @@ const NAV = [
 ] as { href: string; label: string; icon: ReactNode; admin?: boolean; dept?: boolean }[];
 
 type NavItem = (typeof NAV)[number];
+const TK_MUC = [{ id: 'overview', label: 'Tổng quan' }, { id: 'customers', label: 'Khách & Tour' }, { id: 'sales', label: 'Hiệu suất sale' }, { id: 'revenue', label: 'Doanh thu đã chốt' }, { id: 'digital', label: 'Nhu cầu tour' }];
 /** Mục nào hiện với vai trò nào. Chỉ để dễ dùng, quyền thật do backend kiểm tra. */
 function hienMuc(n: NavItem, role: Me['role']) {
+  // Hiệu suất sale và Nhu cầu tour nằm trong menu con của Thống kê; riêng Digital không có Thống kê nên giữ mục Nhu cầu tour.
+  if (n.href === '/tour-interest') return role === 'DIGITAL';
   if (role === 'ADMIN') return true;
-  if (role === 'DIGITAL') return n.href === '/tour-interest' || n.href === '/settings';
+  if (role === 'DIGITAL') return n.href === '/settings';
   if (role === 'DEPT_ADMIN') return !n.admin || !!n.dept;
   return !n.admin;
 }
@@ -92,7 +94,7 @@ function noiDungPing(p: Ping) {
 }
 
 export function Shell({ children }: { children: ReactNode }) {
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const navigate = useNavigate();
   const { data: me, mutate: mutateMe } = useSWR<Me>('/auth/me', fetcher);
   const { data: contacts } = useSWR<ConversationList>(me ? '/conversations?status=CONTACT' : null, fetcher);
@@ -100,6 +102,8 @@ export function Shell({ children }: { children: ReactNode }) {
   const [menu, setMenu] = useState<'bell' | 'me' | null>(null);
   const [doiMk, setDoiMk] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [tkMo, setTkMo] = useState(true);
+  const tkView = new URLSearchParams(search).get('view') ?? 'overview';
   const [thu, setThu] = useState(() => { try { return localStorage.getItem('btt-sidebar') === '1'; } catch { return false; } });
   useEffect(() => { try { localStorage.setItem('btt-sidebar', thu ? '1' : '0'); } catch { /* bỏ qua */ } }, [thu]);
 
@@ -122,7 +126,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const tabDuoi = dsNav.filter((n) => !n.admin).slice(0, 4);
 
   return (
-    <div className="workspace flex h-dvh min-w-0 flex-col md:flex-row">
+    <div className="workspace fixed inset-0 flex min-w-0 flex-col overflow-hidden md:flex-row">
       <div className="relative z-30 hidden h-full shrink-0 md:block">
         <aside className={`flex h-full flex-col overflow-y-auto overflow-x-hidden border-r border-line bg-surface transition-[width] duration-200 ${thu ? 'w-[76px]' : 'w-[248px]'}`}>
           <Link to="/inbox" title="BenThanh Tourist" className={`flex h-[72px] shrink-0 items-center gap-3 border-b border-line-soft ${thu ? 'justify-center px-0' : 'px-4'}`}>
@@ -138,10 +142,15 @@ export function Shell({ children }: { children: ReactNode }) {
             <div key={group.caption} className="px-3 pt-4">
               {thu ? <div className="mb-2 h-px bg-line-soft" /> : <p className="px-3 pb-2 text-[0.6875rem] font-bold uppercase tracking-wider text-muted">{group.caption}</p>}
               <nav aria-label={group.label} className="space-y-1">
-                {group.items.map((n) => (
-                  <Link
-                    key={n.href}
+                {group.items.map((n) => {
+                  const laTk = n.href === '/stats' && !thu;
+                  const tkDangMo = laTk && pathname.startsWith('/stats') && tkMo;
+                  return (
+                    <div key={n.href}>
+                      <Link
                     to={n.href}
+                    onClick={laTk && pathname.startsWith('/stats') ? () => setTkMo(!tkMo) : laTk ? () => setTkMo(true) : undefined}
+                    aria-expanded={laTk ? tkDangMo : undefined}
                     title={thu ? n.label : undefined}
                     aria-current={pathname.startsWith(n.href) ? 'page' : undefined}
                     className={`relative flex h-11 items-center gap-3 whitespace-nowrap rounded-lg border-l-[3px] border-transparent text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:border-brand aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text ${thu ? 'justify-center px-0' : 'px-3'}`}
@@ -150,11 +159,25 @@ export function Shell({ children }: { children: ReactNode }) {
                       {n.icon}
                     </svg>
                     {!thu && <span className="flex-1">{n.label}</span>}
+                    {laTk && (
+                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" className={`shrink-0 transition-transform ${tkDangMo ? 'rotate-180' : ''}`} {...stroke}><path d="m6 9 6 6 6-6" /></svg>
+                    )}
                     {n.href === '/inbox' && soCho > 0 && (
                       <span className={`flex h-[19px] min-w-[20px] items-center justify-center rounded-full bg-brand-button px-1.5 text-[0.6875rem] font-bold text-white ${thu ? 'absolute right-0.5 top-0.5' : ''}`}>{soCho}</span>
                     )}
                   </Link>
-                ))}
+                      {tkDangMo && (
+                        <div className="ml-[22px] mt-1 space-y-0.5 border-l border-line-soft pl-2">
+                          {TK_MUC.map((m) => (
+                            <Link key={m.id} to={m.id === 'overview' ? '/stats' : `/stats?view=${m.id}`} aria-current={tkView === m.id ? 'page' : undefined} className="flex h-8 items-center rounded-lg px-3 text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text">
+                              {m.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </nav>
             </div>
           ))}

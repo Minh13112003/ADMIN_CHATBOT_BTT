@@ -141,6 +141,16 @@ button:not(:disabled) {
   outline: 2px solid var(--color-brand);
   outline-offset: 1px;
 }
+/* Ô tìm kiếm có khung bọc ngoài (biểu tượng + ô gõ): viền đỏ khi gõ phải ôm cả khung, không nằm lọt bên trong. */
+input.bg-transparent:focus-visible,
+textarea.bg-transparent:focus-visible {
+  outline: none;
+}
+label:has(> input.bg-transparent:focus-visible),
+label:has(> input[placeholder^='Tìm']:focus-visible) {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 1px;
+}
 @keyframes nhap {
   0%,
   100% {

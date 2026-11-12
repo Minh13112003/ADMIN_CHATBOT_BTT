@@ -24,7 +24,7 @@ export async function api<T = unknown>(path: string, init?: { method?: string; b
   if (!res.ok) {
     if (res.status === 401 && !path.startsWith('/auth/')) window.location.href = '/login';
     const m = data?.message;
-    throw new ApiError(res.status, Array.isArray(m) ? m[0] : m || 'Có lỗi xảy ra, bạn thử lại nhé.', typeof data?.code === 'string' ? data.code : undefined);
+    throw new ApiError(res.status, res.status >= 500 ? 'Hệ thống đang gặp sự cố, bạn thử lại sau ít phút nhé.' : Array.isArray(m) ? m[0] : m || 'Có lỗi xảy ra, bạn thử lại nhé.', typeof data?.code === 'string' ? data.code : undefined);
   }
   return data as T;
 }
@@ -42,7 +42,7 @@ export async function postForm<T = unknown>(path: string, form: FormData): Promi
   if (!res.ok) {
     if (res.status === 401) window.location.href = '/login';
     const m = data?.message;
-    throw new ApiError(res.status, res.status === 413 ? 'File quá lớn' : Array.isArray(m) ? m[0] : m || 'Có lỗi xảy ra, bạn thử lại nhé.', typeof data?.code === 'string' ? data.code : undefined);
+    throw new ApiError(res.status, res.status === 413 ? 'File quá lớn' : res.status >= 500 ? 'Hệ thống đang gặp sự cố, bạn thử lại sau ít phút nhé.' : Array.isArray(m) ? m[0] : m || 'Có lỗi xảy ra, bạn thử lại nhé.', typeof data?.code === 'string' ? data.code : undefined);
   }
   return data as T;
 }
