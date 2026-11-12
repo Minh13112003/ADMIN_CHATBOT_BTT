@@ -1,4 +1,4 @@
-import { chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce } from './zalo';
+import { chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
 import { createHash } from 'crypto';
 
 describe('zalo', () => {
@@ -41,5 +41,11 @@ describe('zalo', () => {
     expect(phanTichSuKien({ event_name: 'user_send_text', message: { text: 'a' } })).toBeNull();
     expect(phanTichSuKien(null)).toBeNull();
     expect(phanTichSuKien('rac')).toBeNull();
+  });
+  it('chẩn đoán: chỉ trả tên cặp khớp, không lộ khoá', () => {
+    const mac = createHash('sha256').update(raw + 'k2').digest('hex');
+    const kq = thuCongThuc(`mac=${mac}`, '123', raw, '1', { appSecret: 'k1', oaSecretKey: 'k2' });
+    expect(kq).toEqual(['oaSecretKey:sha(raw+key)']);
+    expect(thuCongThuc(undefined, '123', raw, '1', { appSecret: 'k1' })).toEqual([]);
   });
 });

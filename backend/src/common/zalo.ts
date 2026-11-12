@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from 'crypto';
+import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
 /**
  * Hàm thuần cho Zalo OA (có test). Cách ký webhook và PKCE theo mô tả của Zalo ở nguồn bên thứ ba,
@@ -59,4 +59,31 @@ export function phanTichSuKien(body: unknown): SuKienZalo | null {
   const loai = TEN_LOAI[ten] ?? 'nội dung khác';
   const kem = typeof b.message?.text === 'string' && b.message.text.trim() ? `${b.message.text.trim()} ` : '';
   return { userId, msgId, text: `${kem}[Khách gửi ${loai} qua Zalo, xem trên Zalo OA]`.slice(0, 4000), laText: false, tenSuKien: ten, timestamp };
+}
+
+/**
+ * CHẨN ĐOÁN: thử nhiều công thức ký với từng khoá đang có, trả về tên các cặp khớp (không bao giờ trả về khoá).
+ * Dùng để biết Zalo ký bằng khoá nào, công thức nào khi chữ ký không khớp.
+ */
+export function thuCongThuc(header: string | undefined, appId: string, raw: string, ts: string, khoa: Record<string, string>): string[] {
+  if (!header) return [];
+  const nhan = header.trim().replace(/^mac=/i, '').toLowerCase();
+  const sha = (x: string) => createHash('sha256').update(x).digest('hex');
+  const hmac = (k: string, x: string) => createHmac('sha256', k).update(x).digest('hex');
+  const ra: string[] = [];
+  for (const [ten, k] of Object.entries(khoa)) {
+    if (!k) continue;
+    const thu: Record<string, string> = {
+      'sha(appId+raw+ts+key)': sha(appId + raw + ts + k),
+      'sha(raw+ts+key)': sha(raw + ts + k),
+      'sha(appId+raw+key)': sha(appId + raw + k),
+      'sha(raw+key)': sha(raw + k),
+      'sha(key+raw)': sha(k + raw),
+      'hmac(key,appId+raw+ts)': hmac(k, appId + raw + ts),
+      'hmac(key,raw)': hmac(k, raw),
+      'hmac(key,raw+ts)': hmac(k, raw + ts),
+    };
+    for (const [ct, v] of Object.entries(thu)) if (v === nhan) ra.push(`${ten}:${ct}`);
+  }
+  return ra;
 }

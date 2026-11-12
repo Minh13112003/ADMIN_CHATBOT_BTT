@@ -1,7 +1,7 @@
 import { Controller, Get, Headers, HttpCode, Logger, Post, Query, Req, Res, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public, Roles } from '../auth/auth.decorators';
-import { chuKyHopLe, phanTichSuKien } from '../common/zalo';
+import { chuKyHopLe, phanTichSuKien, thuCongThuc } from '../common/zalo';
 import { Role } from '../generated/prisma/client';
 import { IngestService } from '../ingest/ingest.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -55,7 +55,7 @@ export class ZaloWebhookController {
     const timestamp = body?.timestamp === undefined ? '' : String(body.timestamp);
     if (!khoaKy.some((k) => chuKyHopLe(chuKy ?? macCu, c.appId, goc, timestamp, k))) {
       // Chẩn đoán: ghi lại Zalo gửi gì (chữ ký là mã băm, không lộ khoá) để đối chiếu công thức ký.
-      this.log.warn(`Từ chối webhook: chữ ký không khớp. ${JSON.stringify({ tenHeader: Object.keys(req.headers ?? {}).filter((h) => /sig|mac|zevent|zalo|x-/i.test(h)), chuKyNhan: chuKy ?? macCu ?? null, timestamp, doDaiNoiDung: goc.length, noiDung: goc.slice(0, 600), coOaSecret: !!c.oaSecretKey, coAppSecret: !!c.appSecret })}`);
+      this.log.warn(`Từ chối webhook: chữ ký không khớp. ${JSON.stringify({ tenHeader: Object.keys(req.headers ?? {}).filter((h) => /sig|mac|zevent|zalo|x-/i.test(h)), chuKyNhan: chuKy ?? macCu ?? null, timestamp, doDaiNoiDung: goc.length, noiDung: goc.slice(0, 600), coOaSecret: !!c.oaSecretKey, coAppSecret: !!c.appSecret, congThucKhop: thuCongThuc(chuKy ?? macCu, c.appId, goc, timestamp, { appSecret: c.appSecret ?? '', oaSecretKey: c.oaSecretKey ?? '', appId: c.appId, oaId: c.oaId ?? '' }) })}`);
       throw new UnauthorizedException('Chữ ký không hợp lệ');
     }
     const e = phanTichSuKien(body);
