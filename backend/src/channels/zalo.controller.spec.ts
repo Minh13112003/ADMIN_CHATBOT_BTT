@@ -66,8 +66,8 @@ describe('ZaloWebhookController', () => {
     const { ctl, ingest } = tao();
     const mau = { app_id: '111', event_name: 'user_send_text', sender: { id: 'x' }, message: { text: 'This is testing message', msg_id: 'This is message_id' }, timestamp: '1' };
     await expect(ctl.nhan({ rawBody: Buffer.from(JSON.stringify(mau)), body: mau } as never, 'mac=khongdung', undefined)).resolves.toEqual({ ok: true, test: true });
-    // Chỉ đúng tin mẫu; chữ giống mà msg_id khác thì vẫn phải kiểm tra chữ ký.
-    const gia = { ...mau, message: { text: 'This is testing message', msg_id: 'abc' } };
+    // Chỉ đúng nội dung mẫu; tin khác thì vẫn phải kiểm tra chữ ký.
+    const gia = { ...mau, message: { text: 'Tin khác', msg_id: 'This is message_id' } };
     await expect(ctl.nhan({ rawBody: Buffer.from(JSON.stringify(gia)), body: gia } as never, 'mac=khongdung', undefined)).rejects.toBeInstanceOf(UnauthorizedException);
     expect(ingest.inbound).not.toHaveBeenCalled();
   });
