@@ -46,6 +46,10 @@ export class ZaloWebhookController {
     // Zalo gửi một yêu cầu thử không mang sự kiện khi bấm "Kiểm tra" ở trang ứng dụng và chỉ chấp nhận 200. Không có gì để lưu nên trả 200.
     const thu = req.body as Record<string, unknown> | undefined;
     if (!thu || typeof thu.event_name !== 'string') return { ok: true, ping: true };
+    // Tin mẫu cố định Zalo gửi khi bấm "Kiểm tra" (chữ ký của nó dùng khoá mà trang Webhook chỉ hiện sau khi lưu được URL).
+    // Trả 200 để lưu được URL; không lưu gì nên giả mạo tin mẫu này cũng vô hại. Tin thật vẫn bắt buộc đúng chữ ký.
+    const m = (thu.message ?? {}) as Record<string, unknown>;
+    if (thu.event_name === 'user_send_text' && m.text === 'This is testing message' && m.msg_id === 'This is testing message') return { ok: true, test: true };
     const c = await this.zalo.doc();
     // Khoá ký: OA Secret Key nếu có; không có thì thử khoá bí mật của ứng dụng (chưa chắc Zalo ký bằng khoá nào, nên thử cả hai).
     const khoaKy = [c.oaSecretKey, c.appSecret].filter((k): k is string => !!k);
