@@ -38,7 +38,16 @@ describe('ZaloWebhookController', () => {
     await expect(goi(ctl, tinGia, false, (r) => r.replace('Đà Lạt', 'Hà Nội'))).rejects.toBeInstanceOf(UnauthorizedException);
     expect(ingest.inbound).not.toHaveBeenCalled();
   });
-  it('chưa nhập OA Secret Key: từ chối 503, không nhận tin chưa kiểm chứng', async () => {
+  it('không có OA Secret Key nhưng ký bằng khoá bí mật ứng dụng: vẫn nhận', async () => {
+    const { ctl, zalo, ingest } = tao();
+    zalo.doc.mockResolvedValue({ appId: '111', appSecret: 'app-secret' });
+    const raw = JSON.stringify(tinGia);
+    const mac = chuKyZalo('111', raw, '1700000000000', 'app-secret');
+    await expect(ctl.nhan({ rawBody: Buffer.from(raw), body: tinGia } as never, `mac=${mac}`, undefined)).resolves.toEqual({ ok: true });
+    expect(ingest.inbound).toHaveBeenCalledTimes(1);
+    await expect(ctl.nhan({ rawBody: Buffer.from(raw), body: tinGia } as never, 'mac=sai', undefined)).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+  it('chưa nhập khoá nào: từ chối 503, không nhận tin chưa kiểm chứng', async () => {
     const { ctl, zalo, ingest } = tao();
     zalo.doc.mockResolvedValue({ appId: '111' });
     await expect(goi(ctl, tinGia)).rejects.toBeInstanceOf(ServiceUnavailableException);

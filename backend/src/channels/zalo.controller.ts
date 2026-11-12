@@ -47,11 +47,13 @@ export class ZaloWebhookController {
     const thu = req.body as Record<string, unknown> | undefined;
     if (!thu || typeof thu.event_name !== 'string') return { ok: true, ping: true };
     const c = await this.zalo.doc();
-    if (!c.appId || !c.oaSecretKey) throw new ServiceUnavailableException('Chưa cấu hình App ID và OA Secret Key');
+    // Khoá ký: OA Secret Key nếu có; không có thì thử khoá bí mật của ứng dụng (chưa chắc Zalo ký bằng khoá nào, nên thử cả hai).
+    const khoaKy = [c.oaSecretKey, c.appSecret].filter((k): k is string => !!k);
+    if (!c.appId || !khoaKy.length) throw new ServiceUnavailableException('Chưa cấu hình App ID và khoá bí mật');
     const goc = req.rawBody?.toString('utf8') ?? '';
     const body = req.body as Record<string, unknown> | undefined;
     const timestamp = body?.timestamp === undefined ? '' : String(body.timestamp);
-    if (!chuKyHopLe(chuKy ?? macCu, c.appId, goc, timestamp, c.oaSecretKey)) {
+    if (!khoaKy.some((k) => chuKyHopLe(chuKy ?? macCu, c.appId, goc, timestamp, k))) {
       this.log.warn('Từ chối webhook: chữ ký không khớp');
       throw new UnauthorizedException('Chữ ký không hợp lệ');
     }
