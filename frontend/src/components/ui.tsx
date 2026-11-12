@@ -268,3 +268,13 @@ export function NhapNgay({ id, value, onChange, className, min }: { id?: string;
     </>
   );
 }
+
+/** Ảnh đại diện khách: có link thì hiện ảnh, không có hoặc ảnh lỗi thì hiện chữ cái cuối của tên. `className` lo kích thước và màu nền của chữ. */
+export function AnhKhach({ ten, anh, className }: { ten: string; anh?: string | null; className: string }) {
+  const [loi, setLoi] = useState(false);
+  useEffect(() => setLoi(false), [anh]);
+  if (anh && !loi) {
+    return <img src={anh} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setLoi(true)} className={`${className} object-cover`} />;
+  }
+  return <span aria-hidden="true" className={className}>{ten.trim().split(' ').pop()?.charAt(0)}</span>;
+}

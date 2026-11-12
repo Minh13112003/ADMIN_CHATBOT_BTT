@@ -29,7 +29,7 @@ export type Conversation = {
   channel: Channel;
   status: Status;
   mode: 'BOT' | 'STAFF';
-  customer: { id: string; name: string; aliases: string[]; phone: string | null; phoneVerified: boolean };
+  customer: { id: string; name: string; aliases: string[]; phone: string | null; phoneVerified: boolean; avatarUrl?: string | null };
   assignee: Person | null;
   role: Role;
   /** Đồng nghiệp đang soạn hoặc vừa gửi trong 1 phút: bấm gửi sẽ được hỏi lại. */

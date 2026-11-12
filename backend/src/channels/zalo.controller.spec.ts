@@ -6,10 +6,14 @@ import { ZaloWebhookController } from './zalo.controller';
 describe('ZaloWebhookController', () => {
   const cau = { appId: '111', oaSecretKey: 'oa-secret' };
   const tao = (daCoKhach = false, ketQua: Record<string, unknown> = { conversationId: 'c1', action: 'BOT' }) => {
-    const zalo = { doc: jest.fn().mockResolvedValue(cau), tenKhach: jest.fn().mockResolvedValue('Nguyễn Văn An'), guiTin: jest.fn().mockResolvedValue(undefined) };
+    const zalo = { doc: jest.fn().mockResolvedValue(cau), hoSoKhach: jest.fn().mockResolvedValue({ ten: 'Nguyễn Văn An', anh: 'https://s120-ava-talk.zadn.vn/a.jpg' }), guiTin: jest.fn().mockResolvedValue(undefined) };
     const ingest = { inbound: jest.fn().mockResolvedValue(ketQua) };
-    const prisma = { customerIdentity: { findUnique: jest.fn().mockResolvedValue(daCoKhach ? { id: 'i1' } : null) } };
-    return { zalo, ingest, prisma, ctl: new ZaloWebhookController(zalo as never, ingest as never, prisma as never) };
+    const prisma = {
+      customerIdentity: { findUnique: jest.fn().mockResolvedValue(daCoKhach ? { customer: { id: 'k1', name: 'Khách cũ', avatarUrl: 'https://x/a.jpg', conversations: [{ lastCustomerMessageAt: new Date() }] } } : null) },
+      customer: { update: jest.fn().mockResolvedValue({}) },
+    };
+    const sync = { dongBo: jest.fn().mockResolvedValue({ them: 0, tong: 0 }) };
+    return { zalo, ingest, prisma, sync, ctl: new ZaloWebhookController(zalo as never, ingest as never, prisma as never, sync as never) };
   };
   const goi = (ctl: ZaloWebhookController, body: object, macSai = false, bienDoi?: (raw: string) => string) => {
     const raw = JSON.stringify(body);
@@ -22,15 +26,34 @@ describe('ZaloWebhookController', () => {
   it('tin đúng chữ ký: tạo hội thoại kênh ZALO kèm tên lấy từ hồ sơ khách', async () => {
     const { ctl, ingest, zalo } = tao();
     await expect(goi(ctl, tinGia)).resolves.toEqual({ ok: true });
-    expect(zalo.tenKhach).toHaveBeenCalledWith('zalo-user-1');
+    expect(zalo.hoSoKhach).toHaveBeenCalledWith('zalo-user-1');
     expect(ingest.inbound).toHaveBeenCalledWith({ channel: 'ZALO', externalUserId: 'zalo-user-1', text: 'Cho mình hỏi tour Đà Lạt', externalMessageId: 'zalo:abc123', customer: { name: 'Nguyễn Văn An' } });
     expect(zalo.guiTin).not.toHaveBeenCalled();
+  });
+  it('khách mới: kéo tin cũ về (chạy nền); lỗi kéo tin cũ không làm hỏng việc nhận tin', async () => {
+    const { ctl, sync } = tao(false);
+    sync.dongBo.mockRejectedValue(new Error('Zalo từ chối'));
+    await expect(goi(ctl, tinGia)).resolves.toEqual({ ok: true });
+    expect(sync.dongBo).toHaveBeenCalledWith('c1');
   });
   it('khách cũ: không gọi lấy hồ sơ lại', async () => {
     const { ctl, zalo, ingest } = tao(true);
     await goi(ctl, tinGia);
-    expect(zalo.tenKhach).not.toHaveBeenCalled();
+    expect(zalo.hoSoKhach).not.toHaveBeenCalled();
     expect(ingest.inbound.mock.calls[0][0].customer).toBeUndefined();
+  });
+  it('khách cũ chưa có ảnh và tên "Khách chưa rõ tên": cập nhật ảnh và tên từ hồ sơ Zalo', async () => {
+    const t = tao(true);
+    t.prisma.customerIdentity.findUnique.mockResolvedValue({ customer: { id: 'k1', name: 'Khách chưa rõ tên', avatarUrl: null, conversations: [{ lastCustomerMessageAt: new Date() }] } });
+    await goi(t.ctl, tinGia);
+    expect(t.prisma.customer.update).toHaveBeenCalledWith({ where: { id: 'k1' }, data: { avatarUrl: 'https://s120-ava-talk.zadn.vn/a.jpg', name: 'Nguyễn Văn An' } });
+  });
+  it('khách đã có ảnh nhưng quay lại sau hơn 12 giờ: lấy lại ảnh (link Zalo có thể hết hạn)', async () => {
+    const t = tao(true);
+    t.prisma.customerIdentity.findUnique.mockResolvedValue({ customer: { id: 'k1', name: 'An', avatarUrl: 'https://cu/a.jpg', conversations: [{ lastCustomerMessageAt: new Date(Date.now() - 13 * 3600_000) }] } });
+    await goi(t.ctl, tinGia);
+    expect(t.zalo.hoSoKhach).toHaveBeenCalled();
+    expect(t.prisma.customer.update).toHaveBeenCalledWith({ where: { id: 'k1' }, data: { avatarUrl: 'https://s120-ava-talk.zadn.vn/a.jpg' } });
   });
   it('sai chữ ký hoặc nội dung bị sửa: 401, không lưu gì', async () => {
     const { ctl, ingest } = tao();

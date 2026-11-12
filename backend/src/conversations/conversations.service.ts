@@ -6,7 +6,7 @@ import { Channel, ConversationStatus, Prisma, Role } from '../generated/prisma/c
 import { AuthUser } from '../auth/auth.decorators';
 import { tomTatDinhKem } from '../common/attachments';
 import { dongNghiepDangNhan, nguoiPhuTrachSauKhiGui, vaiTro } from '../common/locks';
-import { khoaTimKiem, tomTat, truyVanTin } from '../common/text';
+import { chuanHoaSoDienThoai, khoaTimKiem, tomTat, truyVanTin } from '../common/text';
 import { locHoiThoai, phamViPhong, sqlPhamHoiThoai } from '../common/scope';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -14,7 +14,7 @@ import { AttachmentsService } from '../storage/attachments.service';
 import { PricingService } from '../tours/pricing.service';
 
 const INCLUDE = {
-  customer: { select: { id: true, name: true, aliases: true, phone: true, phoneVerified: true } },
+  customer: { select: { id: true, name: true, aliases: true, phone: true, phoneVerified: true, avatarUrl: true } },
   assignee: { select: { id: true, fullName: true } },
   followUpBy: { select: { id: true, fullName: true } },
 } satisfies Prisma.ConversationInclude;
@@ -329,6 +329,8 @@ export class ConversationsService {
    */
   async close(user: AuthUser, id: string, dto: CloseInput) {
     const c = await this.lay(id);
+    // Chốt tour bắt buộc có số điện thoại để liên hệ khách (khách Zalo không tự có số, sale hỏi rồi nhập ở menu ⋯).
+    if (!c.customer.phone) throw new BadRequestException({ code: 'NEED_PHONE', message: 'Khách chưa có số điện thoại. Bạn cập nhật số điện thoại của khách (menu ⋯ trong khung chat) trước khi chốt tour.' });
     if (dto.orderCode) {
       const trung = await this.prisma.deal.findUnique({ where: { orderCode: dto.orderCode }, select: { id: true } });
       if (trung && trung.id !== dto.dealId) throw new ConflictException('Mã đơn này đã được ghi nhận');
@@ -534,5 +536,21 @@ export class ConversationsService {
     this.log.warn(`${user.fullName} (${user.id}) xoá hội thoại ${id} của khách "${c.customer.name}"${xoaKhach ? ', đã xoá luôn khách' : ''}, ${files.length} file`);
     this.realtime.emit('conversation:update', { id });
     return { ok: true, deleted: id, customerDeleted: xoaKhach };
+  }
+
+  /** Sale xin được số của khách thì nhập ở đây. Số đã thuộc khách khác thì từ chối (không tự gộp hai khách). */
+  async capNhatSoDienThoai(user: AuthUser, id: string, raw: string) {
+    const c = await this.lay(id);
+    const phone = chuanHoaSoDienThoai(raw ?? '');
+    if (!phone) throw new BadRequestException('Số điện thoại không hợp lệ, cần 10 chữ số bắt đầu bằng 0 (hoặc +84)');
+    const trung = await this.prisma.customer.findUnique({ where: { phone }, select: { id: true, name: true } });
+    if (trung && trung.id !== c.customerId) throw new ConflictException(`Số này đã thuộc khách "${trung.name}". Nhờ quản trị viên gộp hai khách nếu là cùng một người.`);
+    if (c.customer.phone === phone) return this.get(user, id);
+    await this.prisma.$transaction([
+      this.prisma.customer.update({ where: { id: c.customerId }, data: { phone, phoneVerified: false } }),
+      this.prisma.message.create({ data: { conversationId: id, senderType: 'SYSTEM', internal: true, text: `${user.fullName} cập nhật số điện thoại của khách: ${phone}` } }),
+    ]);
+    this.realtime.emit('conversation:update', { id });
+    return this.get(user, id);
   }
 }

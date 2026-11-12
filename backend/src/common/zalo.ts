@@ -100,3 +100,29 @@ export function thuCongThuc(header: string | undefined, appId: string, raw: stri
   }
   return ra;
 }
+
+export type TinLichSu = { msgId: string; tuKhach: boolean; text: string; thoiGian: Date };
+
+/**
+ * Chuẩn hoá danh sách tin của API lịch sử hội thoại Zalo (chưa đối chiếu tài liệu chính thức nên đọc rộng rãi):
+ * người gửi suy từ from_id so với mã khách (không có thì dùng src: 1 = khách), giờ từ `time` (mili giây) hoặc `sent_time`.
+ * Trả về cũ nhất trước; bỏ tin không có mã hoặc không rõ giờ.
+ */
+export function chuanHoaLichSu(raw: unknown, zaloUserId: string): TinLichSu[] {
+  if (!Array.isArray(raw)) return [];
+  const ra: TinLichSu[] = [];
+  for (const x of raw) {
+    if (!x || typeof x !== 'object') continue;
+    const m = x as Record<string, any>;
+    const msgId = typeof m.message_id === 'string' ? m.message_id : typeof m.msg_id === 'string' ? m.msg_id : '';
+    const ms = Number(m.time);
+    const gio = Number.isFinite(ms) && ms > 0 ? new Date(ms) : typeof m.sent_time === 'string' ? new Date(m.sent_time) : null;
+    if (!msgId || !gio || Number.isNaN(gio.getTime())) continue;
+    const tuKhach = m.from_id !== undefined && m.from_id !== null ? String(m.from_id) === zaloUserId : Number(m.src) === 1;
+    const chu = typeof m.message === 'string' ? m.message.trim() : '';
+    const loai = typeof m.type === 'string' ? m.type : 'text';
+    const text = loai === 'text' && chu ? chu : `${chu ? `${chu} ` : ''}[${tuKhach ? 'Khách' : 'OA'} gửi ${loai === 'text' ? 'tin nhắn' : loai} qua Zalo, xem trên Zalo OA]`;
+    ra.push({ msgId, tuKhach, text: text.slice(0, 4000), thoiGian: gio });
+  }
+  return ra.sort((a, b) => a.thoiGian.getTime() - b.thoiGian.getTime());
+}

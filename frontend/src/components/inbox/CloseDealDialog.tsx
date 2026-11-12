@@ -4,6 +4,7 @@ import { ApiError, fetcher, loiCua, post } from '@/lib/api';
 import { CHANNEL, DEAL_STATUS, vnd } from '@/lib/labels';
 import type { CatalogTour, Conversation, Deal, Quote, TourDay, TourDetail } from '@/lib/types';
 import { ErrorText, inputClass, Modal, primaryClass, UnderlineTabs } from '../ui';
+import { SoDienThoaiDialog } from './SoDienThoai';
 
 const ngay = (s: string) => (s ? new Date(`${s.slice(0, 10)}T00:00:00`).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '');
 const nhanNgay = (d: TourDay) => `${ngay(d.departureDate)} · ${d.code} · ${vnd(d.price)}/người${d.stock !== null ? ` · ${d.stock > 0 ? `còn ${d.stock} chỗ` : 'hết chỗ'}` : ''}`;
@@ -15,7 +16,7 @@ const conCho = (d: TourDay) => d.available && (d.stock === null || d.stock > 0);
  * giá theo ngày khởi hành và số tiền cuối do backend tính (/tours/quote, rồi tính lại khi chốt).
  * Tab "Theo mã đơn" xác nhận đúng đơn khách đã đặt qua chatbot, không tạo đơn thứ hai.
  */
-export function CloseDealDialog({
+function CloseDealForm({
   conv,
   deal,
   pending,
@@ -415,4 +416,12 @@ export function CloseDealDialog({
       </div>
     </Modal>
   );
+}
+
+/** Chốt tour bắt buộc có số điện thoại: chưa có thì hỏi số trước, nhập xong form chốt tự mở (dữ liệu hội thoại được làm mới). */
+export function CloseDealDialog(props: Parameters<typeof CloseDealForm>[0]) {
+  if (!props.conv.customer.phone) {
+    return <SoDienThoaiDialog conv={props.conv} lyDo="Cần số điện thoại của khách trước khi chốt tour. Bạn xin số từ khách rồi nhập vào đây." onClose={props.onClose} />;
+  }
+  return <CloseDealForm {...props} />;
 }

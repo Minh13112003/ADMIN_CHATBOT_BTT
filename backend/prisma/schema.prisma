@@ -126,6 +126,7 @@ model Customer {
   aliases       String[] @default([]) // Các cách viết tên khác khách từng nhập
   phone         String?  @unique // Dạng số 0xxxxxxxxx
   phoneVerified Boolean  @default(false) // App đã đăng nhập = true, web chưa có OTP = false
+  avatarUrl     String? // Ảnh đại diện (Zalo trả link), kênh khác để trống
   // Tên, các tên khác và SĐT viết thường, bỏ dấu. Trigger customers_search_text trong database tự điền, không ghi tay.
   searchText    String   @default("")
   createdAt     DateTime @default(now())

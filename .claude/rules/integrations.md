@@ -38,3 +38,4 @@ Giá nhập trong `.env` (`GEMINI_PRICE_*`), tỷ giá `USD_VND_RATE`. Chatbot p
 - Webhook `https://<tên miền>/api/v1/webhooks/zalo`: chỉ nhận `user_send_*`, chữ ký `sha256(appId + body gốc + timestamp + OASecretKey)` (cần `rawBody: true` ở `main.ts`), tin vào qua `IngestService.inbound` kênh `ZALO`, `externalMessageId = zalo:<msg_id>` chống trùng. Chưa có chatbot cho Zalo: chỉ gửi lại câu trả lời tự động và câu báo đã chuyển nhân viên.
 - Nhân viên trả lời trong trang này thì gửi sang Zalo (`/v3.0/oa/message/cs`) trước khi lưu; lỗi thì không lưu. Chưa gửi được ảnh/PDF sang Zalo. Khách gửi ảnh/tệp chỉ hiện dòng báo "xem trên Zalo OA".
 - Kênh ZALO chỉ hiện "Đã kết nối" khi đã có tin khách thật.
+- Zalo chỉ đẩy tin MỚI qua webhook; chưa kéo lại tin cũ từ Zalo. Ảnh đại diện và tên lấy từ hồ sơ Zalo khi có tin (khách mới, thiếu ảnh, hoặc quay lại sau hơn 12 giờ), lưu `customers.avatarUrl`.

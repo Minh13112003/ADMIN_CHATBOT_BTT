@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
+import { AnhKhach } from '../ui';
 import { fetcher } from '@/lib/api';
 import { CHANNEL, CHANNEL_LIST, dinhDangSo, gioTin, STATUS, STATUS_LIST, TAGS, thoiGianTruoc } from '@/lib/labels';
 import type { Channel, ConversationList as ListData, MessageHit, Status } from '@/lib/types';
@@ -150,11 +151,7 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
                 aria-current={dangChon}
                 className={`relative aria-[current=true]:shadow-[inset_3px_0_var(--color-brand)] [:root[data-density=compact]_&]:py-[0.4rem] flex w-full gap-3 border-b border-line-soft px-4 py-4 text-left hover:bg-page ${dangChon ? 'bg-brand-soft' : lh ? 'bg-brand-faint' : 'bg-surface'}`}
               >
-                <span
-                  className={`flex size-11 shrink-0 items-center justify-center rounded-full font-semibold ${lh ? 'ping bg-status-contact text-white' : 'bg-neutral-soft text-neutral-ink'}`}
-                >
-                  {c.customer.name.trim().split(' ').pop()?.charAt(0)}
-                </span>
+                <AnhKhach ten={c.customer.name} anh={c.customer.avatarUrl} className={`flex size-11 shrink-0 items-center justify-center rounded-full font-semibold ${lh ? 'ping bg-status-contact text-white' : 'bg-neutral-soft text-neutral-ink'}`} />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="flex items-baseline gap-2">
                     <span className={`min-w-0 flex-1 truncate text-[0.9375rem] ${lh || c.status === 'UNREAD' ? 'font-bold' : 'font-medium'}`}>

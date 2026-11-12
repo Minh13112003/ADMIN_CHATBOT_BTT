@@ -1,4 +1,4 @@
-import { chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
+import { chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
 import { createHash } from 'crypto';
 
 describe('zalo', () => {
@@ -49,5 +49,25 @@ describe('zalo', () => {
     const mac2 = createHash('sha256').update('123' + 'k1' + raw + '1').digest('hex');
     expect(thuCongThuc(mac2, '123', raw, '1', { appSecret: 'k1' })).toContain('appSecret:sha(A+K+R+T)');
     expect(thuCongThuc(undefined, '123', raw, '1', { appSecret: 'k1' })).toEqual([]);
+  });
+  it('lịch sử: xếp cũ trước, phân biệt khách và OA, tin không phải chữ thành dòng báo', () => {
+    const kq = chuanHoaLichSu(
+      [
+        { message_id: 'b', from_id: 'oa1', time: 2000, type: 'text', message: 'Dạ chào anh' },
+        { message_id: 'a', from_id: 'u1', time: 1000, type: 'text', message: 'Hi' },
+        { message_id: 'c', from_id: 'u1', time: 3000, type: 'photo' },
+        { message_id: '', from_id: 'u1', time: 4000, type: 'text', message: 'bỏ vì thiếu mã' },
+        { message_id: 'd', from_id: 'u1', type: 'text', message: 'bỏ vì thiếu giờ' },
+      ],
+      'u1',
+    );
+    expect(kq.map((t) => [t.msgId, t.tuKhach])).toEqual([['a', true], ['b', false], ['c', true]]);
+    expect(kq[0].text).toBe('Hi');
+    expect(kq[2].text).toContain('photo');
+    expect(chuanHoaLichSu('rac', 'u1')).toEqual([]);
+  });
+  it('lịch sử: không có from_id thì dùng src (1 = khách)', () => {
+    const kq = chuanHoaLichSu([{ message_id: 'a', src: 1, time: 1, message: 'x' }, { message_id: 'b', src: 0, time: 2, message: 'y' }], 'u1');
+    expect(kq.map((t) => t.tuKhach)).toEqual([true, false]);
   });
 });

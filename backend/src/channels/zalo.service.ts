@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { randomBytes } from 'crypto';
 import { giaiMa, maHoa } from '../common/secret-box';
-import { taoPkce } from '../common/zalo';
+import { chuanHoaLichSu, taoPkce, type TinLichSu } from '../common/zalo';
 import { PrismaService } from '../prisma/prisma.service';
 
 const OAUTH = 'https://oauth.zaloapp.com/v4/oa';
@@ -178,18 +178,36 @@ export class ZaloService {
     await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: { recipient: { user_id: zaloUserId }, message: { text } } });
   }
 
-  /** Tên hiển thị của khách; lỗi thì trả null (không chặn việc nhận tin). Thử bản API mới (v3.0) trước, rồi bản cũ (v2.0). */
-  async tenKhach(zaloUserId: string): Promise<string | null> {
+  /** Tên và ảnh đại diện của khách; lỗi thì trả rỗng (không chặn việc nhận tin). Thử API v3.0 trước, rồi v2.0. */
+  async hoSoKhach(zaloUserId: string): Promise<{ ten: string | null; anh: string | null }> {
     const data = encodeURIComponent(JSON.stringify({ user_id: zaloUserId }));
     for (const duong of [`/v3.0/oa/user/detail?data=${data}`, `/v2.0/oa/getprofile?data=${data}`]) {
       try {
         const j = await this.goiApi(`${OPENAPI}${duong}`, { method: 'GET' });
-        const ten = j?.data?.display_name;
-        if (typeof ten === 'string' && ten.trim()) return ten.trim().slice(0, 120);
+        const d = j?.data ?? {};
+        const ten = typeof d.display_name === 'string' && d.display_name.trim() ? d.display_name.trim().slice(0, 120) : null;
+        const anhNho = d.avatars && typeof d.avatars === 'object' ? (d.avatars['240'] ?? d.avatars['120']) : null;
+        const anhRaw = typeof anhNho === 'string' ? anhNho : typeof d.avatar === 'string' ? d.avatar : null;
+        const anh = anhRaw && /^https:\/\//.test(anhRaw) && anhRaw.length <= 1000 ? anhRaw : null;
+        if (ten || anh) return { ten, anh };
       } catch (e) {
-        this.log.warn(`Không lấy được tên khách Zalo qua ${duong.split('?')[0]}: ${(e as Error).message}`);
+        this.log.warn(`Không lấy được hồ sơ khách Zalo qua ${duong.split('?')[0]}: ${(e as Error).message}`);
       }
     }
-    return null;
+    return { ten: null, anh: null };
+  }
+
+  /** Kéo lịch sử tin với một khách (mỗi lần tối đa 10 tin, lùi dần), cũ nhất trước. Lỗi thì ném ra để người dùng thấy lý do. */
+  async layLichSu(zaloUserId: string, toiDa = 50): Promise<TinLichSu[]> {
+    const tat: TinLichSu[] = [];
+    for (let offset = 0; offset < toiDa; offset += 10) {
+      const data = encodeURIComponent(JSON.stringify({ user_id: zaloUserId, offset, count: 10 }));
+      const j = await this.goiApi(`${OPENAPI}/v2.0/oa/conversation?data=${data}`, { method: 'GET' });
+      const mang = chuanHoaLichSu(j?.data, zaloUserId);
+      tat.push(...mang);
+      if (!Array.isArray(j?.data) || j.data.length < 10) break;
+    }
+    const gap = new Map(tat.map((t) => [t.msgId, t]));
+    return [...gap.values()].sort((a, b) => a.thoiGian.getTime() - b.thoiGian.getTime());
   }
 }

@@ -28,6 +28,9 @@
 - Cách gắn chính (đổi ngày 2026-11-11): bấm icon ghim trên từng tin trong khung chat, hộp hiện ra chỉ còn bước chọn tour (gõ tên hoặc mã). Tab Tour quan tâm chỉ xem lịch sử và gỡ nhãn, không còn nút gắn (đổi 2026-11-12).
 - Sale gắn nhãn tour quan tâm ở cột thông tin khách, mỗi nhãn ghim đúng một tin (không ghim log nội bộ). Gắn theo **tour**, không theo ngày khởi hành. Cùng tour gắn lại sau là nhãn mới "Lần 2". Ai trong nhóm sale cũng gắn, gỡ được; có log nội bộ. Digital chỉ xem. Trang Nhu cầu tour chỉ đếm nhãn sale ghim, không đếm thẻ tour chatbot gửi (chốt 2026-11-11).
 
+## Số điện thoại và chốt tour (chốt ngày 2026-11-12)
+- **Chốt tour bắt buộc khách có số điện thoại** (backend trả `NEED_PHONE`). Khách Zalo không tự có số: sale xin khách rồi nhập ở menu ⋯ → "Cập nhật số điện thoại khách". Chốt khi chưa có số thì hộp hỏi số trước. Số đã thuộc khách khác thì từ chối, không tự gộp. Nhập sẽ ghi log nội bộ. Chưa làm nút xin số qua Zalo.
+
 ## Xoá hội thoại (chốt ngày 2026-11-12)
 - Chỉ `ADMIN` toàn quyền, menu ⋯ trong khung chat, dùng dọn dữ liệu thử. Xoá hẳn hội thoại, tin nhắn, đơn, nhãn tour, file đính kèm; khách không còn hội thoại nào khác thì xoá luôn khách. Hội thoại có đơn đã chốt (đang tính doanh thu) phải xác nhận thêm vì doanh thu thống kê giảm theo. Có ghi log server.
 - Đây là ngoại lệ của quy tắc "Lưu vĩnh viễn" bên dưới, chỉ do admin chủ động.

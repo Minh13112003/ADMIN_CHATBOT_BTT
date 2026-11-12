@@ -6,6 +6,7 @@ import { Role } from '../generated/prisma/client';
 import { IngestService } from '../ingest/ingest.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ZaloService } from './zalo.service';
+import { ZaloSyncService } from './zalo-sync.service';
 
 /** Kết nối Zalo bằng OAuth: link cấp quyền (chỉ ADMIN) và địa chỉ Zalo quay về. */
 @Controller('channel-settings/zalo')
@@ -33,11 +34,13 @@ export class ZaloOAuthController {
   }
 }
 
+const TEN_CHUA_RO = 'Khách chưa rõ tên';
+
 /** Zalo gửi tin của khách về đây. */
 @Controller('webhooks')
 export class ZaloWebhookController {
   private log = new Logger('ZaloWebhook');
-  constructor(private zalo: ZaloService, private ingest: IngestService, private prisma: PrismaService) {}
+  constructor(private zalo: ZaloService, private ingest: IngestService, private prisma: PrismaService, private sync: ZaloSyncService) {}
 
   @Public()
   @Post('zalo')
@@ -65,10 +68,28 @@ export class ZaloWebhookController {
     const e = phanTichSuKien(body);
     if (!e) return { ok: true, ignored: true };
 
-    // Khách mới: lấy tên hiển thị từ hồ sơ Zalo để danh sách không toàn "Khách chưa rõ tên".
-    const daCo = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: e.userId } }, select: { id: true } });
-    const ten = daCo ? null : await this.zalo.tenKhach(e.userId);
-    const kq = await this.ingest.inbound({ channel: 'ZALO', externalUserId: e.userId, text: e.text, externalMessageId: e.msgId ? `zalo:${e.msgId}` : undefined, ...(ten ? { customer: { name: ten } } : {}) });
+    // Lấy tên và ảnh đại diện từ hồ sơ Zalo khi là khách mới, hoặc khách cũ còn thiếu ảnh / chưa có tên thật.
+    const dt = await this.prisma.customerIdentity.findUnique({
+      where: { channel_externalId: { channel: 'ZALO', externalId: e.userId } },
+      select: { customer: { select: { id: true, name: true, avatarUrl: true, conversations: { where: { channel: 'ZALO' }, select: { lastCustomerMessageAt: true }, take: 1 } } } },
+    });
+    // Link ảnh Zalo có thể hết hạn: khách quay lại sau hơn 12 giờ thì lấy lại ảnh.
+    const lanCuoi = dt?.customer.conversations[0]?.lastCustomerMessageAt;
+    const lauRoi = !lanCuoi || Date.now() - lanCuoi.getTime() > 12 * 3600_000;
+    const thieu = !dt || !dt.customer.avatarUrl || dt.customer.name === TEN_CHUA_RO || lauRoi;
+    const hoSo = thieu ? await this.zalo.hoSoKhach(e.userId) : { ten: null, anh: null };
+    const kq = await this.ingest.inbound({ channel: 'ZALO', externalUserId: e.userId, text: e.text, externalMessageId: e.msgId ? `zalo:${e.msgId}` : undefined, ...(hoSo.ten && !dt ? { customer: { name: hoSo.ten } } : {}) });
+    if (dt && (hoSo.ten || hoSo.anh)) {
+      await this.prisma.customer.update({
+        where: { id: dt.customer.id },
+        data: { ...(hoSo.anh ? { avatarUrl: hoSo.anh } : {}), ...(hoSo.ten && dt.customer.name === TEN_CHUA_RO ? { name: hoSo.ten } : {}) },
+      });
+    } else if (!dt && hoSo.anh) {
+      const moi = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: e.userId } }, select: { customerId: true } });
+      if (moi) await this.prisma.customer.update({ where: { id: moi.customerId }, data: { avatarUrl: hoSo.anh } });
+    }
+    // Khách mới: kéo luôn tin cũ về (chạy nền, lỗi chỉ ghi log để không làm chậm phản hồi cho Zalo).
+    if (!dt) void this.sync.dongBo(kq.conversationId).catch((err: Error) => this.log.warn(`Không kéo được tin cũ của khách Zalo mới: ${err.message}`));
     // Zalo chưa có chatbot: chỉ gửi lại câu trả lời tự động hoặc câu báo đã chuyển nhân viên.
     if (!kq.duplicate && kq.reply && (kq.action === 'AUTO_REPLY' || kq.action === 'CONTACT')) {
       try {

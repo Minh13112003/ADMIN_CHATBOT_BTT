@@ -87,6 +87,10 @@ class PatchDto {
   @IsOptional() @IsString() @MaxLength(300) followUpNote?: string;
 }
 
+class PhoneDto {
+  @IsString({ message: 'Nhập số điện thoại' }) @MaxLength(30) phone: string;
+}
+
 @Controller('conversations')
 @UseGuards(ConversationScopeGuard)
 export class ConversationsController {
@@ -152,6 +156,13 @@ export class ConversationsController {
   @HttpCode(200)
   status(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: StatusDto) {
     return this.svc.setStatus(me, id, dto.status);
+  }
+
+  /** Nhập số điện thoại cho khách (khách Zalo không có sẵn số). */
+  @Post(':id/customer-phone')
+  @HttpCode(200)
+  capNhatSdt(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: PhoneDto) {
+    return this.svc.capNhatSoDienThoai(me, id, dto.phone);
   }
 
   @Post(':id/close')

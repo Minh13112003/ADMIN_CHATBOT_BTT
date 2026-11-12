@@ -7,11 +7,12 @@ import { useRealtime } from '@/lib/realtime';
 import type { Conversation, Deal, Me, Message, MessageHit, Person, Template, TourTag } from '@/lib/types';
 import { TagTourDialog, xemTinTrongChat } from './TourTags';
 import { insertAtCursor, prepareQuickReply } from '@/lib/quick-reply';
-import { chipClass, Dialog, ErrorText, Field, inputClass, primaryClass, secondaryClass, Switch } from '../ui';
+import { AnhKhach, chipClass, Dialog, ErrorText, Field, inputClass, primaryClass, secondaryClass, Switch } from '../ui';
 import { InfoPanel } from './InfoPanel';
 import { CloseDealDialog } from './CloseDealDialog';
 import { dungLuong, MessageBubble } from './MessageBubble';
 import { QuickReplyPicker } from './QuickReplyPicker';
+import { SoDienThoaiDialog } from './SoDienThoai';
 
 export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
   const convKey = `/conversations/${id}`;
@@ -23,6 +24,8 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
   const [chatMenu, setChatMenu] = useState(false);
   const [headerHandover, setHeaderHandover] = useState(false);
   const [xoaHoiThoai, setXoaHoiThoai] = useState(false);
+  const [capSdt, setCapSdt] = useState(false);
+  const [dongBoZalo, setDongBoZalo] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [ghimTin, setGhimTin] = useState<Message | null>(null);
   const [timTin, setTimTin] = useState(false);
@@ -80,7 +83,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
               <path d="m15 18-6-6 6-6" />
             </svg>
           </button>
-          <span aria-hidden="true" className="hidden size-10 shrink-0 place-items-center rounded-full bg-brand-soft font-semibold text-brand-text sm:grid">{conv.customer.name.trim().split(' ').pop()?.charAt(0)}</span>
+          <AnhKhach ten={conv.customer.name} anh={conv.customer.avatarUrl} className="hidden size-10 shrink-0 place-items-center rounded-full bg-brand-soft font-semibold text-brand-text sm:grid" />
           <div className="min-w-0 flex-1">
             <div className="truncate text-base font-semibold" title={conv.customer.name}>
               {conv.customer.name}
@@ -94,7 +97,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
             </button>
           )}
           <button className="hidden min-h-11 rounded-lg bg-brand-button px-4 text-sm font-semibold text-white sm:block" onClick={() => setCloseNew(true)}>Chốt tour</button>
-          <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-11 place-items-center rounded-lg border border-line text-xl">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-surface shadow-sm p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button>{me?.role === 'ADMIN' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold text-brand-text hover:bg-brand-soft" onClick={() => { setXoaHoiThoai(true); setChatMenu(false); }}>Xoá hội thoại</button>}</div>}</div>
+          <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-11 place-items-center rounded-lg border border-line text-xl">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-surface shadow-sm p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button>{me?.role === 'ADMIN' && conv.channel === 'ZALO' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setDongBoZalo(true); setChatMenu(false); }}>Đồng bộ tin cũ từ Zalo</button>}{!chiXem && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setCapSdt(true); setChatMenu(false); }}>{conv.customer.phone ? 'Sửa số điện thoại khách' : 'Cập nhật số điện thoại khách'}</button>}{me?.role === 'ADMIN' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold text-brand-text hover:bg-brand-soft" onClick={() => { setXoaHoiThoai(true); setChatMenu(false); }}>Xoá hội thoại</button>}</div>}</div>
           <button
             type="button"
             onClick={() => setPanelOpen(!panelOpen)}
@@ -120,6 +123,8 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
       {panelOpen && <InfoPanel conv={conv} deals={deals} onChange={refresh} onClose={() => setPanelOpen(false)} />}
       {xacNhan && <CloseDealDialog conv={conv} deal={xacNhan} pending={donChoTatCa} onClose={() => setXacNhan(null)} onDone={refresh} />}
       {closeNew && <CloseDealDialog conv={conv} deal={null} pending={donChoTatCa} onClose={() => setCloseNew(false)} onDone={refresh} />}
+      {dongBoZalo && <DongBoZaloDialog id={id} onClose={() => setDongBoZalo(false)} />}
+      {capSdt && <SoDienThoaiDialog conv={conv} onClose={() => setCapSdt(false)} />}
       {xoaHoiThoai && <XoaHoiThoaiDialog id={id} ten={conv.customer.name} onClose={() => setXoaHoiThoai(false)} onXong={() => { setXoaHoiThoai(false); onBack(); void globalMutate((k) => typeof k === 'string' && (k.startsWith('/conversations') || k.startsWith('/customers') || k.startsWith('/stats')), undefined, { revalidate: true }); }} />}
       {headerHandover && <HandoverDialog conv={conv} onClose={() => setHeaderHandover(false)} onDone={refresh} />}
       {ghimTin && <TagTourDialog conv={conv} tags={tags ?? []} ghimSan={ghimTin} onClose={() => setGhimTin(null)} onDone={() => void mutateTags()} />}
@@ -659,6 +664,38 @@ function XoaHoiThoaiDialog({ id, ten, onClose, onXong }: { id: string; ten: stri
           <button type="button" disabled={dang} onClick={() => void xoa(!!donChot)} className={primaryClass}>
             {dang ? 'Đang xoá...' : donChot ? 'Vẫn xoá' : 'Xoá hội thoại'}
           </button>
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
+/** Admin kéo tin cũ của khách Zalo từ Zalo về hội thoại (chỉ ghi lại, không báo nhân viên, không trả lời tự động). */
+function DongBoZaloDialog({ id, onClose }: { id: string; onClose: () => void }) {
+  const [dang, setDang] = useState(false);
+  const [kq, setKq] = useState<{ them: number; tong: number } | null>(null);
+  const [loi, setLoi] = useState('');
+  const chay = async () => {
+    setDang(true);
+    setLoi('');
+    try {
+      setKq(await post<{ them: number; tong: number }>(`/conversations/${id}/zalo-history`));
+      await globalMutate((k) => typeof k === 'string' && k.startsWith(`/conversations/${id}`), undefined, { revalidate: true });
+    } catch (e) {
+      setLoi(loiCua(e));
+    } finally {
+      setDang(false);
+    }
+  };
+  return (
+    <Dialog title="Đồng bộ tin cũ từ Zalo" onClose={onClose}>
+      <div className="flex flex-col gap-4">
+        <p className="text-sm">Lấy lại các tin gần đây giữa OA và khách này từ Zalo (tối đa 50 tin). Tin đã có trong hệ thống được bỏ qua. Việc này chỉ ghi lại lịch sử, không gửi gì cho khách và không báo nhân viên.</p>
+        {kq && <p role="status" className="rounded-lg border border-green-soft bg-green-soft/40 px-3 py-2 text-sm text-green-ink">{kq.tong === 0 ? 'Zalo không trả tin nào.' : `Đã thêm ${kq.them} tin cũ (Zalo trả ${kq.tong} tin).`}</p>}
+        <ErrorText>{loi}</ErrorText>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className={secondaryClass}>Đóng</button>
+          <button type="button" disabled={dang} onClick={() => void chay()} className={primaryClass}>{dang ? 'Đang lấy...' : kq ? 'Lấy lại' : 'Đồng bộ'}</button>
         </div>
       </div>
     </Dialog>
