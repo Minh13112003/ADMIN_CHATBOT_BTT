@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import useSWR from 'swr';
-import { ApiError, fetcher, loiCua, patch, post, postForm } from '@/lib/api';
+import useSWR, { mutate as globalMutate } from 'swr';
+import { ApiError, del, fetcher, loiCua, patch, post, postForm } from '@/lib/api';
 import { CHANNEL, dinhDangSo, STATUS, trieu } from '@/lib/labels';
 import { useRealtime } from '@/lib/realtime';
 import type { Conversation, Deal, Me, Message, MessageHit, Person, Template, TourTag } from '@/lib/types';
@@ -22,6 +22,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
   const [closeNew, setCloseNew] = useState(false);
   const [chatMenu, setChatMenu] = useState(false);
   const [headerHandover, setHeaderHandover] = useState(false);
+  const [xoaHoiThoai, setXoaHoiThoai] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [ghimTin, setGhimTin] = useState<Message | null>(null);
   const [timTin, setTimTin] = useState(false);
@@ -93,7 +94,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
             </button>
           )}
           <button className="hidden min-h-11 rounded-lg bg-brand-button px-4 text-sm font-semibold text-white sm:block" onClick={() => setCloseNew(true)}>Chốt tour</button>
-          <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-11 place-items-center rounded-lg border border-line text-xl">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-surface shadow-sm p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button></div>}</div>
+          <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-11 place-items-center rounded-lg border border-line text-xl">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-surface shadow-sm p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button>{me?.role === 'ADMIN' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold text-brand-text hover:bg-brand-soft" onClick={() => { setXoaHoiThoai(true); setChatMenu(false); }}>Xoá hội thoại</button>}</div>}</div>
           <button
             type="button"
             onClick={() => setPanelOpen(!panelOpen)}
@@ -119,6 +120,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
       {panelOpen && <InfoPanel conv={conv} deals={deals} onChange={refresh} onClose={() => setPanelOpen(false)} />}
       {xacNhan && <CloseDealDialog conv={conv} deal={xacNhan} pending={donChoTatCa} onClose={() => setXacNhan(null)} onDone={refresh} />}
       {closeNew && <CloseDealDialog conv={conv} deal={null} pending={donChoTatCa} onClose={() => setCloseNew(false)} onDone={refresh} />}
+      {xoaHoiThoai && <XoaHoiThoaiDialog id={id} ten={conv.customer.name} onClose={() => setXoaHoiThoai(false)} onXong={() => { setXoaHoiThoai(false); onBack(); void globalMutate((k) => typeof k === 'string' && (k.startsWith('/conversations') || k.startsWith('/customers') || k.startsWith('/stats')), undefined, { revalidate: true }); }} />}
       {headerHandover && <HandoverDialog conv={conv} onClose={() => setHeaderHandover(false)} onDone={refresh} />}
       {ghimTin && <TagTourDialog conv={conv} tags={tags ?? []} ghimSan={ghimTin} onClose={() => setGhimTin(null)} onDone={() => void mutateTags()} />}
     </div>
@@ -617,6 +619,48 @@ function HandoverDialog({ conv, onClose, onDone }: { conv: Conversation; onClose
           </button>
         </div>
       </form>
+    </Dialog>
+  );
+}
+
+/** Admin toàn quyền xoá hẳn hội thoại (dọn dữ liệu thử). Hai bước: xác nhận, rồi nếu có đơn đã chốt thì cảnh báo thêm. */
+function XoaHoiThoaiDialog({ id, ten, onClose, onXong }: { id: string; ten: string; onClose: () => void; onXong: () => void }) {
+  const [donChot, setDonChot] = useState<{ count: number; amount: number } | null>(null);
+  const [dang, setDang] = useState(false);
+  const [loi, setLoi] = useState('');
+  const xoa = async (force: boolean) => {
+    setDang(true);
+    setLoi('');
+    try {
+      await del(`/conversations/${id}${force ? '?force=1' : ''}`);
+      onXong();
+    } catch (e) {
+      if (e instanceof ApiError && e.code === 'HAS_DEALS') {
+        const m = /(\d+) đơn/.exec(e.message);
+        setDonChot({ count: Number(m?.[1] ?? 1), amount: 0 });
+      } else setLoi(loiCua(e));
+      setDang(false);
+    }
+  };
+  return (
+    <Dialog title="Xoá hội thoại" onClose={onClose}>
+      <div className="flex flex-col gap-4">
+        <p className="text-sm">
+          Xoá hẳn hội thoại với <strong>{ten}</strong>? Toàn bộ tin nhắn, đơn, nhãn tour quan tâm và file đính kèm sẽ mất, <strong>không khôi phục được</strong>. Nếu khách không còn hội thoại nào khác thì khách cũng bị xoá.
+        </p>
+        {donChot && (
+          <p role="alert" className="rounded-lg border border-alert-line bg-brand-faint px-3 py-2 text-sm text-brand-text">
+            Hội thoại này có <strong>{donChot.count} đơn đã chốt</strong> đang tính vào doanh thu. Xoá sẽ làm số liệu thống kê doanh thu giảm theo. Bạn vẫn muốn xoá?
+          </p>
+        )}
+        <ErrorText>{loi}</ErrorText>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className={secondaryClass}>Huỷ</button>
+          <button type="button" disabled={dang} onClick={() => void xoa(!!donChot)} className={primaryClass}>
+            {dang ? 'Đang xoá...' : donChot ? 'Vẫn xoá' : 'Xoá hội thoại'}
+          </button>
+        </div>
+      </div>
     </Dialog>
   );
 }

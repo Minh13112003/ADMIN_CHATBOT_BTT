@@ -16,6 +16,11 @@ export const HAN_LINK_KHACH_GIAY = 7 * 24 * 3600;
 export class AttachmentsService {
   constructor(private storage: StorageService, private config: ConfigService) {}
 
+  /** Xoá file khỏi nơi lưu (không ném lỗi). */
+  xoaTep(path: string) {
+    return this.storage.xoa(path);
+  }
+
   /**
    * Kiểm tra theo nội dung file, thu nhỏ ảnh (cạnh dài tối đa 1600 px, xoay đúng chiều, bỏ EXIF gồm cả vị trí chụp)
    * rồi lưu vào Storage. Gọi SAU khi đã qua các kiểm tra khác để không lưu file rồi mới báo lỗi.

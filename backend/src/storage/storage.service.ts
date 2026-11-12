@@ -1,6 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { mkdir, rename, stat, writeFile } from 'fs/promises';
+import { mkdir, rename, stat, unlink, writeFile } from 'fs/promises';
 import { dirname } from 'path';
 import { duongDanTrongThuMuc } from '../common/attachments';
 
@@ -78,6 +78,21 @@ export class StorageService {
     } catch (e) {
       this.log.error(`Không ghi được file vào ${this.thuMuc}: ${(e as Error).message}`);
       throw new ServiceUnavailableException('Không lưu được file, bạn thử lại sau ít phút nhé');
+    }
+  }
+
+  /** Xoá một file (khi xoá hội thoại). Không ném lỗi: file mồ côi còn hơn làm hỏng việc xoá hội thoại. */
+  async xoa(path: string): Promise<void> {
+    try {
+      if (this.laODia) {
+        const f = duongDanTrongThuMuc(this.thuMuc, path);
+        if (f) await unlink(f);
+        return;
+      }
+      if (!this.daCauHinh()) return;
+      await fetch(`${this.url}/storage/v1/object/${this.bucket}/${path}`, { method: 'DELETE', headers: this.headers, signal: AbortSignal.timeout(10_000) });
+    } catch (e) {
+      this.log.warn(`Không xoá được file ${path}: ${(e as Error).message}`);
     }
   }
 

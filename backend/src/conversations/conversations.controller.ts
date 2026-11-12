@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Channel, ConversationStatus, Role } from '../generated/prisma/client';
 import { Transform, Type } from 'class-transformer';
@@ -102,6 +102,13 @@ export class ConversationsController {
   @Roles(Role.SALE, Role.ADMIN, Role.DEPT_ADMIN, Role.DIGITAL)
   get(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.svc.get(me, id);
+  }
+
+  /** Xoá hội thoại (dùng dọn dữ liệu thử): chỉ admin toàn quyền. Có đơn đã chốt thì cần `?force=1`. */
+  @Delete(':id')
+  @Roles(Role.ADMIN)
+  xoa(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Query('force') force?: string) {
+    return this.svc.xoaHoiThoai(me, id, force === '1');
   }
 
   @Get(':id/messages')

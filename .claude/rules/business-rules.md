@@ -28,6 +28,10 @@
 - Cách gắn chính (đổi ngày 2026-11-11): bấm icon ghim trên từng tin trong khung chat, hộp hiện ra chỉ còn bước chọn tour (gõ tên hoặc mã). Tab Tour quan tâm chỉ xem lịch sử và gỡ nhãn, không còn nút gắn (đổi 2026-11-12).
 - Sale gắn nhãn tour quan tâm ở cột thông tin khách, mỗi nhãn ghim đúng một tin (không ghim log nội bộ). Gắn theo **tour**, không theo ngày khởi hành. Cùng tour gắn lại sau là nhãn mới "Lần 2". Ai trong nhóm sale cũng gắn, gỡ được; có log nội bộ. Digital chỉ xem. Trang Nhu cầu tour chỉ đếm nhãn sale ghim, không đếm thẻ tour chatbot gửi (chốt 2026-11-11).
 
+## Xoá hội thoại (chốt ngày 2026-11-12)
+- Chỉ `ADMIN` toàn quyền, menu ⋯ trong khung chat, dùng dọn dữ liệu thử. Xoá hẳn hội thoại, tin nhắn, đơn, nhãn tour, file đính kèm; khách không còn hội thoại nào khác thì xoá luôn khách. Hội thoại có đơn đã chốt (đang tính doanh thu) phải xác nhận thêm vì doanh thu thống kê giảm theo. Có ghi log server.
+- Đây là ngoại lệ của quy tắc "Lưu vĩnh viễn" bên dưới, chỉ do admin chủ động.
+
 ## Chia việc
 Không có phân công tay. Khi khách đòi gặp nhân viên: khách cũ về người phụ trách cũ nếu đang trực; không thì người đang giữ ít khách nhất (`CONTACT` + `PENDING`), hoà thì người lâu chưa được chia. Sau `CONTACT_ACCEPT_MINUTES` chưa ai trả lời khách (bot vẫn chạy) thì tự chuyển người khác. Khách có đơn chờ xác nhận mà chưa ai phụ trách cũng được chia. Sale tắt "Đang trực" thì không nhận khách mới.
 

@@ -507,4 +507,32 @@ export class ConversationsService {
       ORDER BY m."createdAt" DESC
       LIMIT ${Math.min(take, 200)}`;
   }
+
+  /**
+   * Chỉ ADMIN (controller kiểm tra). Xoá hẳn hội thoại cùng tin nhắn, đơn, nhãn tour; file đính kèm xoá khỏi nơi lưu.
+   * Khách không còn hội thoại nào khác thì xoá luôn khách (và mã nhận diện), để tin nhắn mới tạo khách mới sạch.
+   * Hội thoại có đơn ĐÃ CHỐT (đang tính doanh thu) thì phải gửi `force`, vì xoá sẽ làm doanh thu thống kê giảm.
+   */
+  async xoaHoiThoai(user: AuthUser, id: string, force: boolean) {
+    const c = await this.prisma.conversation.findUnique({ where: { id }, select: { id: true, customerId: true, customer: { select: { name: true } } } });
+    if (!c) throw new NotFoundException('Không tìm thấy hội thoại');
+    const donChot = await this.prisma.deal.aggregate({ where: { conversationId: id, status: 'CONFIRMED', voidedAt: null }, _count: { _all: true }, _sum: { amount: true } });
+    if (donChot._count._all > 0 && !force) {
+      throw new ConflictException({ code: 'HAS_DEALS', count: donChot._count._all, amount: Number(donChot._sum.amount ?? 0), message: `Hội thoại có ${donChot._count._all} đơn đã chốt, xoá sẽ làm doanh thu thống kê giảm.` });
+    }
+    const files = await this.prisma.message.findMany({ where: { conversationId: id, attachmentPath: { not: null } }, select: { attachmentPath: true } });
+    const xoaKhach = await this.prisma.$transaction(async (tx) => {
+      await tx.conversation.delete({ where: { id } });
+      const con = await tx.conversation.count({ where: { customerId: c.customerId } });
+      if (con === 0) {
+        await tx.customer.delete({ where: { id: c.customerId } });
+        return true;
+      }
+      return false;
+    });
+    for (const f of files) if (f.attachmentPath) await this.tep.xoaTep(f.attachmentPath);
+    this.log.warn(`${user.fullName} (${user.id}) xoá hội thoại ${id} của khách "${c.customer.name}"${xoaKhach ? ', đã xoá luôn khách' : ''}, ${files.length} file`);
+    this.realtime.emit('conversation:update', { id });
+    return { ok: true, deleted: id, customerDeleted: xoaKhach };
+  }
 }
