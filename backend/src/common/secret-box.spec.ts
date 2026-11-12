@@ -15,8 +15,10 @@ describe('secret-box', () => {
     expect(giaiMa(m.slice(0, -3) + 'AAA', 'khoa-1')).toBeNull();
     expect(giaiMa('rac', 'khoa-1')).toBeNull();
   });
-  it('xem trước chỉ lộ 4 ký tự cuối, giá trị ngắn che hết', () => {
-    expect(xemTruoc('abcdefghijkl')).toBe('••••ijkl');
-    expect(xemTruoc('abc')).toBe('••••');
+  it('xem trước chỉ lộ 5 ký tự cuối, giá trị ngắn che hết', () => {
+    expect(xemTruoc('abcdefghijkl')).toBe('••••••••hijkl');
+    expect(xemTruoc('abcdefghijk')).toBe('••••••••');
+    expect(xemTruoc('abc')).toBe('••••••••');
+    expect(xemTruoc('x'.repeat(40)).length).toBe(13);
   });
 });

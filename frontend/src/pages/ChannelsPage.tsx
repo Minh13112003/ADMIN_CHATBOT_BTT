@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useSearchParams } from "react-router";
 import useSWR from "swr";
 import { ChannelConnectDialog } from "@/components/ChannelConnectDialog";
-import { primaryClass } from "@/components/ui";
+import { primaryClass, secondaryClass } from "@/components/ui";
 import type { Me } from "@/lib/types";
 import { fetcher } from "@/lib/api";
 import { thoiGianTruoc, thoiLuong, vnd } from "@/lib/labels";
@@ -80,7 +80,7 @@ export default function ChannelsPage() {
                   {DETAILS[c.channel].title}
                 </h2>
                 <p className="mt-1 text-sm text-muted">
-                  {DETAILS[c.channel].description}
+                  {c.connected && (c.channel === "ZALO" || c.channel === "FACEBOOK") ? "Đang nhận tin từ khách." : DETAILS[c.channel].description}
                 </p>
               </div>
               <span
@@ -118,8 +118,8 @@ export default function ChannelsPage() {
                 </div>
               </dl>
             ) : <div className="mt-[22px] flex flex-col gap-1 rounded-[10px] border border-dashed border-line bg-fill p-4 text-[0.8rem] [&_span]:text-muted"><strong>Điều kiện kết nối</strong><span>{c.channel === "ZALO" ? "Zalo OA cần được xác thực, dùng gói Tăng trưởng trở lên và cấu hình webhook." : "Cần quyền quản trị Trang Facebook và quyền truy cập tin nhắn Messenger."}</span></div>}
-            {!c.connected && (c.channel === "ZALO" || c.channel === "FACEBOOK") && me?.role === "ADMIN" && (
-              <button type="button" onClick={() => setKetNoi(c.channel as "ZALO" | "FACEBOOK")} className={`${primaryClass} mt-4 self-start`}>Nhập thông tin kết nối</button>
+            {(c.channel === "ZALO" || c.channel === "FACEBOOK") && me?.role === "ADMIN" && (
+              <button type="button" onClick={() => setKetNoi(c.channel as "ZALO" | "FACEBOOK")} className={`${c.connected ? secondaryClass : primaryClass} mt-4 self-start`}>{c.connected ? "Quản lý thông tin kết nối" : "Nhập thông tin kết nối"}</button>
             )}
             <p className="mt-auto pt-[18px] text-xs text-muted">{c.connected ? "Số liệu được lấy từ hội thoại thực tế trong hệ thống." : "Trạng thái kết nối sẽ được cập nhật khi kênh được tích hợp."}</p>
           </section>

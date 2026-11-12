@@ -24,6 +24,7 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
   const key = `/channel-settings/${channel}`;
   const { data, error, mutate } = useSWR<Settings>(key, fetcher);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [sua, setSua] = useState<Record<string, boolean>>({});
   const [loi, setLoi] = useState('');
   const [dang, setDang] = useState(false);
   const [hoiXoa, setHoiXoa] = useState(false);
@@ -47,6 +48,7 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
       const r = await api<Settings>(key, { method: 'PUT', body: { values } });
       await mutate(r, { revalidate: false });
       setValues({});
+      setSua({});
       onSaved();
     } catch (e) {
       setLoi(loiCua(e));
@@ -72,7 +74,7 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
   return (
     <Modal
       title={`Kết nối ${title}`}
-      subtitle="Thông tin được mã hoá trước khi lưu. Chỉ quản trị toàn quyền nhập được, và không ai xem lại được giá trị đã lưu."
+      subtitle="Thông tin được mã hoá trước khi lưu trong database. Khoá bí mật và token chỉ hiện 5 ký tự cuối, không ai xem lại được giá trị đầy đủ."
       onClose={onClose}
       width={560}
       footer={
@@ -98,25 +100,44 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
             Máy chủ chưa có khoá mã hoá (ENCRYPTION_KEY trong file .env), nên chưa lưu được. Nhờ người quản trị server thêm khoá rồi khởi động lại backend.
           </p>
         )}
-        {data?.fields.map((f) => (
-          <div key={f.name} className="flex flex-col gap-1.5">
-            <label htmlFor={`kn-${f.name}`} className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
-              {f.label}
-              {f.set && <span className="rounded-full bg-green-soft px-2 py-0.5 text-xs font-semibold text-green-ink">Đã nhập {f.preview ? `· ${f.preview}` : ''}</span>}
-            </label>
-            <input
-              id={`kn-${f.name}`}
-              type={f.secret ? 'password' : 'text'}
-              autoComplete="off"
-              spellCheck={false}
-              value={values[f.name] ?? ''}
-              onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
-              placeholder={f.set ? 'Để trống nếu giữ nguyên, nhập mới để thay' : 'Chưa nhập'}
-              className={inputClass}
-            />
-            {f.hint && <small className="text-xs text-muted">{f.hint}</small>}
-          </div>
-        ))}
+        {data?.fields.map((f) => {
+          // Đã lưu: ô khoá lại, chỉ thấy bản che (bí mật chỉ lộ 5 ký tự cuối). Bấm "Thay đổi" thì ô trống để nhập giá trị mới.
+          const khoaLai = f.set && !sua[f.name];
+          return (
+            <div key={f.name} className="flex flex-col gap-1.5">
+              <label htmlFor={`kn-${f.name}`} className="flex flex-wrap items-center justify-between gap-2 text-sm font-medium">
+                {f.label}
+                {f.set && <span className="rounded-full bg-green-soft px-2 py-0.5 text-xs font-semibold text-green-ink">Đã nhập</span>}
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  id={`kn-${f.name}`}
+                  type={f.secret && !khoaLai ? 'password' : 'text'}
+                  autoComplete="off"
+                  spellCheck={false}
+                  disabled={khoaLai}
+                  value={khoaLai ? (f.preview ?? '') : (values[f.name] ?? '')}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
+                  placeholder={f.set ? 'Nhập giá trị mới (để trống = giữ nguyên)' : 'Chưa nhập'}
+                  className={`${inputClass} min-w-0 flex-1 disabled:bg-fill disabled:text-muted`}
+                />
+                {f.set && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSua((x) => ({ ...x, [f.name]: !x[f.name] }));
+                      setValues((v) => ({ ...v, [f.name]: '' }));
+                    }}
+                    className="min-h-11 shrink-0 rounded-[10px] border border-field px-3 text-sm font-semibold hover:bg-fill"
+                  >
+                    {khoaLai ? 'Thay đổi' : 'Huỷ'}
+                  </button>
+                )}
+              </div>
+              {f.hint && <small className="text-xs text-muted">{f.hint}</small>}
+            </div>
+          );
+        })}
         {data?.urls && (
           <div className="flex flex-col gap-2.5 rounded-xl border border-line bg-page p-3">
             <p className="text-xs font-semibold">Khai hai địa chỉ này trong ứng dụng Zalo (developers.zalo.me)</p>

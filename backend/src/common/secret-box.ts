@@ -27,7 +27,7 @@ export function giaiMa(chuoi: string, chuoiKhoa: string): string | null {
   }
 }
 
-/** Chỉ cho giao diện thấy đuôi: "••••a3f9". Giá trị ngắn thì che hết. */
+/** Giao diện chỉ thấy 5 ký tự cuối: "••••••••a3f9b". Giá trị ngắn (dưới 12 ký tự) thì che hết để phần lộ không đáng kể. */
 export function xemTruoc(banRo: string): string {
-  return banRo.length <= 8 ? '••••' : `••••${banRo.slice(-4)}`;
+  return banRo.length < 12 ? '••••••••' : `••••••••${banRo.slice(-5)}`;
 }
