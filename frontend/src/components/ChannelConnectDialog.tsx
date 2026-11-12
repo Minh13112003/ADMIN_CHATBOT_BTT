@@ -4,7 +4,20 @@ import { api, del, fetcher, loiCua } from '@/lib/api';
 import { ErrorText, inputClass, Modal, primaryClass, secondaryClass } from './ui';
 
 type Field = { name: string; label: string; secret: boolean; hint?: string; set: boolean; preview: string | null; updatedAt: string | null };
-type Settings = { encryptionReady: boolean; fields: Field[] };
+type Settings = { encryptionReady: boolean; fields: Field[]; urls?: { webhook: string; callback: string } };
+
+function DiaChi({ nhan, gia }: { nhan: string; gia: string }) {
+  const [daChep, setDaChep] = useState(false);
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-xs font-semibold text-body">{nhan}</span>
+      <div className="flex items-center gap-2">
+        <code className="min-w-0 flex-1 break-all rounded-lg bg-fill px-2.5 py-2 text-xs">{gia}</code>
+        <button type="button" onClick={() => { void navigator.clipboard?.writeText(gia).then(() => { setDaChep(true); setTimeout(() => setDaChep(false), 1500); }); }} className="min-h-9 shrink-0 rounded-lg border border-field px-2.5 text-xs font-semibold hover:bg-fill">{daChep ? 'Đã chép' : 'Chép'}</button>
+      </div>
+    </div>
+  );
+}
 
 /** Hộp nhập thông tin kết nối Zalo OA / Facebook. Giá trị bí mật chỉ gửi lên, không bao giờ hiện lại (chỉ thấy đuôi 4 ký tự). */
 export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { channel: 'ZALO' | 'FACEBOOK'; title: string; onClose: () => void; onSaved: () => void }) {
@@ -15,6 +28,17 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
   const [dang, setDang] = useState(false);
   const [hoiXoa, setHoiXoa] = useState(false);
 
+  const ketNoiZalo = async () => {
+    setDang(true);
+    setLoi('');
+    try {
+      const r = await api<{ url: string }>('/channel-settings/zalo/connect-url');
+      window.location.href = r.url;
+    } catch (e) {
+      setLoi(loiCua(e));
+      setDang(false);
+    }
+  };
   const coNhap = Object.values(values).some((v) => v.trim());
   const luu = async () => {
     setDang(true);
@@ -93,6 +117,19 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
             {f.hint && <small className="text-xs text-muted">{f.hint}</small>}
           </div>
         ))}
+        {data?.urls && (
+          <div className="flex flex-col gap-2.5 rounded-xl border border-line bg-page p-3">
+            <p className="text-xs font-semibold">Khai hai địa chỉ này trong ứng dụng Zalo (developers.zalo.me)</p>
+            <DiaChi nhan="Webhook URL (Zalo gửi tin khách về đây)" gia={data.urls.webhook} />
+            <DiaChi nhan="Callback URL (Zalo quay về sau khi cấp quyền)" gia={data.urls.callback} />
+          </div>
+        )}
+        {channel === 'ZALO' && (
+          <div className="flex flex-col gap-1.5 rounded-xl border border-line bg-page p-3">
+            <p className="text-xs text-body">Sau khi lưu App ID và khoá bí mật, bấm nút dưới, đăng nhập Zalo bằng tài khoản quản trị OA và đồng ý cấp quyền. Hệ thống tự lấy và tự làm mới token, bạn không phải dán token.</p>
+            <button type="button" disabled={dang || !data?.fields.find((f) => f.name === 'appId')?.set || !data?.fields.find((f) => f.name === 'appSecret')?.set} onClick={() => void ketNoiZalo()} className={`${primaryClass} self-start`}>Kết nối với Zalo</button>
+          </div>
+        )}
         <ErrorText>{loi}</ErrorText>
         <p className="text-xs text-muted">Sau khi lưu, kênh chỉ chuyển sang "Đã kết nối" khi nhận được tin thật đầu tiên từ khách.</p>
       </div>

@@ -23,7 +23,7 @@ class CorsIoAdapter extends IoAdapter {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true }); // rawBody: kiểm tra chữ ký webhook Zalo cần đúng từng byte
   const config = app.get(ConfigService);
   const origins = (config.get<string>('FRONTEND_URL') ?? 'http://localhost:3002').split(',').map((s) => s.trim());
 

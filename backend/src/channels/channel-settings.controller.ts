@@ -4,16 +4,18 @@ import { AuthUser, CurrentUser, Roles } from '../auth/auth.decorators';
 import { giaiMa, maHoa, xemTruoc } from '../common/secret-box';
 import { Channel, Role } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { ZaloService } from './zalo.service';
 
 type Truong = { name: string; label: string; secret: boolean; hint?: string };
 /** Trường cần nhập cho từng kênh. Tên trường theo tài liệu từng nền tảng; sửa ở đây khi đối chiếu bản chính thức. */
 export const TRUONG_KENH: Partial<Record<Channel, Truong[]>> = {
   ZALO: [
-    { name: 'oaId', label: 'ID Official Account', secret: false },
-    { name: 'appId', label: 'App ID', secret: false },
-    { name: 'appSecret', label: 'Khoá bí mật của ứng dụng (App Secret)', secret: true, hint: 'Dùng để kiểm tra tin Zalo gửi về đúng là của Zalo.' },
-    { name: 'accessToken', label: 'Access token của OA', secret: true },
-    { name: 'refreshToken', label: 'Refresh token', secret: true, hint: 'Hệ thống sẽ tự cập nhật khi Zalo cấp token mới.' },
+    { name: 'appId', label: 'App ID', secret: false, hint: 'Trang ứng dụng trên developers.zalo.me.' },
+    { name: 'appSecret', label: 'Khoá bí mật của ứng dụng (Application Secret Key)', secret: true, hint: 'Dùng để lấy và làm mới token.' },
+    { name: 'oaSecretKey', label: 'OA Secret Key (kiểm tra tin Zalo gửi về)', secret: true, hint: 'Lấy ở mục Webhook của ứng dụng. Khác với khoá bí mật ở trên.' },
+    { name: 'oaId', label: 'ID Official Account (không bắt buộc)', secret: false },
+    { name: 'accessToken', label: 'Access token (tự lấy khi bấm "Kết nối với Zalo")', secret: true, hint: 'Chỉ dán tay khi thử; token tự lấy sẽ tự làm mới.' },
+    { name: 'refreshToken', label: 'Refresh token (tự lấy khi bấm "Kết nối với Zalo")', secret: true },
   ],
   FACEBOOK: [
     { name: 'pageId', label: 'ID Trang', secret: false },
@@ -33,7 +35,7 @@ function kenh(ten: string): Channel {
 @Roles(Role.ADMIN)
 @Controller('channel-settings')
 export class ChannelSettingsController {
-  constructor(private prisma: PrismaService, private config: ConfigService) {}
+  constructor(private prisma: PrismaService, private config: ConfigService, private zalo: ZaloService) {}
 
   private khoaMaHoa() {
     const k = this.config.get<string>('ENCRYPTION_KEY');
@@ -49,6 +51,7 @@ export class ChannelSettingsController {
     const theoTen = new Map(dong.map((d) => [d.name, d]));
     return {
       encryptionReady: khoa.length >= 32,
+      ...(k === 'ZALO' ? { urls: { webhook: this.zalo.diaChiWebhook(), callback: this.zalo.diaChiCallback() } } : {}),
       fields: TRUONG_KENH[k]!.map((t) => {
         const d = theoTen.get(t.name);
         const banRo = d && khoa ? giaiMa(d.valueEnc, khoa) : null;

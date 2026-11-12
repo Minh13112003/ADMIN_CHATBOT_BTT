@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router";
 import useSWR from "swr";
 import { ChannelConnectDialog } from "@/components/ChannelConnectDialog";
 import { primaryClass } from "@/components/ui";
@@ -37,6 +38,8 @@ export default function ChannelsPage() {
     "/stats/channels",
     fetcher,
   );
+  const [sp, setSp] = useSearchParams();
+  const ketQuaZalo = sp.get("zalo");
   const { data: me } = useSWR<Me>("/auth/me", fetcher);
   const [ketNoi, setKetNoi] = useState<"ZALO" | "FACEBOOK" | null>(null);
   const { data: costs } = useSWR<CostSource[]>("/stats/cost-by-source?period=month", fetcher);
@@ -49,6 +52,12 @@ export default function ChannelsPage() {
           <p>Trạng thái và hoạt động của các kênh tư vấn.</p>
         </div>
       </header>
+      {ketQuaZalo && (
+        <p role="status" className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm ${ketQuaZalo === "ok" ? "border-green-soft bg-green-soft/40 text-green-ink" : "border-alert-line bg-brand-faint text-brand-text"}`}>
+          <span>{ketQuaZalo === "ok" ? "Đã lấy token Zalo và lưu mã hoá. Gửi thử một tin nhắn từ Zalo cá nhân tới OA để kiểm tra." : `Kết nối Zalo chưa thành công: ${sp.get("ly") ?? "không rõ lý do"}`}</span>
+          <button type="button" onClick={() => setSp({}, { replace: true })} className="shrink-0 underline">Đóng</button>
+        </p>
+      )}
       {!data && !error && <p role="status">Đang tải trạng thái kênh...</p>}
       {error && (
         <p role="alert" className="text-brand-text">

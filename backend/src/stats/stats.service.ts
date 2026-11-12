@@ -162,7 +162,7 @@ export class StatsService {
       lastCustomerMessageAt: ganNhat.find((c) => c.channel === channel)?._max.lastCustomerMessageAt ?? null,
       conversationsToday: conversations.find((c) => c.channel === channel)?._count._all ?? 0,
       medianSeconds: tomTatPhanHoi(responseRows.filter((r) => r.channel === channel).map((r) => r.seconds)).medianSeconds,
-      connected: channel === 'WEB' || channel === 'APP',
+      connected: channel === 'WEB' || channel === 'APP' || (channel === 'ZALO' && !!ganNhat.find((c) => c.channel === channel)?._max.lastCustomerMessageAt),
     }));
   }
 

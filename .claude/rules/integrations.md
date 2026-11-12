@@ -5,7 +5,7 @@ Trạng thái ngày 2026-11-06. Cập nhật file này mỗi khi trạng thái �
 | Kênh | Trạng thái | Ghi chú |
 |---|---|---|
 | bttAI App, Web, Zalo Mini App | **Đã nối** (chạy trên máy, chưa triển khai server) | Hợp đồng ở `docs/ingest-api.md`. Mini App đi chung kênh `APP` vì dùng cùng tài khoản |
-| Zalo OA | Để ngỏ theo yêu cầu | Enum `ZALO`, `CustomerIdentity` đã sẵn; nút lọc đang khoá (`connected: false` trong `labels.ts`) |
+| Zalo OA | Đã viết, **chưa chạy thật** (2026-11-12) | Webhook `POST /webhooks/zalo` (kiểm tra chữ ký bằng OA Secret Key), OAuth qua `channel-settings/zalo/*`, gửi trả lời từ `ConversationsService.send`. Chỉ test bằng tin giả; tên API, header chữ ký, PKCE chưa đối chiếu tài liệu Zalo. Xem mục Zalo OA bên dưới |
 | Facebook | Để ngỏ theo yêu cầu | Tương tự Zalo |
 
 ## Phía chatbot đã nối thế nào (`D:\ChatBot`)
@@ -32,3 +32,9 @@ Miễn phí, không cần App Review nếu chỉ dùng cho Page của công ty. 
 
 ## Gemini
 Giá nhập trong `.env` (`GEMINI_PRICE_*`), tỷ giá `USD_VND_RATE`. Chatbot phải gửi số token từ mỗi phản hồi thì mới có số chi phí.
+
+## Zalo OA, cách hoạt động (viết 2026-11-12, chưa chạy với Zalo thật)
+- Thông tin nhập ở trang Kênh kết nối (xem `backend.md`): App ID, khoá bí mật ứng dụng, OA Secret Key. Bấm "Kết nối với Zalo" để lấy access/refresh token qua OAuth (PKCE); `ZaloService.tuLamMoi` chạy mỗi 10 phút, token còn dưới 1 giờ thì làm mới (refresh token đổi mỗi lần dùng, lưu lại ngay).
+- Webhook `https://<tên miền>/api/v1/webhooks/zalo`: chỉ nhận `user_send_*`, chữ ký `sha256(appId + body gốc + timestamp + OASecretKey)` (cần `rawBody: true` ở `main.ts`), tin vào qua `IngestService.inbound` kênh `ZALO`, `externalMessageId = zalo:<msg_id>` chống trùng. Chưa có chatbot cho Zalo: chỉ gửi lại câu trả lời tự động và câu báo đã chuyển nhân viên.
+- Nhân viên trả lời trong trang này thì gửi sang Zalo (`/v3.0/oa/message/cs`) trước khi lưu; lỗi thì không lưu. Chưa gửi được ảnh/PDF sang Zalo. Khách gửi ảnh/tệp chỉ hiện dòng báo "xem trên Zalo OA".
+- Kênh ZALO chỉ hiện "Đã kết nối" khi đã có tin khách thật.

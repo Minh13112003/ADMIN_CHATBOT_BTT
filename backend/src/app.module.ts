@@ -30,6 +30,8 @@ import { TourCatalogService } from './tours/tour-catalog.service';
 import { PricingService } from './tours/pricing.service';
 import { VouchersController } from './vouchers/vouchers.controller';
 import { ChannelSettingsController } from './channels/channel-settings.controller';
+import { ZaloOAuthController, ZaloWebhookController } from './channels/zalo.controller';
+import { ZaloService } from './channels/zalo.service';
 
 @Module({
   imports: [
@@ -58,6 +60,8 @@ import { ChannelSettingsController } from './channels/channel-settings.controlle
     ToursController,
     VouchersController,
     ChannelSettingsController,
+    ZaloOAuthController,
+    ZaloWebhookController,
     ConversationsController,
     CustomersController,
     DealsController,
@@ -71,6 +75,7 @@ import { ChannelSettingsController } from './channels/channel-settings.controlle
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
     IngestKeyGuard,
+    ZaloService,
     IngestService,
     TourInterestService,
     TourCatalogService,

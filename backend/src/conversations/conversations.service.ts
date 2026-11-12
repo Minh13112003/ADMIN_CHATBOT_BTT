@@ -1,3 +1,4 @@
+import { ZaloService } from '../channels/zalo.service';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
@@ -50,7 +51,7 @@ export type PatchInput = { tags?: string[]; note?: string; interest?: string; au
 export class ConversationsService {
   private log = new Logger('Conversations');
 
-  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService) {}
+  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService, private zalo: ZaloService) {}
 
   /** Bỏ đường dẫn lưu trữ, thêm `attachment` (link xem có hạn) trước khi gửi ra ngoài. */
   private ra<T extends { id: string; attachmentPath: string | null; attachmentType: string | null; attachmentName: string | null; attachmentSize: number | null }>(m: T) {
@@ -217,6 +218,13 @@ export class ConversationsService {
     if (dto.replyToId) {
       const goc = await this.prisma.message.findFirst({ where: { id: dto.replyToId, conversationId: id, internal: false }, select: { id: true } });
       if (!goc) throw new BadRequestException('Không tìm thấy tin được trích');
+    }
+    // Kênh Zalo: gửi sang Zalo trước khi lưu, lỗi thì báo ngay và không lưu tin giả vờ đã gửi.
+    if (c.channel === 'ZALO') {
+      if (file) throw new BadRequestException('Zalo OA chưa hỗ trợ gửi ảnh/PDF từ trang này, bạn nhắn chữ giúp nhé');
+      const danhTinh = await this.prisma.customerIdentity.findFirst({ where: { customerId: c.customerId, channel: 'ZALO' }, select: { externalId: true } });
+      if (!danhTinh) throw new BadRequestException('Không tìm thấy tài khoản Zalo của khách này');
+      await this.zalo.guiTin(danhTinh.externalId, noiDung);
     }
     // Lưu file sau cùng các kiểm tra khác để không tải lên rồi mới báo lỗi.
     const dinhKem = file ? await this.tep.luu(file) : null;
