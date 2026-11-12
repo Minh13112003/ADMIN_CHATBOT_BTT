@@ -54,7 +54,8 @@ export class ZaloWebhookController {
     const body = req.body as Record<string, unknown> | undefined;
     const timestamp = body?.timestamp === undefined ? '' : String(body.timestamp);
     if (!khoaKy.some((k) => chuKyHopLe(chuKy ?? macCu, c.appId, goc, timestamp, k))) {
-      this.log.warn('Từ chối webhook: chữ ký không khớp');
+      // Chẩn đoán: ghi lại Zalo gửi gì (chữ ký là mã băm, không lộ khoá) để đối chiếu công thức ký.
+      this.log.warn(`Từ chối webhook: chữ ký không khớp. ${JSON.stringify({ tenHeader: Object.keys(req.headers ?? {}).filter((h) => /sig|mac|zevent|zalo|x-/i.test(h)), chuKyNhan: chuKy ?? macCu ?? null, timestamp, doDaiNoiDung: goc.length, noiDung: goc.slice(0, 600), coOaSecret: !!c.oaSecretKey, coAppSecret: !!c.appSecret })}`);
       throw new UnauthorizedException('Chữ ký không hợp lệ');
     }
     const e = phanTichSuKien(body);
