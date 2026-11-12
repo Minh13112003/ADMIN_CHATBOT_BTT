@@ -61,29 +61,42 @@ export function phanTichSuKien(body: unknown): SuKienZalo | null {
   return { userId, msgId, text: `${kem}[Khách gửi ${loai} qua Zalo, xem trên Zalo OA]`.slice(0, 4000), laText: false, tenSuKien: ten, timestamp };
 }
 
+/** Mọi cách xếp thứ tự của các tập con khác rỗng. */
+function xepThuTu<T>(mang: T[]): T[][] {
+  if (mang.length <= 1) return [mang];
+  return mang.flatMap((x, i) => xepThuTu([...mang.slice(0, i), ...mang.slice(i + 1)]).map((r) => [x, ...r]));
+}
+
 /**
- * CHẨN ĐOÁN: thử nhiều công thức ký với từng khoá đang có, trả về tên các cặp khớp (không bao giờ trả về khoá).
- * Dùng để biết Zalo ký bằng khoá nào, công thức nào khi chữ ký không khớp.
+ * CHẨN ĐOÁN: thử mọi cách ghép (A=App ID, R=nội dung gốc, T=timestamp, K=khoá) bằng sha256 và HMAC-sha256 với từng khoá đang có,
+ * trả về tên các cách khớp với chữ ký Zalo gửi (không bao giờ trả về khoá). Dùng để biết Zalo ký thế nào khi chữ ký không khớp.
  */
 export function thuCongThuc(header: string | undefined, appId: string, raw: string, ts: string, khoa: Record<string, string>): string[] {
   if (!header) return [];
   const nhan = header.trim().replace(/^mac=/i, '').toLowerCase();
   const sha = (x: string) => createHash('sha256').update(x).digest('hex');
   const hmac = (k: string, x: string) => createHmac('sha256', k).update(x).digest('hex');
+  const phan: Record<string, string> = { A: appId, R: raw, T: ts };
   const ra: string[] = [];
+  const tapCon = (bat: string[], tuyChon: string[]) => {
+    const ds: string[][] = [];
+    for (let m = 0; m < 1 << tuyChon.length; m++) ds.push([...bat, ...tuyChon.filter((_, i) => m & (1 << i))]);
+    return ds;
+  };
   for (const [ten, k] of Object.entries(khoa)) {
     if (!k) continue;
-    const thu: Record<string, string> = {
-      'sha(appId+raw+ts+key)': sha(appId + raw + ts + k),
-      'sha(raw+ts+key)': sha(raw + ts + k),
-      'sha(appId+raw+key)': sha(appId + raw + k),
-      'sha(raw+key)': sha(raw + k),
-      'sha(key+raw)': sha(k + raw),
-      'hmac(key,appId+raw+ts)': hmac(k, appId + raw + ts),
-      'hmac(key,raw)': hmac(k, raw),
-      'hmac(key,raw+ts)': hmac(k, raw + ts),
-    };
-    for (const [ct, v] of Object.entries(thu)) if (v === nhan) ra.push(`${ten}:${ct}`);
+    // sha256(ghép các phần, trong đó có R và K)
+    for (const ds of tapCon(['R', 'K'], ['A', 'T'])) {
+      for (const tt of xepThuTu(ds)) {
+        if (sha(tt.map((x) => (x === 'K' ? k : phan[x])).join('')) === nhan) ra.push(`${ten}:sha(${tt.join('+')})`);
+      }
+    }
+    // hmac(K, ghép các phần có R)
+    for (const ds of tapCon(['R'], ['A', 'T'])) {
+      for (const tt of xepThuTu(ds)) {
+        if (hmac(k, tt.map((x) => phan[x]).join('')) === nhan) ra.push(`${ten}:hmac(K,${tt.join('+')})`);
+      }
+    }
   }
   return ra;
 }

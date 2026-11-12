@@ -45,7 +45,9 @@ describe('zalo', () => {
   it('chẩn đoán: chỉ trả tên cặp khớp, không lộ khoá', () => {
     const mac = createHash('sha256').update(raw + 'k2').digest('hex');
     const kq = thuCongThuc(`mac=${mac}`, '123', raw, '1', { appSecret: 'k1', oaSecretKey: 'k2' });
-    expect(kq).toEqual(['oaSecretKey:sha(raw+key)']);
+    expect(kq).toEqual(['oaSecretKey:sha(R+K)']);
+    const mac2 = createHash('sha256').update('123' + 'k1' + raw + '1').digest('hex');
+    expect(thuCongThuc(mac2, '123', raw, '1', { appSecret: 'k1' })).toContain('appSecret:sha(A+K+R+T)');
     expect(thuCongThuc(undefined, '123', raw, '1', { appSecret: 'k1' })).toEqual([]);
   });
 });

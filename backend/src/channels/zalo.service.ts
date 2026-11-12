@@ -9,7 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 const OAUTH = 'https://oauth.zaloapp.com/v4/oa';
 const OPENAPI = 'https://openapi.zalo.me';
 const HAN_STATE_MS = 10 * 60_000;
-const TRUOC_HAN_MS = 60 * 60_000; // Làm mới token khi còn dưới 1 giờ
+const TRUOC_HAN_MS = 20 * 60_000; // Làm mới token khi còn dưới 20 phút (access token Zalo sống ngắn, có thể chỉ 15 phút)
 
 type Tokens = { access_token?: string; refresh_token?: string; expires_in?: string | number; error?: number; error_name?: string; error_reason?: string; message?: string };
 
@@ -136,8 +136,8 @@ export class ZaloService {
     this.log.log('Đã lưu token Zalo mới');
   }
 
-  /** Mỗi 10 phút: token còn dưới 1 giờ thì làm mới. Lỗi chỉ ghi log. */
-  @Cron('*/10 * * * *')
+  /** Mỗi 5 phút: token còn dưới 20 phút thì làm mới. Lỗi chỉ ghi log. */
+  @Cron('*/5 * * * *')
   async tuLamMoi() {
     try {
       const c = await this.doc();

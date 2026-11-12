@@ -59,7 +59,7 @@ export class ZaloWebhookController {
     const timestamp = body?.timestamp === undefined ? '' : String(body.timestamp);
     if (!khoaKy.some((k) => chuKyHopLe(chuKy ?? macCu, c.appId, goc, timestamp, k))) {
       // Chẩn đoán: ghi lại Zalo gửi gì (chữ ký là mã băm, không lộ khoá) để đối chiếu công thức ký.
-      this.log.warn(`Từ chối webhook: chữ ký không khớp. ${JSON.stringify({ tenHeader: Object.keys(req.headers ?? {}).filter((h) => /sig|mac|zevent|zalo|x-/i.test(h)), chuKyNhan: chuKy ?? macCu ?? null, timestamp, doDaiNoiDung: goc.length, noiDung: goc.slice(0, 600), coOaSecret: !!c.oaSecretKey, coAppSecret: !!c.appSecret, congThucKhop: thuCongThuc(chuKy ?? macCu, c.appId, goc, timestamp, { appSecret: c.appSecret ?? '', oaSecretKey: c.oaSecretKey ?? '', appId: c.appId, oaId: c.oaId ?? '' }) })}`);
+      this.log.warn(`Từ chối webhook: chữ ký không khớp. ${JSON.stringify({ tenHeader: Object.keys(req.headers ?? {}).filter((h) => /sig|mac|zevent|zalo|x-/i.test(h)), chuKyNhan: chuKy ?? macCu ?? null, timestamp, doDaiNoiDung: goc.length, noiDung: goc.slice(0, 600), coOaSecret: !!c.oaSecretKey, coAppSecret: !!c.appSecret, congThucKhop: thuCongThuc(chuKy ?? macCu, c.appId, goc, timestamp, { appSecret: c.appSecret ?? '', oaSecretKey: c.oaSecretKey ?? '', appId: c.appId, oaId: c.oaId ?? '', accessToken: c.accessToken ?? '', refreshToken: c.refreshToken ?? '' }) })}`);
       throw new UnauthorizedException('Chữ ký không hợp lệ');
     }
     const e = phanTichSuKien(body);
