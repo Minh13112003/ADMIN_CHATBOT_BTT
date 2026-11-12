@@ -32,7 +32,7 @@ import { VouchersController } from './vouchers/vouchers.controller';
 import { ChannelSettingsController } from './channels/channel-settings.controller';
 import { ZaloOAuthController, ZaloWebhookController } from './channels/zalo.controller';
 import { ZaloService } from './channels/zalo.service';
-import { ZaloSyncController, ZaloSyncService } from './channels/zalo-sync.service';
+import { ZaloImportController, ZaloSyncController, ZaloSyncService } from './channels/zalo-sync.service';
 
 @Module({
   imports: [
@@ -64,6 +64,7 @@ import { ZaloSyncController, ZaloSyncService } from './channels/zalo-sync.servic
     ZaloOAuthController,
     ZaloWebhookController,
     ZaloSyncController,
+    ZaloImportController,
     ConversationsController,
     CustomersController,
     DealsController,

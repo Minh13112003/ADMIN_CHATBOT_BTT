@@ -1,4 +1,4 @@
-import { chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
+import { chuanHoaChatGanDay, chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
 import { createHash } from 'crypto';
 
 describe('zalo', () => {
@@ -69,5 +69,20 @@ describe('zalo', () => {
   it('lịch sử: không có from_id thì dùng src (1 = khách)', () => {
     const kq = chuanHoaLichSu([{ message_id: 'a', src: 1, time: 1, message: 'x' }, { message_id: 'b', src: 0, time: 2, message: 'y' }], 'u1');
     expect(kq.map((t) => t.tuKhach)).toEqual([true, false]);
+  });
+  it('chat gần đây: nhận ra khách là bên không phải OA, mỗi khách một dòng, mới nhất trước', () => {
+    const kq = chuanHoaChatGanDay([
+      { from_id: 'u1', from_display_name: 'An', from_avatar: 'https://a/1.jpg', to_id: 'oa', time: 1000, message: 'Hi' },
+      { from_id: 'oa', to_id: 'u2', to_display_name: 'Bình', time: 3000, message: 'Dạ' },
+      { from_id: 'u1', to_id: 'oa', from_display_name: 'An', time: 2000, message: 'Tour Đà Lạt' },
+    ]);
+    expect(kq.map((k) => [k.userId, k.ten, k.text])).toEqual([['u2', 'Bình', 'Dạ'], ['u1', 'An', 'Tour Đà Lạt']]);
+    expect(kq[1].anh).toBe('https://a/1.jpg');
+    expect(chuanHoaChatGanDay('rac')).toEqual([]);
+    expect(chuanHoaChatGanDay([{ from_id: 'u1', to_id: 'oa' }])).toEqual([]);
+  });
+  it('chat gần đây: dùng oaId đã biết khi có', () => {
+    const kq = chuanHoaChatGanDay([{ from_id: 'oa', to_id: 'u1', time: 1, message: 'x' }, { from_id: 'oa', to_id: 'u2', time: 2, message: 'y' }], 'oa');
+    expect(kq.map((k) => k.userId)).toEqual(['u2', 'u1']);
   });
 });

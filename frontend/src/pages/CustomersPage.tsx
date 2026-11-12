@@ -11,7 +11,7 @@ const COT = ['Họ tên', 'Số điện thoại', 'Nguồn', 'Quan tâm', 'Trạ
 export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [tu, setTu] = useState('');
-  const [channel, setChannel] = useState<'ALL' | 'WEB' | 'APP'>('ALL');
+  const [channel, setChannel] = useState<'ALL' | 'WEB' | 'APP' | 'ZALO'>('ALL');
   const [urgent, setUrgent] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setTu(search.trim()), 300);
@@ -49,7 +49,7 @@ export default function CustomersPage() {
       </div>
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-line bg-surface shadow-sm p-3.5 [&>span:first-child]:mr-1 [&>span:first-child]:text-[0.8rem] [&>span:first-child]:text-muted [&_button]:min-h-9 [&_button]:rounded-[20px] [&_button]:bg-fill [&_button]:px-[13px] [&_button]:text-[0.78rem] [&_button[aria-pressed=true]]:bg-brand-soft [&_button[aria-pressed=true]]:font-bold [&_button[aria-pressed=true]]:text-brand-text" role="group" aria-label="Lọc khách hàng">
         <span>Bộ lọc nhanh</span>
-        {([{ key: 'ALL', label: 'Tất cả nguồn' }, { key: 'WEB', label: 'bttAI Web' }, { key: 'APP', label: 'bttAI App' }] as const).map((item) => <button key={item.key} type="button" aria-pressed={channel === item.key} onClick={() => setChannel(item.key)}>{item.label}</button>)}
+        {([{ key: 'ALL', label: 'Tất cả nguồn' }, { key: 'WEB', label: 'bttAI Web' }, { key: 'APP', label: 'bttAI App' }, { key: 'ZALO', label: 'Zalo OA' }] as const).map((item) => <button key={item.key} type="button" aria-pressed={channel === item.key} onClick={() => setChannel(item.key)}>{item.label}</button>)}
         <button type="button" aria-pressed={urgent} onClick={() => setUrgent(!urgent)}>Cần hỗ trợ ngay ({needsHelp})</button>
         <span className="ml-auto text-[0.78rem] text-muted">{dong.length} hội thoại</span>
       </div>

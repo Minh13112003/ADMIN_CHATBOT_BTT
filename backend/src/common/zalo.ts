@@ -126,3 +126,39 @@ export function chuanHoaLichSu(raw: unknown, zaloUserId: string): TinLichSu[] {
   }
   return ra.sort((a, b) => a.thoiGian.getTime() - b.thoiGian.getTime());
 }
+
+export type ChatGanDay = { userId: string; ten: string | null; anh: string | null; gio: Date; text: string };
+
+/**
+ * Chuẩn hoá danh sách các cuộc trò chuyện gần đây của OA (mỗi phần tử là tin mới nhất của một khách; định dạng chưa đối chiếu tài liệu chính thức).
+ * Khách là bên KHÔNG phải OA: OA là `oaId` nếu có trong dữ liệu, không thì mã xuất hiện ở nhiều tin nhất. Mỗi khách một dòng, mới nhất trước.
+ */
+export function chuanHoaChatGanDay(raw: unknown, oaId?: string): ChatGanDay[] {
+  if (!Array.isArray(raw)) return [];
+  const tin = raw.filter((x): x is Record<string, any> => !!x && typeof x === 'object' && x.from_id !== undefined && x.to_id !== undefined);
+  if (!tin.length) return [];
+  const dem = new Map<string, number>();
+  for (const m of tin) for (const id of [String(m.from_id), String(m.to_id)]) dem.set(id, (dem.get(id) ?? 0) + 1);
+  const oa = oaId && dem.has(oaId) ? oaId : [...dem.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  const theoKhach = new Map<string, ChatGanDay>();
+  for (const m of tin) {
+    const tuOa = String(m.from_id) === oa;
+    const userId = tuOa ? String(m.to_id) : String(m.from_id);
+    if (!userId || userId === oa) continue;
+    const ms = Number(m.time);
+    const gio = Number.isFinite(ms) && ms > 0 ? new Date(ms) : new Date(NaN);
+    if (Number.isNaN(gio.getTime())) continue;
+    const ten = (tuOa ? m.to_display_name : m.from_display_name) as unknown;
+    const anh = (tuOa ? m.to_avatar : m.from_avatar) as unknown;
+    const cu = theoKhach.get(userId);
+    if (cu && cu.gio >= gio) continue;
+    theoKhach.set(userId, {
+      userId,
+      ten: typeof ten === 'string' && ten.trim() ? ten.trim().slice(0, 120) : cu?.ten ?? null,
+      anh: typeof anh === 'string' && /^https:\/\//.test(anh) && anh.length <= 1000 ? anh : cu?.anh ?? null,
+      gio,
+      text: typeof m.message === 'string' ? m.message.slice(0, 4000) : '',
+    });
+  }
+  return [...theoKhach.values()].sort((a, b) => b.gio.getTime() - a.gio.getTime());
+}

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { randomBytes } from 'crypto';
 import { giaiMa, maHoa } from '../common/secret-box';
-import { chuanHoaLichSu, taoPkce, type TinLichSu } from '../common/zalo';
+import { chuanHoaChatGanDay, chuanHoaLichSu, taoPkce, type ChatGanDay, type TinLichSu } from '../common/zalo';
 import { PrismaService } from '../prisma/prisma.service';
 
 const OAUTH = 'https://oauth.zaloapp.com/v4/oa';
@@ -204,10 +204,31 @@ export class ZaloService {
       const data = encodeURIComponent(JSON.stringify({ user_id: zaloUserId, offset, count: 10 }));
       const j = await this.goiApi(`${OPENAPI}/v2.0/oa/conversation?data=${data}`, { method: 'GET' });
       const mang = chuanHoaLichSu(j?.data, zaloUserId);
+      // Chẩn đoán định dạng: chỉ ghi số lượng và tên trường (không ghi nội dung tin của khách).
+      const dau = Array.isArray(j?.data) ? j.data[0] : undefined;
+      this.log.log(`Lịch sử Zalo offset ${offset}: ${Array.isArray(j?.data) ? j.data.length : 'không phải mảng'} tin, đọc được ${mang.length}; trường tin đầu: ${dau && typeof dau === 'object' ? Object.keys(dau).join(',') : '-'}; khoá cấp ngoài: ${j && typeof j === 'object' ? Object.keys(j).join(',') : '-'}`);
       tat.push(...mang);
       if (!Array.isArray(j?.data) || j.data.length < 10) break;
     }
     const gap = new Map(tat.map((t) => [t.msgId, t]));
     return [...gap.values()].sort((a, b) => a.thoiGian.getTime() - b.thoiGian.getTime());
+  }
+
+  /** Các cuộc trò chuyện gần đây của OA (mỗi lần 10, lùi dần), mới nhất trước. Dùng để nhập khách đã nhắn từ trước khi nối. */
+  async chatGanDay(toiDa = 200): Promise<ChatGanDay[]> {
+    const c = await this.doc();
+    const tat: ChatGanDay[] = [];
+    for (let offset = 0; offset < toiDa; offset += 10) {
+      const data = encodeURIComponent(JSON.stringify({ offset, count: 10 }));
+      const j = await this.goiApi(`${OPENAPI}/v2.0/oa/listrecentchat?data=${data}`, { method: 'GET' });
+      const dau = Array.isArray(j?.data) ? j.data[0] : undefined;
+      this.log.log(`Chat gần đây Zalo offset ${offset}: ${Array.isArray(j?.data) ? j.data.length : 'không phải mảng'} mục; trường mục đầu: ${dau && typeof dau === 'object' ? Object.keys(dau).join(',') : '-'}; khoá cấp ngoài: ${j && typeof j === 'object' ? Object.keys(j).join(',') : '-'}`);
+      if (!Array.isArray(j?.data) || !j.data.length) break;
+      tat.push(...chuanHoaChatGanDay(j.data, c.oaId));
+      if (j.data.length < 10) break;
+    }
+    const gap = new Map<string, ChatGanDay>();
+    for (const k of tat) if (!gap.has(k.userId) || gap.get(k.userId)!.gio < k.gio) gap.set(k.userId, k);
+    return [...gap.values()].sort((a, b) => b.gio.getTime() - a.gio.getTime());
   }
 }

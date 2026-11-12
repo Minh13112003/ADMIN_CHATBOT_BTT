@@ -1,5 +1,6 @@
-import { BadRequestException, Controller, HttpCode, Injectable, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { BadRequestException, ConflictException, Controller, Get, HttpCode, Injectable, Logger, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { Roles } from '../auth/auth.decorators';
+import { tomTat } from '../common/text';
 import { Role } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -9,9 +10,85 @@ import { ZaloService } from './zalo.service';
  * Kéo tin cũ của một khách Zalo về hội thoại. Chỉ GHI LẠI lịch sử: không trả lời tự động, không đổi trạng thái hội thoại,
  * không báo nhân viên, không đụng tin xem trước của danh sách. Tin đã có thì bỏ qua (theo mã tin, hoặc cùng nội dung và gần giờ).
  */
+export type TienDoNhap = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; batDau: string | null; ketThuc: string | null };
+const TIEN_DO_RONG: TienDoNhap = { dang: false, tong: 0, xong: 0, khachMoi: 0, tinThem: 0, loi: 0, lyDo: null, batDau: null, ketThuc: null };
+const nghi = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 @Injectable()
 export class ZaloSyncService {
+  private log = new Logger('ZaloSync');
+  private tienDo: TienDoNhap = { ...TIEN_DO_RONG };
   constructor(private prisma: PrismaService, private zalo: ZaloService, private realtime: RealtimeGateway) {}
+
+  layTienDo(): TienDoNhap {
+    return this.tienDo;
+  }
+
+  /** Admin bấm "Nhập khách cũ từ Zalo": chạy nền, trả về ngay; xem tiến độ qua layTienDo. Không chạy hai lần cùng lúc. */
+  batDauNhapKhachCu(toiDaKhach = 300, nghiMs = 400): TienDoNhap {
+    if (this.tienDo.dang) throw new ConflictException('Đang nhập khách cũ, đợi chạy xong nhé');
+    this.tienDo = { ...TIEN_DO_RONG, dang: true, batDau: new Date().toISOString() };
+    void this.chayNhap(toiDaKhach, nghiMs).catch((e: Error) => {
+      this.log.error(`Nhập khách cũ lỗi: ${e.message}`);
+      this.tienDo = { ...this.tienDo, dang: false, lyDo: e.message, ketThuc: new Date().toISOString() };
+    });
+    return this.tienDo;
+  }
+
+  /**
+   * Nhập các khách đã nhắn OA từ trước khi nối (webhook chỉ báo tin mới). Mỗi khách: tạo khách và hội thoại nếu chưa có
+   * (trạng thái Đã xem, chưa phân công, không báo nhân viên), rồi kéo lịch sử tin. Nghỉ giữa các khách để không vượt giới hạn gọi của Zalo.
+   */
+  private async chayNhap(toiDaKhach: number, nghiMs: number) {
+    const ds = await this.zalo.chatGanDay(toiDaKhach);
+    this.tienDo = { ...this.tienDo, tong: ds.length };
+    for (const k of ds) {
+      try {
+        const { conversationId, moi } = await this.taoNeuChua(k);
+        const r = await this.dongBo(conversationId, 50);
+        await this.capNhatTomTat(conversationId);
+        this.tienDo = { ...this.tienDo, xong: this.tienDo.xong + 1, khachMoi: this.tienDo.khachMoi + (moi ? 1 : 0), tinThem: this.tienDo.tinThem + r.them };
+      } catch (e) {
+        this.log.warn(`Nhập khách Zalo ${k.userId} lỗi: ${(e as Error).message}`);
+        this.tienDo = { ...this.tienDo, xong: this.tienDo.xong + 1, loi: this.tienDo.loi + 1 };
+      }
+      await nghi(nghiMs);
+    }
+    this.tienDo = { ...this.tienDo, dang: false, ketThuc: new Date().toISOString() };
+    this.realtime.emit('conversation:update', {});
+    this.log.log(`Nhập khách cũ xong: ${this.tienDo.xong}/${this.tienDo.tong} khách, ${this.tienDo.khachMoi} khách mới, ${this.tienDo.tinThem} tin, ${this.tienDo.loi} lỗi`);
+  }
+
+  private async taoNeuChua(k: { userId: string; ten: string | null; anh: string | null; gio: Date; text: string }): Promise<{ conversationId: string; moi: boolean }> {
+    const cu = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: k.userId } }, select: { customerId: true } });
+    if (cu) {
+      const c = await this.prisma.conversation.findUnique({ where: { customerId_channel: { customerId: cu.customerId, channel: 'ZALO' } }, select: { id: true } });
+      if (c) return { conversationId: c.id, moi: false };
+    }
+    // Danh sách chat gần đây có thể thiếu tên/ảnh: hỏi hồ sơ Zalo (lỗi thì dùng tên mặc định).
+    const hoSo = !k.ten || !k.anh ? await this.zalo.hoSoKhach(k.userId) : { ten: null, anh: null };
+    const ten = k.ten ?? hoSo.ten ?? 'Khách chưa rõ tên';
+    const anh = k.anh ?? hoSo.anh;
+    const conversationId = await this.prisma.$transaction(async (tx) => {
+      const customerId = cu?.customerId ?? (await tx.customer.create({ data: { name: ten, avatarUrl: anh } })).id;
+      if (!cu) await tx.customerIdentity.create({ data: { channel: 'ZALO', externalId: k.userId, customerId } });
+      const c = await tx.conversation.create({
+        data: { customerId, channel: 'ZALO', status: 'READ', mode: 'BOT', lastMessageAt: k.gio, lastMessagePreview: tomTat(k.text || '[Tin nhắn Zalo]') },
+        select: { id: true },
+      });
+      return c.id;
+    });
+    return { conversationId, moi: true };
+  }
+
+  /** Sau khi kéo lịch sử: đưa giờ và dòng xem trước của danh sách về tin mới nhất (chỉ khi mới hơn giá trị đang có). */
+  private async capNhatTomTat(conversationId: string) {
+    const cuoi = await this.prisma.message.findFirst({ where: { conversationId, internal: false }, orderBy: { createdAt: 'desc' }, select: { text: true, createdAt: true } });
+    const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { lastMessageAt: true } });
+    if (cuoi && c && cuoi.createdAt > c.lastMessageAt) {
+      await this.prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: cuoi.createdAt, lastMessagePreview: tomTat(cuoi.text) } });
+    }
+  }
 
   async dongBo(conversationId: string, toiDa = 50): Promise<{ them: number; tong: number }> {
     const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { channel: true, customerId: true } });
@@ -57,5 +134,24 @@ export class ZaloSyncController {
   @HttpCode(200)
   dongBo(@Param('id', ParseUUIDPipe) id: string) {
     return this.sync.dongBo(id);
+  }
+}
+
+@Controller('channel-settings/zalo')
+export class ZaloImportController {
+  constructor(private sync: ZaloSyncService) {}
+
+  /** Bắt đầu nhập khách cũ (chạy nền). Chỉ ADMIN. */
+  @Roles(Role.ADMIN)
+  @Post('import-old')
+  @HttpCode(200)
+  batDau() {
+    return this.sync.batDauNhapKhachCu();
+  }
+
+  @Roles(Role.ADMIN)
+  @Get('import-status')
+  tienDo() {
+    return this.sync.layTienDo();
   }
 }

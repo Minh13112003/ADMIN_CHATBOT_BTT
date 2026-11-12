@@ -9,11 +9,11 @@ export const STATUS: Record<Status, { label: string; className: string }> = {
 };
 export const STATUS_LIST: Status[] = ['CONTACT', 'UNREAD', 'READ', 'PENDING', 'CLOSED'];
 
-// Zalo và Facebook chưa kết nối: connected = false thì nút lọc bị khoá.
+// Facebook chưa kết nối: connected = false thì nút lọc bị khoá. Zalo đã nối từ 2026-11-12.
 export const CHANNEL: Record<Channel, { label: string; short: string; bot: string; className: string; connected: boolean }> = {
   WEB: { label: 'bttAI Web', short: 'Web', bot: 'bttAI', className: 'bg-blue-soft text-blue-ink', connected: true },
   APP: { label: 'bttAI App', short: 'App', bot: 'bttAI', className: 'bg-green-soft text-green-ink', connected: true },
-  ZALO: { label: 'Zalo OA', short: 'Zalo', bot: 'Bot Zalo', className: 'bg-blue-soft text-blue-ink', connected: false },
+  ZALO: { label: 'Zalo OA', short: 'Zalo', bot: 'Bot Zalo', className: 'bg-blue-soft text-blue-ink', connected: true },
   FACEBOOK: { label: 'Facebook', short: 'Facebook', bot: 'Bot Facebook', className: 'bg-purple-soft text-purple-ink', connected: false },
 };
 export const CHANNEL_LIST: Channel[] = ['WEB', 'APP', 'ZALO', 'FACEBOOK'];

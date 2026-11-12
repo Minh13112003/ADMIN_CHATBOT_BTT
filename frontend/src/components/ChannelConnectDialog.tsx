@@ -20,6 +20,40 @@ function DiaChi({ nhan, gia }: { nhan: string; gia: string }) {
 }
 
 /** Hộp nhập thông tin kết nối Zalo OA / Facebook. Giá trị bí mật chỉ gửi lên, không bao giờ hiện lại (chỉ thấy đuôi 4 ký tự). */
+type TienDo = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; ketThuc: string | null };
+
+/** Nhập các khách đã nhắn OA từ trước khi nối (webhook chỉ báo tin mới). Chạy nền ở server, đây chỉ bấm và xem tiến độ. */
+function NhapKhachCu() {
+  const { data, mutate } = useSWR<TienDo>('/channel-settings/zalo/import-status', fetcher, { refreshInterval: (d) => (d?.dang ? 2000 : 0) });
+  const [loi, setLoi] = useState('');
+  const bat = async () => {
+    setLoi('');
+    try {
+      await api('/channel-settings/zalo/import-old', { method: 'POST', body: {} });
+      await mutate();
+    } catch (e) {
+      setLoi(loiCua(e));
+    }
+  };
+  const xongRoi = data && !data.dang && data.ketThuc;
+  return (
+    <div className="flex flex-col gap-1.5 rounded-xl border border-line bg-page p-3">
+      <p className="text-xs text-body">Lấy các khách đã nhắn OA trước khi kết nối (tối đa 300 khách gần nhất) cùng tin cũ của họ. Khách hiện trong Hộp thư với trạng thái <strong>Đã xem</strong>, không báo nhân viên. Cần kết nối Zalo xong trước. Có thể mất vài phút, bạn đóng hộp này cũng được.</p>
+      {data?.dang && (
+        <p role="status" className="text-sm font-medium">Đang nhập: {data.xong}/{data.tong || '?'} khách, đã thêm {data.khachMoi} khách mới và {data.tinThem} tin{data.loi ? `, ${data.loi} lỗi` : ''}...</p>
+      )}
+      {xongRoi && !data.lyDo && (
+        <p role="status" className="rounded-lg border border-green-soft bg-green-soft/40 px-3 py-2 text-sm text-green-ink">
+          Xong: {data.xong} khách ({data.khachMoi} khách mới), thêm {data.tinThem} tin{data.loi ? `, ${data.loi} khách lỗi` : ''}. Tải lại Hộp thư để xem.
+        </p>
+      )}
+      {xongRoi && data.lyDo && <ErrorText>{data.lyDo}</ErrorText>}
+      <ErrorText>{loi}</ErrorText>
+      <button type="button" disabled={data?.dang} onClick={() => void bat()} className={`${secondaryClass} self-start`}>{data?.dang ? 'Đang nhập...' : xongRoi ? 'Nhập lại' : 'Nhập khách cũ từ Zalo'}</button>
+    </div>
+  );
+}
+
 export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { channel: 'ZALO' | 'FACEBOOK'; title: string; onClose: () => void; onSaved: () => void }) {
   const key = `/channel-settings/${channel}`;
   const { data, error, mutate } = useSWR<Settings>(key, fetcher);
@@ -151,6 +185,7 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
             <button type="button" disabled={dang || !data?.fields.find((f) => f.name === 'appId')?.set || !data?.fields.find((f) => f.name === 'appSecret')?.set} onClick={() => void ketNoiZalo()} className={`${primaryClass} self-start`}>Kết nối với Zalo</button>
           </div>
         )}
+        {channel === 'ZALO' && <NhapKhachCu />}
         <ErrorText>{loi}</ErrorText>
         <p className="text-xs text-muted">Sau khi lưu, kênh chỉ chuyển sang "Đã kết nối" khi nhận được tin thật đầu tiên từ khách.</p>
       </div>
