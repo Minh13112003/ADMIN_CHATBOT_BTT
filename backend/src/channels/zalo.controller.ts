@@ -43,6 +43,9 @@ export class ZaloWebhookController {
   @Post('zalo')
   @HttpCode(200)
   async nhan(@Req() req: Request & { rawBody?: Buffer }, @Headers('x-zevent-signature') chuKy: string | undefined, @Headers('mac') macCu: string | undefined) {
+    // Zalo gửi một yêu cầu thử không mang sự kiện khi bấm "Kiểm tra" ở trang ứng dụng và chỉ chấp nhận 200. Không có gì để lưu nên trả 200.
+    const thu = req.body as Record<string, unknown> | undefined;
+    if (!thu || typeof thu.event_name !== 'string') return { ok: true, ping: true };
     const c = await this.zalo.doc();
     if (!c.appId || !c.oaSecretKey) throw new ServiceUnavailableException('Chưa cấu hình App ID và OA Secret Key');
     const goc = req.rawBody?.toString('utf8') ?? '';

@@ -44,6 +44,15 @@ describe('ZaloWebhookController', () => {
     await expect(goi(ctl, tinGia)).rejects.toBeInstanceOf(ServiceUnavailableException);
     expect(ingest.inbound).not.toHaveBeenCalled();
   });
+  it('yêu cầu thử của Zalo (không có sự kiện): trả 200 kể cả khi chưa nhập khoá, không lưu gì', async () => {
+    const { ctl, zalo, ingest } = tao();
+    zalo.doc.mockResolvedValue({});
+    for (const body of [{}, { timestamp: '1' }]) {
+      await expect(ctl.nhan({ rawBody: Buffer.from(JSON.stringify(body)), body } as never, undefined, undefined)).resolves.toEqual({ ok: true, ping: true });
+    }
+    await expect(ctl.nhan({ rawBody: Buffer.from(''), body: undefined } as never, undefined, undefined)).resolves.toEqual({ ok: true, ping: true });
+    expect(ingest.inbound).not.toHaveBeenCalled();
+  });
   it('sự kiện không phải tin khách (OA gửi, theo dõi): bỏ qua', async () => {
     const { ctl, ingest } = tao();
     const r = await goi(ctl, { ...tinGia, event_name: 'oa_send_text' });
