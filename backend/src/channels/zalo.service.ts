@@ -178,15 +178,18 @@ export class ZaloService {
     await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: { recipient: { user_id: zaloUserId }, message: { text } } });
   }
 
-  /** Tên hiển thị của khách; lỗi thì trả null (không chặn việc nhận tin). */
+  /** Tên hiển thị của khách; lỗi thì trả null (không chặn việc nhận tin). Thử bản API mới (v3.0) trước, rồi bản cũ (v2.0). */
   async tenKhach(zaloUserId: string): Promise<string | null> {
-    try {
-      const j = await this.goiApi(`${OPENAPI}/v2.0/oa/getprofile?data=${encodeURIComponent(JSON.stringify({ user_id: zaloUserId }))}`, { method: 'GET' });
-      const ten = j?.data?.display_name;
-      return typeof ten === 'string' && ten.trim() ? ten.trim().slice(0, 120) : null;
-    } catch (e) {
-      this.log.warn(`Không lấy được tên khách Zalo: ${(e as Error).message}`);
-      return null;
+    const data = encodeURIComponent(JSON.stringify({ user_id: zaloUserId }));
+    for (const duong of [`/v3.0/oa/user/detail?data=${data}`, `/v2.0/oa/getprofile?data=${data}`]) {
+      try {
+        const j = await this.goiApi(`${OPENAPI}${duong}`, { method: 'GET' });
+        const ten = j?.data?.display_name;
+        if (typeof ten === 'string' && ten.trim()) return ten.trim().slice(0, 120);
+      } catch (e) {
+        this.log.warn(`Không lấy được tên khách Zalo qua ${duong.split('?')[0]}: ${(e as Error).message}`);
+      }
     }
+    return null;
   }
 }
