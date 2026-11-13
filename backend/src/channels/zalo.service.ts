@@ -25,6 +25,10 @@ export class ZaloService {
   private log = new Logger('Zalo');
   private dangLamMoi: Promise<void> | null = null;
   private cho = new Map<string, { verifier: string; het: number }>();
+  /** Lỗi token gần nhất (làm mới thất bại, Zalo báo token hỏng) để trang Kênh kết nối cảnh báo admin. Giữ trong bộ nhớ. */
+  private loiToken: { luc: string; lyDo: string } | null = null;
+  /** Số lần gửi tin sang Zalo bị lỗi trong ngày (giờ Việt Nam), giữ trong bộ nhớ, khởi động lại thì về 0. */
+  private guiLoi = { ngay: '', so: 0 };
 
   constructor(private prisma: PrismaService, private config: ConfigService, private tep: AttachmentsService) {}
 
@@ -154,6 +158,7 @@ export class ZaloService {
       accessTokenExpiresAt: String(Date.now() + giay * 1000),
       ...(oaId ? { oaId } : {}),
     });
+    this.loiToken = null;
     this.log.log('Đã lưu token Zalo mới');
   }
 
@@ -167,6 +172,7 @@ export class ZaloService {
       if (Number.isFinite(het) && het - Date.now() > TRUOC_HAN_MS) return;
       await this.lamMoiToken();
     } catch (e) {
+      this.loiToken = { luc: new Date().toISOString(), lyDo: (e as Error).message };
       this.log.warn(`Tự làm mới token Zalo không được: ${(e as Error).message}`);
     }
   }
@@ -188,6 +194,11 @@ export class ZaloService {
       return this.goiApi(url, init, false);
     }
     if (j?.error) {
+      if (j.error === -216) this.loiToken = { luc: new Date().toISOString(), lyDo: `Zalo từ chối token (lỗi -216): ${j.message ?? ''}`.trim() };
+      if (url.includes('/message/')) {
+        const ngay = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+        this.guiLoi = this.guiLoi.ngay === ngay ? { ngay, so: this.guiLoi.so + 1 } : { ngay, so: 1 };
+      }
       this.log.error(`Zalo báo lỗi ${j.error}: ${j.message ?? ''}`);
       throw new BadRequestException(`Zalo báo lỗi ${j.error}: ${j.message ?? 'không rõ'}`);
     }
@@ -248,6 +259,22 @@ export class ZaloService {
         message: { attachment: { type: 'template', payload: { template_type: 'request_user_info', elements: [{ title: 'BenThanh Tourist xin thông tin liên hệ', subtitle: 'Anh/chị bấm chia sẻ để tư vấn viên gọi lại và giữ chỗ tour nhanh hơn ạ.', image_url: `${this.goc()}/logo.png` }] } } },
       },
     });
+  }
+
+  /** Tình trạng kết nối cho trang Kênh kết nối (chỉ admin). Không trả giá trị token. */
+  async trangThai() {
+    const c = await this.doc();
+    const rt = await this.prisma.channelSecret.findFirst({ where: { channel: 'ZALO', name: 'refreshToken' }, select: { updatedAt: true } });
+    const ngay = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+    const het = Number(c.accessTokenExpiresAt);
+    return {
+      coToken: !!c.accessToken && !!c.refreshToken,
+      accessTokenHetLuc: Number.isFinite(het) && het > 0 ? new Date(het).toISOString() : null,
+      // Refresh token Zalo sống khoảng 3 tháng và được cấp mới mỗi lần làm mới: tính từ lần lưu gần nhất.
+      refreshTokenHetLuc: rt ? new Date(rt.updatedAt.getTime() + 90 * 86_400_000).toISOString() : null,
+      loiToken: this.loiToken,
+      guiLoiHomNay: this.guiLoi.ngay === ngay ? this.guiLoi.so : 0,
+    };
   }
 
   /** Gửi tin chữ tư vấn cho khách. Zalo chỉ cho nhắn trong khung thời gian sau lần khách tương tác cuối. */

@@ -20,6 +20,12 @@ export class ZaloOAuthController {
     return { url: await this.zalo.taoLinkCapQuyen() };
   }
 
+  @Roles(Role.ADMIN)
+  @Get('status')
+  trangThai() {
+    return this.zalo.trangThai();
+  }
+
   /** Công khai vì Zalo chuyển trình duyệt về đây; an toàn nhờ `state` dùng một lần, hết hạn sau 10 phút. */
   @Public()
   @Get('callback')
