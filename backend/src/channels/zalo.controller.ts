@@ -93,6 +93,10 @@ export class ZaloWebhookController {
     if (oa) {
       try {
         const dk = layDinhKem(body);
+        // Chẩn đoán: tên sự kiện, tên trường, số tệp đọc được (không ghi nội dung, không ghi link).
+        const mm = (body?.message ?? {}) as Record<string, unknown>;
+        const pl = Array.isArray(mm.attachments) ? (mm.attachments as Record<string, unknown>[])[0] : undefined;
+        this.log.log(`Tin OA gửi: ${oa.tenSuKien}; trường message: ${Object.keys(mm).join(',') || '-'}; tệp đọc được: ${dk.length}${pl ? `; loại tệp đầu: ${String(pl.type)}; trường payload: ${Object.keys((pl.payload ?? {}) as object).join(',')}` : ''}`);
         const cacTin = dk.length ? await this.dinhKemThanhTin(dk, oa.text.startsWith('[OA gửi') ? '' : oa.text, 'OA') : [{ text: oa.text }];
         const trichOa = layTrich(body).msgId;
         if (truongLa(body).length) this.log.log(`Tin OA gửi có trường lạ trong message: ${truongLa(body).join(',')}`);

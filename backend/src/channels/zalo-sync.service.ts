@@ -139,7 +139,11 @@ export class ZaloSyncService {
       const t = tin.find((x) => `zalo:${x.msgId}` === cu.externalMessageId);
       // Không lọc theo loại: Zalo có thể trả tin ảnh với loại "text". Tệp tải về được kiểm tra theo nội dung nên link trang web sẽ bị bỏ.
       const tep = t?.url ? await this.zalo.taiTep(t.url, t.ten) : null;
-      if (!tep) continue;
+      if (!tep) {
+        // Không có tệp: cập nhật dòng chữ thay thế cho đúng loại tin (bản cũ ghi chung "OA gửi tin nhắn").
+        if (t && t.text !== cu.text) await this.prisma.message.update({ where: { id: cu.id }, data: { text: t.text } });
+        continue;
+      }
       await this.prisma.message.update({ where: { id: cu.id }, data: { text: t!.chu ?? '', attachmentPath: tep.path, attachmentType: tep.type, attachmentName: tep.name, attachmentSize: tep.size } });
       nangCap++;
     }

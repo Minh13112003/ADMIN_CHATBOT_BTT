@@ -105,6 +105,21 @@ describe('zalo', () => {
     const [t] = chuanHoaLichSu([{ message_id: 'm2', time: 1700000000000, from_id: 'u1', type: 'photo', message: '', url: 'https://z/a.jpg', quote_msg_id: 'm1' }], 'u1');
     expect(t).toMatchObject({ msgId: 'm2', tuKhach: true, url: 'https://z/a.jpg', trichMa: 'm1', loai: 'photo' });
   });
+  it('lịch sử theo dữ liệu Zalo thật: ảnh lấy chữ ở description, nosupport và tin không có type ghi rõ là không xem được', () => {
+    const [anh, ns, rong] = chuanHoaLichSu(
+      [
+        { message_id: 'a', time: 1, src: 1, type: 'photo', thumb: 'https://z/t.jpg', url: 'https://z/a.jpg', description: 'Ảnh hộ chiếu' },
+        { message_id: 'b', time: 2, src: 0, type: 'nosupport' },
+        { message_id: 'c', time: 3, src: 0, from_avatar: 'https://z/avt.jpg' },
+      ],
+      'u1',
+    );
+    expect(anh).toMatchObject({ url: 'https://z/a.jpg', chu: 'Ảnh hộ chiếu' });
+    expect(ns.text).toContain('Zalo không cho xem qua API');
+    expect(ns.url).toBeNull();
+    expect(rong.text).toContain('Zalo không cho xem qua API');
+    expect(rong.url).toBeNull();
+  });
   it('lịch sử: tin loại text không có chữ vẫn tìm link lồng nhau, bỏ ảnh đại diện; tin có chữ thì không lấy link', () => {
     const [a, b] = chuanHoaLichSu(
       [

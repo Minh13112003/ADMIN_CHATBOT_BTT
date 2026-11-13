@@ -218,9 +218,17 @@ export function chuanHoaLichSu(raw: unknown, zaloUserId: string): TinLichSu[] {
     const gio = Number.isFinite(ms) && ms > 0 ? new Date(ms) : typeof m.sent_time === 'string' ? new Date(m.sent_time) : null;
     if (!msgId || !gio || Number.isNaN(gio.getTime())) continue;
     const tuKhach = m.from_id !== undefined && m.from_id !== null ? String(m.from_id) === zaloUserId : Number(m.src) === 1;
-    const chu = typeof m.message === 'string' ? m.message.trim() : '';
-    const loai = typeof m.type === 'string' ? m.type : 'text';
-    const text = loai === 'text' && chu ? chu : `${chu ? `${chu} ` : ''}[${tuKhach ? 'Khách' : 'OA'} gửi ${loai === 'text' ? 'tin nhắn' : loai} qua Zalo, xem trên Zalo OA]`;
+    // Đã kiểm chứng với Zalo thật (2026-11-13): ảnh có `thumb`, `url`, `description` (chữ kèm ảnh); sticker có `url`; link có `links`;
+    // `nosupport` và tin không có `type` không kèm nội dung gì (tệp PDF, tin thoại, thẻ...). Lịch sử không có thông tin trích dẫn.
+    const chu = [m.message, m.description].find((x) => typeof x === 'string' && x.trim())?.trim() ?? '';
+    const loai = typeof m.type === 'string' ? m.type : 'khac';
+    const ai = tuKhach ? 'Khách' : 'OA';
+    const text =
+      loai === 'text' && chu
+        ? chu
+        : loai === 'nosupport' || loai === 'khac' || (loai === 'text' && !chu)
+          ? `[${ai} gửi tệp, tin thoại hoặc nội dung Zalo không cho xem qua API, xem trên Zalo OA]`
+          : `${chu ? `${chu} ` : ''}[${ai} gửi ${loai} qua Zalo, xem trên Zalo OA]`;
     // Ảnh, sticker, tệp: link nằm ở `url`, `thumb` hoặc `links[0].url` (chưa kiểm chứng tài liệu, đọc phòng thủ).
     // Có tin ảnh Zalo trả loại "text" mà không có chữ, nên tin không có chữ cũng tìm link (mọi trường, trừ ảnh đại diện).
     const lk = Array.isArray(m.links) ? (m.links[0] as Record<string, unknown> | undefined) : undefined;

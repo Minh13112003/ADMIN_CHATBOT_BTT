@@ -19,8 +19,9 @@
 | Nhập khách cũ từ Zalo | Đã chạy thật | Lần đầu lỗi do thiếu migration |
 | Tin OA gửi trên ứng dụng Zalo (`oa_send_*`) | Chỉ test giả | Từ 2026-11-13. Tin trước giờ cập nhật VPS không về, phải Đồng bộ tin cũ |
 | Ảnh/PDF/sticker khách gửi qua webhook | Chỉ test giả | Tên trường `message.attachments[].payload.url` chưa kiểm chứng |
-| Ảnh/PDF khi kéo tin cũ, nâng cấp tin "xem trên Zalo OA" | Chỉ test giả | Tên trường link (`url`, `thumb`, `links`) chưa kiểm chứng; log "Lịch sử Zalo có tin loại..." |
-| Trích dẫn (reply): webhook, tin OA, tin cũ | Chỉ test giả | Tên trường (`quote_msg_id`, `quote`...) chưa kiểm chứng; log "trường lạ trong message" |
+| Ảnh/sticker khi kéo tin cũ | Đã kiểm chứng định dạng | Log thật 2026-11-13: `photo` có `thumb,url,description`; `sticker` có `url`; `link` có `links`. `nosupport` và tin không có `type` KHÔNG kèm nội dung (tệp PDF, tin thoại...): không lấy được, chỉ ghi dòng báo |
+| Trích dẫn (reply) tin cũ | Không làm được | API lịch sử Zalo không trả thông tin trích dẫn |
+| Trích dẫn (reply) qua webhook, tin OA | Chỉ test giả | Tên trường (`quote_msg_id`, `quote`...) chưa kiểm chứng; log "trường lạ trong message" |
 | Khách thả cảm xúc → log nội bộ | Chỉ test giả | Tên sự kiện chưa kiểm chứng; log "Bỏ qua sự kiện Zalo" |
 | Chatbot AI tự trả lời Zalo | Chưa làm | Đã có hướng (webhook gọi chatbot), chờ chủ dự án quyết |
 | Xin SĐT qua Zalo bằng thẻ `request_user_info` | Đã bỏ nút | 2026-11-13: thẻ bắt quét QR trên Zalo PC, form nhiều ô. Chủ dự án chọn dùng mẫu trả lời nhanh "Xin số điện thoại" (phím tắt `sdt`, migration `20261113150000_mau_xin_sdt`). API và sự kiện `user_submit_info` còn trong backend, không có nút gọi |
