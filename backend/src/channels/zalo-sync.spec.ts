@@ -46,6 +46,20 @@ describe('ZaloSyncService', () => {
     const { svc } = tao({ gan: [{ text: 'Tour Đà Lạt', createdAt: new Date(t0 + 120_000 + 5000), senderType: 'CUSTOMER' }] });
     await expect(svc.dongBo('c1')).resolves.toEqual({ them: 2, tong: 3 });
   });
+  it('tin ảnh có link: tải về gắn tệp; tin cũ chỉ có dòng chữ thay thế thì được nâng cấp', async () => {
+    const tep = { path: 'p.jpg', type: 'image/jpeg', name: 'a.jpg', size: 9 };
+    const lichSu = [
+      { msgId: 'a', tuKhach: false, text: '[OA gửi photo qua Zalo, xem trên Zalo OA]', thoiGian: new Date(t0), loai: 'photo', url: 'https://z/a.jpg', ten: null, chu: '' },
+      { msgId: 'b', tuKhach: true, text: '[Khách gửi file qua Zalo, xem trên Zalo OA]', thoiGian: new Date(t0 + 1000), loai: 'file', url: 'https://z/b.pdf', ten: 'b.pdf', chu: '' },
+    ];
+    const t = tao({ lichSu, daCoMa: [] });
+    t.prisma.message.findMany.mockReset().mockResolvedValueOnce([{ id: 'm1', externalMessageId: 'zalo:a', text: lichSu[0].text, attachmentPath: null }]).mockResolvedValueOnce([]);
+    (t.zalo as Record<string, unknown>).taiTep = jest.fn().mockResolvedValue(tep);
+    (t.prisma.message as Record<string, unknown>).update = jest.fn().mockResolvedValue({});
+    await expect(t.svc.dongBo('c1')).resolves.toEqual({ them: 1, tong: 2 });
+    expect((t.prisma.message as unknown as { update: jest.Mock }).update).toHaveBeenCalledWith({ where: { id: 'm1' }, data: expect.objectContaining({ text: '', attachmentPath: 'p.jpg' }) });
+    expect(t.prisma.message.createMany.mock.calls[0][0].data[0]).toMatchObject({ text: '', attachmentPath: 'p.jpg', senderType: 'CUSTOMER' });
+  });
   it('không có gì mới thì không ghi và không báo làm mới', async () => {
     const { svc, prisma, realtime } = tao({ daCoMa: ['a', 'b', 'c'] });
     await expect(svc.dongBo('c1')).resolves.toEqual({ them: 0, tong: 3 });

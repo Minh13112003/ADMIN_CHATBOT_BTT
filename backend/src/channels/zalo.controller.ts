@@ -1,7 +1,7 @@
 import { Controller, Get, Headers, HttpCode, Logger, Post, Query, Req, Res, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public, Roles } from '../auth/auth.decorators';
-import { chuKyHopLe, layDinhKem, layTrich, phanTichOa, phanTichPhanUng, phanTichSuKien, thuCongThuc, type DinhKemZalo } from '../common/zalo';
+import { chuKyHopLe, layDinhKem, layTrich, phanTichOa, phanTichPhanUng, phanTichSuKien, thuCongThuc, truongLa, type DinhKemZalo } from '../common/zalo';
 import type { TepDaLuu } from '../storage/attachments.service';
 import { Role } from '../generated/prisma/client';
 import { IngestService } from '../ingest/ingest.service';
@@ -88,7 +88,9 @@ export class ZaloWebhookController {
       try {
         const dk = layDinhKem(body);
         const cacTin = dk.length ? await this.dinhKemThanhTin(dk, oa.text.startsWith('[OA gửi') ? '' : oa.text, 'OA') : [{ text: oa.text }];
-        for (const [i, t] of cacTin.entries()) await this.ingest.oaGui({ userId: oa.userId, text: t.text, msgId: oa.msgId ? (i ? `${oa.msgId}:${i}` : oa.msgId) : null, file: t.file });
+        const trichOa = layTrich(body).msgId;
+        if (truongLa(body).length) this.log.log(`Tin OA gửi có trường lạ trong message: ${truongLa(body).join(',')}`);
+        for (const [i, t] of cacTin.entries()) await this.ingest.oaGui({ userId: oa.userId, text: t.text, msgId: oa.msgId ? (i ? `${oa.msgId}:${i}` : oa.msgId) : null, file: t.file, ...(trichOa && !i ? { trichMa: trichOa } : {}) });
       } catch (err) {
         this.log.warn(`Không ghi được tin OA gửi: ${(err as Error).message}`);
       }
@@ -107,6 +109,8 @@ export class ZaloWebhookController {
     }
     const dinhKem = layDinhKem(body);
     const trich = layTrich(body);
+    // Chẩn đoán: Zalo gửi thêm trường nào (ví dụ thông tin trích dẫn) mà mình chưa đọc. Chỉ ghi tên trường.
+    if (truongLa(body).length) this.log.log(`Tin khách Zalo có trường lạ trong message: ${truongLa(body).join(',')}; đọc được trích dẫn: ${trich.msgId || trich.text ? 'có' : 'không'}`);
     const goc2 = trich.msgId ? await this.prisma.message.findUnique({ where: { externalMessageId: `zalo:${trich.msgId}` }, select: { id: true } }) : null;
     const tienTo = !goc2 && trich.text ? `[Trả lời: "${trich.text}"] ` : '';
     const cacTin = !e.laText && dinhKem.length ? await this.dinhKemThanhTin(dinhKem, typeof m.text === 'string' ? m.text.trim() : '', 'Khách') : [{ text: e.text }];

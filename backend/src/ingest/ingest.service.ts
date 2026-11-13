@@ -220,7 +220,7 @@ export class IngestService {
    * Không gửi lại sang Zalo, không chạy quy tắc tự động. Tin vừa gửi từ chính trang này cũng được Zalo báo lại nên bỏ qua
    * nếu cùng nội dung đã có trong 2 phút gần nhất. Khách chưa có trong hệ thống thì bỏ qua (tin cũ sẽ được kéo về khi khách nhắn).
    */
-  async oaGui(a: { userId: string; text: string; msgId: string | null; file?: TepDaLuu }): Promise<{ saved: boolean }> {
+  async oaGui(a: { userId: string; text: string; msgId: string | null; file?: TepDaLuu; trichMa?: string | null }): Promise<{ saved: boolean }> {
     const ma = a.msgId ? `zalo:${a.msgId}` : undefined;
     if (ma && (await this.daCoTin(ma))) return { saved: false };
     const dt = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: a.userId } }, select: { customerId: true } });
@@ -232,9 +232,10 @@ export class IngestService {
       select: { id: true },
     });
     if (trung) return { saved: false };
+    const goc = a.trichMa ? await this.prisma.message.findFirst({ where: { externalMessageId: `zalo:${a.trichMa}`, conversationId: conv.id }, select: { id: true } }) : null;
     const [message] = await this.prisma.$transaction([
       this.prisma.message.create({
-        data: { conversationId: conv.id, senderType: 'STAFF', staffLabel: 'Zalo OA', text: a.text, externalMessageId: ma, createdAt: now, ...(a.file ? { attachmentPath: a.file.path, attachmentType: a.file.type, attachmentName: a.file.name, attachmentSize: a.file.size } : {}) },
+        data: { conversationId: conv.id, senderType: 'STAFF', staffLabel: 'Zalo OA', text: a.text, externalMessageId: ma, createdAt: now, ...(goc ? { replyToId: goc.id } : {}), ...(a.file ? { attachmentPath: a.file.path, attachmentType: a.file.type, attachmentName: a.file.name, attachmentSize: a.file.size } : {}) },
       }),
       this.prisma.conversation.update({
         where: { id: conv.id },

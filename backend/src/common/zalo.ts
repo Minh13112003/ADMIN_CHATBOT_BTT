@@ -94,6 +94,13 @@ export function layTrich(body: unknown): { msgId: string | null; text: string | 
 
 export type TinOa = { userId: string; msgId: string | null; text: string; tenSuKien: string; timestamp: string };
 
+/** Tên trường của `message` ngoài các trường đã biết: dùng ghi log chẩn đoán (không ghi nội dung). */
+export function truongLa(body: unknown): string[] {
+  const m = (body as { message?: unknown } | null)?.message;
+  if (!m || typeof m !== 'object') return [];
+  return Object.keys(m).filter((k) => !['text', 'msg_id', 'attachments'].includes(k));
+}
+
 /** Tin do chính OA gửi (nhân viên trả lời ngay trên ứng dụng Zalo): người nhận là khách. Không phải oa_send_* thì null. */
 export function phanTichOa(body: unknown): TinOa | null {
   if (!body || typeof body !== 'object') return null;
@@ -167,7 +174,8 @@ export function thuCongThuc(header: string | undefined, appId: string, raw: stri
   return ra;
 }
 
-export type TinLichSu = { msgId: string; tuKhach: boolean; text: string; thoiGian: Date };
+/** `url`: link tệp của Zalo nếu là ảnh/tệp; `chu`: chữ gốc kèm theo (có thể rỗng). */
+export type TinLichSu = { msgId: string; tuKhach: boolean; text: string; thoiGian: Date; loai?: string; url?: string | null; ten?: string | null; chu?: string; trichMa?: string | null };
 
 /**
  * Chuẩn hoá danh sách tin của API lịch sử hội thoại Zalo (chưa đối chiếu tài liệu chính thức nên đọc rộng rãi):
@@ -188,7 +196,11 @@ export function chuanHoaLichSu(raw: unknown, zaloUserId: string): TinLichSu[] {
     const chu = typeof m.message === 'string' ? m.message.trim() : '';
     const loai = typeof m.type === 'string' ? m.type : 'text';
     const text = loai === 'text' && chu ? chu : `${chu ? `${chu} ` : ''}[${tuKhach ? 'Khách' : 'OA'} gửi ${loai === 'text' ? 'tin nhắn' : loai} qua Zalo, xem trên Zalo OA]`;
-    ra.push({ msgId, tuKhach, text: text.slice(0, 4000), thoiGian: gio });
+    // Ảnh, sticker, tệp: link nằm ở `url`, `thumb` hoặc `links[0].url` (chưa kiểm chứng tài liệu, đọc phòng thủ).
+    const lk = Array.isArray(m.links) ? (m.links[0] as Record<string, unknown> | undefined) : undefined;
+    const url = loai === 'text' ? null : ([m.url, m.thumb, m.href, lk?.url, lk?.thumb].find(https) ?? null);
+    const ten = [m.name, m.file_name, lk?.title].find((x) => typeof x === 'string' && x.trim()) as string | undefined;
+    ra.push({ msgId, tuKhach, text: text.slice(0, 4000), thoiGian: gio, loai, url, ten: ten?.trim().slice(0, 200) ?? null, chu, trichMa: layTrich({ message: m }).msgId });
   }
   return ra.sort((a, b) => a.thoiGian.getTime() - b.thoiGian.getTime());
 }

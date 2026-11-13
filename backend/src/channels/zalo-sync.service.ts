@@ -99,27 +99,51 @@ export class ZaloSyncService {
     const tin = await this.zalo.layLichSu(danhTinh.externalId, toiDa);
     if (!tin.length) return { them: 0, tong: 0 };
 
-    const daCoMa = await this.prisma.message.findMany({ where: { externalMessageId: { in: tin.map((t) => `zalo:${t.msgId}`) } }, select: { externalMessageId: true } });
+    const daCoMa = await this.prisma.message.findMany({ where: { externalMessageId: { in: tin.map((t) => `zalo:${t.msgId}`) } }, select: { id: true, externalMessageId: true, text: true, attachmentPath: true } });
     const maCo = new Set(daCoMa.map((m) => m.externalMessageId));
+    // Tin đã có nhưng trước đây chỉ ghi dòng "xem trên Zalo OA": nay tải được ảnh/PDF thì gắn tệp vào đúng tin đó.
+    let nangCap = 0;
+    for (const cu of daCoMa) {
+      if (cu.attachmentPath || !cu.text?.includes('xem trên Zalo OA')) continue;
+      const t = tin.find((x) => `zalo:${x.msgId}` === cu.externalMessageId);
+      const tep = t?.url && /^(photo|image|sticker|gif|file)$/i.test(t.loai ?? '') ? await this.zalo.taiTep(t.url, t.ten) : null;
+      if (!tep) continue;
+      await this.prisma.message.update({ where: { id: cu.id }, data: { text: t!.chu ?? '', attachmentPath: tep.path, attachmentType: tep.type, attachmentName: tep.name, attachmentSize: tep.size } });
+      nangCap++;
+    }
+    if (nangCap) this.realtime.emit('conversation:update', { id: conversationId });
     // Tin nhận trực tiếp qua webhook có thể mang mã khác với mã trong lịch sử: so thêm theo nội dung và giờ.
     const tuGio = new Date(tin[0].thoiGian.getTime() - 5 * 60_000);
     const gan = await this.prisma.message.findMany({ where: { conversationId, senderType: { in: ['CUSTOMER', 'STAFF'] }, createdAt: { gte: tuGio } }, select: { text: true, createdAt: true, senderType: true } });
     const trung = (t: (typeof tin)[number]) => gan.some((g) => g.text === t.text && (g.senderType === 'CUSTOMER') === t.tuKhach && Math.abs(g.createdAt.getTime() - t.thoiGian.getTime()) < 3 * 60_000);
     const moi = tin.filter((t) => !maCo.has(`zalo:${t.msgId}`) && !trung(t));
-    if (!moi.length) return { them: 0, tong: tin.length };
+    if (!moi.length) {
+      if (nangCap) this.realtime.emit('message:new', { conversationId });
+      return { them: 0, tong: tin.length };
+    }
 
-    await this.prisma.message.createMany({
-      data: moi.map((t) => ({
+    const data = [];
+    for (const t of moi) {
+      // Ảnh/PDF: tải về lưu để xem trong khung chat; không tải được thì giữ dòng chữ thay thế.
+      const tep = t.url && /^(photo|image|sticker|gif|file)$/i.test(t.loai ?? '') ? await this.zalo.taiTep(t.url, t.ten) : null;
+      data.push({
         conversationId,
         senderType: t.tuKhach ? ('CUSTOMER' as const) : ('STAFF' as const),
         ...(t.tuKhach ? {} : { staffLabel: 'Zalo OA' }),
-        text: t.text,
+        text: tep ? (t.chu ?? '') : t.text,
         externalMessageId: `zalo:${t.msgId}`,
         createdAt: t.thoiGian,
-      })),
-      skipDuplicates: true,
-    });
+        ...(tep ? { attachmentPath: tep.path, attachmentType: tep.type, attachmentName: tep.name, attachmentSize: tep.size } : {}),
+      });
+    }
+    await this.prisma.message.createMany({ data, skipDuplicates: true });
+    // Tin trả lời (trích) một tin khác: nối sau khi đã ghi, vì tin được trích có thể nằm ngay trong đợt này.
+    for (const t of moi.filter((x) => x.trichMa)) {
+      const goc = await this.prisma.message.findFirst({ where: { conversationId, externalMessageId: `zalo:${t.trichMa}` }, select: { id: true } });
+      if (goc) await this.prisma.message.updateMany({ where: { externalMessageId: `zalo:${t.msgId}`, replyToId: null }, data: { replyToId: goc.id } });
+    }
     this.realtime.emit('conversation:update', { id: conversationId });
+    this.realtime.emit('message:new', { conversationId });
     return { them: moi.length, tong: tin.length };
   }
 }

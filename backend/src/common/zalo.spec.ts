@@ -101,4 +101,8 @@ describe('zalo', () => {
     expect(phanTichPhanUng({ event_name: 'user_reacted_message', sender: { id: 'u1' }, message: { msg_id: 'm1', react_icon: '/-heart' } })).toEqual({ userId: 'u1', msgId: 'm1', camXuc: 'thả tim' });
     expect(phanTichPhanUng({ event_name: 'user_send_text', sender: { id: 'u1' } })).toBeNull();
   });
+  it('lịch sử: đọc mã tin được trích dẫn và link ảnh', () => {
+    const [t] = chuanHoaLichSu([{ message_id: 'm2', time: 1700000000000, from_id: 'u1', type: 'photo', message: '', url: 'https://z/a.jpg', quote_msg_id: 'm1' }], 'u1');
+    expect(t).toMatchObject({ msgId: 'm2', tuKhach: true, url: 'https://z/a.jpg', trichMa: 'm1', loai: 'photo' });
+  });
 });

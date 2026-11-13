@@ -228,6 +228,9 @@ export class ZaloService {
       // Chẩn đoán định dạng: chỉ ghi số lượng và tên trường (không ghi nội dung tin của khách).
       const dau = Array.isArray(j?.data) ? j.data[0] : undefined;
       this.log.log(`Lịch sử Zalo offset ${offset}: ${Array.isArray(j?.data) ? j.data.length : 'không phải mảng'} tin, đọc được ${mang.length}; trường tin đầu: ${dau && typeof dau === 'object' ? Object.keys(dau).join(',') : '-'}; khoá cấp ngoài: ${j && typeof j === 'object' ? Object.keys(j).join(',') : '-'}`);
+      // Chẩn đoán tin ảnh/tệp: chỉ ghi loại và tên trường để biết link tệp nằm ở đâu.
+      const khac = Array.isArray(j?.data) ? (j.data as Record<string, unknown>[]).find((x) => x && x.type && x.type !== 'text') : undefined;
+      if (khac) this.log.log(`Lịch sử Zalo có tin loại ${String(khac.type)}; trường: ${Object.keys(khac).join(',')}; đọc được link: ${mang.some((t) => t.url) ? 'có' : 'không'}`);
       tat.push(...mang);
       if (!Array.isArray(j?.data) || j.data.length < 10) break;
     }

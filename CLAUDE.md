@@ -11,4 +11,6 @@ Người dùng nói tiếng Việt, không phải lúc nào cũng chuyên về k
 @.claude/rules/frontend.md
 @.claude/rules/integrations.md
 
+**Đầu phiên đọc [docs/trang-thai-tinh-nang.md](docs/trang-thai-tinh-nang.md), cuối mỗi việc cập nhật nó** (trạng thái, nhật ký, có migration hay không). Chỉ ghi "Đã chạy thật" khi chủ dự án xác nhận đã thử trên VPS.
+
 Tài liệu chi tiết: [docs/ingest-api.md](docs/ingest-api.md) (hợp đồng API cho chatbot), [docs/data-model.md](docs/data-model.md) (bảng dữ liệu), [docs/roadmap.md](docs/roadmap.md) (việc chưa làm).
