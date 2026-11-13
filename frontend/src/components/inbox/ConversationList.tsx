@@ -143,24 +143,34 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
           {data?.items.map((c) => {
             const lh = c.status === 'CONTACT';
             const dangChon = c.id === selected;
+            const chuaXem = c.status === 'UNREAD';
             return (
               <button
                 key={c.id}
                 type="button"
                 onClick={() => onSelect(c.id)}
                 aria-current={dangChon}
-                className={`relative aria-[current=true]:shadow-[inset_3px_0_var(--color-brand)] [:root[data-density=compact]_&]:py-[0.4rem] flex w-full gap-3 border-b border-line-soft px-4 py-4 text-left hover:bg-page ${dangChon ? 'bg-brand-soft' : lh ? 'bg-brand-faint' : 'bg-surface'}`}
+                className={`relative aria-[current=true]:shadow-[inset_3px_0_var(--color-brand)] [:root[data-density=compact]_&]:py-[0.4rem] flex w-full gap-3 border-b border-line-soft px-4 py-4 text-left hover:bg-page ${dangChon ? 'bg-brand-soft' : lh ? 'bg-brand-faint shadow-[inset_4px_0_var(--color-brand)]' : chuaXem ? 'bg-blue-soft/50 shadow-[inset_4px_0_var(--color-blue-ink)]' : 'bg-surface'}`}
               >
                 <AnhKhach ten={c.customer.name} anh={c.customer.avatarUrl} className={`flex size-11 shrink-0 items-center justify-center rounded-full font-semibold ${lh ? 'ping bg-status-contact text-white' : 'bg-neutral-soft text-neutral-ink'}`} />
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="flex items-baseline gap-2">
-                    <span className={`min-w-0 flex-1 truncate text-[0.9375rem] ${lh || c.status === 'UNREAD' ? 'font-bold' : 'font-medium'}`}>
+                    <span className={`min-w-0 flex-1 truncate text-[0.9375rem] ${lh ? 'font-extrabold text-brand-text' : chuaXem ? 'font-extrabold text-ink' : 'font-medium'}`}>
                       {c.customer.name}
                     </span>
-                    <span className="shrink-0 text-xs text-muted">{thoiGianTruoc(c.lastMessageAt)}</span>
+                    {lh && (
+                      <span role="img" aria-label="Khách cần nhân viên gấp" title="Khách cần nhân viên gấp" className="shrink-0 text-brand">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" className="animate-pulse">
+                          <path d="M6 9a6 6 0 1 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z" />
+                          <path d="M10 20a2 2 0 0 0 4 0" fill="none" strokeLinecap="round" />
+                        </svg>
+                      </span>
+                    )}
+                    {chuaXem && <span aria-label="Chưa đọc" className="size-2.5 shrink-0 rounded-full bg-blue-ink" />}
+                    <span className={`shrink-0 text-xs ${lh || chuaXem ? 'font-semibold text-ink' : 'text-muted'}`}>{thoiGianTruoc(c.lastMessageAt)}</span>
                   </span>
                   <span className="text-[0.8125rem] text-muted">{dinhDangSo(c.customer.phone)}</span>
-                  <span className="truncate text-[0.8125rem] text-body">{c.lastMessagePreview}</span>
+                  <span className={`truncate text-[0.8125rem] ${lh || chuaXem ? 'font-semibold text-ink' : 'text-body'}`}>{c.lastMessagePreview}</span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-[5px]">
                     <span className={`rounded-[10px] px-2 py-0.5 text-xs font-semibold ${STATUS[c.status].className}`}>{STATUS[c.status].label}</span>
                     <span className={`rounded-[10px] px-2 py-0.5 text-xs font-medium ${CHANNEL[c.channel].className}`}>{CHANNEL[c.channel].label}</span>

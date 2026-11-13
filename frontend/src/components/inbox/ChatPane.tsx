@@ -184,7 +184,7 @@ function TimTinTrongChat({ id, onClose }: { id: string; onClose: () => void }) {
 
 function MessageList({ id, seenAt, onReply, onPin, focusId }: { id: string; seenAt: string | null; onReply: (m: Message) => void; onPin?: (m: Message) => void; focusId?: string | null }) {
   // Mở từ báo cáo nhu cầu tour: tải quanh đúng tin được trỏ tới, rồi cuộn tới và làm nổi bật.
-  const { data, error } = useSWR<{ items: Message[]; hasMore: boolean }>(focusId ? `/conversations/${id}/messages?around=${focusId}` : `/conversations/${id}/messages`, fetcher);
+  const { data, error } = useSWR<{ items: Message[]; hasMore: boolean }>(focusId ? `/conversations/${id}/messages?around=${focusId}` : `/conversations/${id}/messages`, fetcher, { refreshInterval: 20_000 });
   const daCuon = useRef<string | null>(null);
   const [, setSp] = useSearchParams();
   const { data: tags } = useSWR<TourTag[]>(`/conversations/${id}/tour-tags`, fetcher);

@@ -164,6 +164,7 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
         <div
           className={`whitespace-pre-line break-words rounded-[14px_14px_14px_4px] bg-surface px-3 py-2 text-sm leading-normal ${m.isTrigger ? 'border-2 border-brand' : 'border border-line'}`}
         >
+          {m.replyTo && <Trich m={m.replyTo} />}
           {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} />}
           <VanBan text={m.text} tuKhoa={tuKhoa} />
         </div>

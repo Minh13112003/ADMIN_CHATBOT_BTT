@@ -27,7 +27,7 @@ describe('ZaloWebhookController', () => {
     const { ctl, ingest, zalo } = tao();
     await expect(goi(ctl, tinGia)).resolves.toEqual({ ok: true });
     expect(zalo.hoSoKhach).toHaveBeenCalledWith('zalo-user-1');
-    expect(ingest.inbound).toHaveBeenCalledWith({ channel: 'ZALO', externalUserId: 'zalo-user-1', text: 'Cho mình hỏi tour Đà Lạt', externalMessageId: 'zalo:abc123', customer: { name: 'Nguyễn Văn An' } });
+    expect(ingest.inbound).toHaveBeenCalledWith({ channel: 'ZALO', externalUserId: 'zalo-user-1', text: 'Cho mình hỏi tour Đà Lạt', externalMessageId: 'zalo:abc123', customer: { name: 'Nguyễn Văn An' } }, undefined, undefined);
     expect(zalo.guiTin).not.toHaveBeenCalled();
   });
   it('khách mới: kéo tin cũ về (chạy nền); lỗi kéo tin cũ không làm hỏng việc nhận tin', async () => {
@@ -94,11 +94,29 @@ describe('ZaloWebhookController', () => {
     await expect(ctl.nhan({ rawBody: Buffer.from(JSON.stringify(gia)), body: gia } as never, 'mac=khongdung', undefined)).rejects.toBeInstanceOf(UnauthorizedException);
     expect(ingest.inbound).not.toHaveBeenCalled();
   });
-  it('sự kiện không phải tin khách (OA gửi, theo dõi): bỏ qua', async () => {
+  it('sự kiện theo dõi: bỏ qua, không lưu', async () => {
     const { ctl, ingest } = tao();
-    const r = await goi(ctl, { ...tinGia, event_name: 'oa_send_text' });
+    const r = await goi(ctl, { ...tinGia, event_name: 'follow' });
     expect(r).toEqual({ ok: true, ignored: true });
     expect(ingest.inbound).not.toHaveBeenCalled();
+  });
+  it('nhân viên trả lời trên ứng dụng Zalo OA (oa_send_text): ghi thành tin nhân viên, không qua luồng tin khách', async () => {
+    const { ctl, ingest } = tao();
+    const oaGui = jest.fn().mockResolvedValue({ saved: true });
+    (ingest as Record<string, unknown>).oaGui = oaGui;
+    const r = await goi(ctl, { ...tinGia, event_name: 'oa_send_text', sender: { id: 'oa-1' }, recipient: { id: 'zalo-user-1' }, message: { text: 'Dạ chào anh', msg_id: 'o1' } });
+    expect(r).toEqual({ ok: true });
+    expect(oaGui).toHaveBeenCalledWith({ userId: 'zalo-user-1', text: 'Dạ chào anh', msgId: 'o1', file: undefined });
+    expect(ingest.inbound).not.toHaveBeenCalled();
+  });
+  it('khách gửi ảnh: tải về lưu, ghi tin kèm tệp; không tải được thì ghi dòng chữ kèm link', async () => {
+    const t = tao();
+    const file = { path: 'a/b.jpg', type: 'image/jpeg', name: 'anh.jpg', size: 10 };
+    (t.zalo as Record<string, unknown>).taiTep = jest.fn().mockResolvedValueOnce(file).mockResolvedValueOnce(null);
+    const body = { ...tinGia, event_name: 'user_send_image', message: { msg_id: 'i1', attachments: [{ type: 'image', payload: { url: 'https://z/1.jpg' } }, { type: 'image', payload: { url: 'https://z/2.jpg' } }] } };
+    await goi(t.ctl, body);
+    expect(t.ingest.inbound).toHaveBeenNthCalledWith(1, expect.objectContaining({ text: '', externalMessageId: 'zalo:i1' }), file, undefined);
+    expect(t.ingest.inbound).toHaveBeenNthCalledWith(2, expect.objectContaining({ text: expect.stringContaining('https://z/2.jpg'), externalMessageId: 'zalo:i1:1' }), undefined, undefined);
   });
   it('khách đòi gặp nhân viên: gửi lại câu báo qua Zalo; tin trùng thì không gửi lại', async () => {
     const a = tao(true, { conversationId: 'c1', action: 'CONTACT', reply: 'Đã báo nhân viên' });

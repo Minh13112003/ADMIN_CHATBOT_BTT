@@ -1,7 +1,8 @@
 import { Controller, Get, Headers, HttpCode, Logger, Post, Query, Req, Res, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public, Roles } from '../auth/auth.decorators';
-import { chuKyHopLe, phanTichSuKien, thuCongThuc } from '../common/zalo';
+import { chuKyHopLe, layDinhKem, layTrich, phanTichOa, phanTichPhanUng, phanTichSuKien, thuCongThuc, type DinhKemZalo } from '../common/zalo';
+import type { TepDaLuu } from '../storage/attachments.service';
 import { Role } from '../generated/prisma/client';
 import { IngestService } from '../ingest/ingest.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -35,12 +36,28 @@ export class ZaloOAuthController {
 }
 
 const TEN_CHUA_RO = 'Khách chưa rõ tên';
+const TEN_DINH_KEM: Record<string, string> = { image: 'ảnh', photo: 'ảnh', file: 'tệp', sticker: 'sticker', gif: 'ảnh động', video: 'video', audio: 'tin thoại', link: 'liên kết' };
 
 /** Zalo gửi tin của khách về đây. */
 @Controller('webhooks')
 export class ZaloWebhookController {
   private log = new Logger('ZaloWebhook');
   constructor(private zalo: ZaloService, private ingest: IngestService, private prisma: PrismaService, private sync: ZaloSyncService) {}
+
+  /**
+   * Đổi tệp đính kèm Zalo thành các tin để ghi: ảnh/PDF tải về lưu trong hệ thống để xem ngay trong khung chat;
+   * loại khác (hoặc tải lỗi) ghi dòng chữ kèm link gốc của Zalo. `caption` (chữ kèm theo) đi với tệp đầu tiên.
+   */
+  private async dinhKemThanhTin(dk: DinhKemZalo[], caption: string, ai: 'Khách' | 'OA'): Promise<{ text: string; file?: TepDaLuu }[]> {
+    const ra: { text: string; file?: TepDaLuu }[] = [];
+    for (const [i, d] of dk.entries()) {
+      const chu = i === 0 ? caption : '';
+      const duocLuu = /^(image|photo|sticker|gif|file)$/i.test(d.loai) ? await this.zalo.taiTep(d.url, d.ten) : null;
+      if (duocLuu) ra.push({ text: chu, file: duocLuu });
+      else ra.push({ text: `${chu ? `${chu} ` : ''}[${ai} gửi ${TEN_DINH_KEM[d.loai] ?? 'tệp'}${d.ten ? ` "${d.ten}"` : ''}: ${d.url}]`.slice(0, 4000) });
+    }
+    return ra;
+  }
 
   @Public()
   @Post('zalo')
@@ -65,8 +82,35 @@ export class ZaloWebhookController {
       this.log.warn(`Từ chối webhook: chữ ký không khớp. ${JSON.stringify({ tenHeader: Object.keys(req.headers ?? {}).filter((h) => /sig|mac|zevent|zalo|x-/i.test(h)), chuKyNhan: chuKy ?? macCu ?? null, timestamp, doDaiNoiDung: goc.length, noiDung: goc.slice(0, 600), coOaSecret: !!c.oaSecretKey, coAppSecret: !!c.appSecret, congThucKhop: thuCongThuc(chuKy ?? macCu, c.appId, goc, timestamp, { appSecret: c.appSecret ?? '', oaSecretKey: c.oaSecretKey ?? '', appId: c.appId, oaId: c.oaId ?? '', accessToken: c.accessToken ?? '', refreshToken: c.refreshToken ?? '' }) })}`);
       throw new UnauthorizedException('Chữ ký không hợp lệ');
     }
+    // Nhân viên trả lời ngay trên ứng dụng Zalo OA: ghi vào hội thoại (không gửi lại, không trả lời tự động).
+    const oa = phanTichOa(body);
+    if (oa) {
+      try {
+        const dk = layDinhKem(body);
+        const cacTin = dk.length ? await this.dinhKemThanhTin(dk, oa.text.startsWith('[OA gửi') ? '' : oa.text, 'OA') : [{ text: oa.text }];
+        for (const [i, t] of cacTin.entries()) await this.ingest.oaGui({ userId: oa.userId, text: t.text, msgId: oa.msgId ? (i ? `${oa.msgId}:${i}` : oa.msgId) : null, file: t.file });
+      } catch (err) {
+        this.log.warn(`Không ghi được tin OA gửi: ${(err as Error).message}`);
+      }
+      return { ok: true };
+    }
+    const pu = phanTichPhanUng(body);
+    if (pu) {
+      await this.ingest.khachThaCamXuc(pu).catch((err: Error) => this.log.warn(`Không ghi được cảm xúc của khách: ${err.message}`));
+      return { ok: true };
+    }
     const e = phanTichSuKien(body);
-    if (!e) return { ok: true, ignored: true };
+    if (!e) {
+      // Chẩn đoán: ghi tên sự kiện và tên trường (không ghi nội dung) để biết Zalo còn gửi loại nào mà mình chưa xử lý.
+      this.log.log(`Bỏ qua sự kiện Zalo: ${String(thu.event_name)}; trường: ${Object.keys(thu).join(',')}; trường message: ${Object.keys(m).join(',') || '-'}`);
+      return { ok: true, ignored: true };
+    }
+    const dinhKem = layDinhKem(body);
+    const trich = layTrich(body);
+    const goc2 = trich.msgId ? await this.prisma.message.findUnique({ where: { externalMessageId: `zalo:${trich.msgId}` }, select: { id: true } }) : null;
+    const tienTo = !goc2 && trich.text ? `[Trả lời: "${trich.text}"] ` : '';
+    const cacTin = !e.laText && dinhKem.length ? await this.dinhKemThanhTin(dinhKem, typeof m.text === 'string' ? m.text.trim() : '', 'Khách') : [{ text: e.text }];
+    cacTin[0] = { ...cacTin[0], text: `${tienTo}${cacTin[0].text}`.trim() };
 
     // Lấy tên và ảnh đại diện từ hồ sơ Zalo khi là khách mới, hoặc khách cũ còn thiếu ảnh / chưa có tên thật.
     const dt = await this.prisma.customerIdentity.findUnique({
@@ -78,7 +122,16 @@ export class ZaloWebhookController {
     const lauRoi = !lanCuoi || Date.now() - lanCuoi.getTime() > 12 * 3600_000;
     const thieu = !dt || !dt.customer.avatarUrl || dt.customer.name === TEN_CHUA_RO || lauRoi;
     const hoSo = thieu ? await this.zalo.hoSoKhach(e.userId) : { ten: null, anh: null };
-    const kq = await this.ingest.inbound({ channel: 'ZALO', externalUserId: e.userId, text: e.text, externalMessageId: e.msgId ? `zalo:${e.msgId}` : undefined, ...(hoSo.ten && !dt ? { customer: { name: hoSo.ten } } : {}) });
+    let kq: Awaited<ReturnType<IngestService['inbound']>> | undefined;
+    for (const [i, t] of cacTin.entries()) {
+      const r = await this.ingest.inbound(
+        { channel: 'ZALO', externalUserId: e.userId, text: t.text, externalMessageId: e.msgId ? `zalo:${e.msgId}${i ? `:${i}` : ''}` : undefined, ...(hoSo.ten && !dt && !i ? { customer: { name: hoSo.ten } } : {}) },
+        t.file,
+        goc2 && !i ? { replyToId: goc2.id } : undefined,
+      );
+      kq ??= r;
+    }
+    if (!kq) return { ok: true };
     if (dt && (hoSo.ten || hoSo.anh)) {
       await this.prisma.customer.update({
         where: { id: dt.customer.id },

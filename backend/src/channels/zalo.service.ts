@@ -2,7 +2,9 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { randomBytes } from 'crypto';
+import { GIOI_HAN_TEP_TOI_DA } from '../common/attachments';
 import { giaiMa, maHoa } from '../common/secret-box';
+import { AttachmentsService, type TepDaLuu } from '../storage/attachments.service';
 import { chuanHoaChatGanDay, chuanHoaLichSu, taoPkce, type ChatGanDay, type TinLichSu } from '../common/zalo';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -24,7 +26,26 @@ export class ZaloService {
   private dangLamMoi: Promise<void> | null = null;
   private cho = new Map<string, { verifier: string; het: number }>();
 
-  constructor(private prisma: PrismaService, private config: ConfigService) {}
+  constructor(private prisma: PrismaService, private config: ConfigService, private tep: AttachmentsService) {}
+
+  /**
+   * Tải ảnh/PDF khách gửi từ link của Zalo (link có thể hết hạn nên lưu về máy chủ ngay).
+   * Không tải được, quá lớn hoặc không phải ảnh/PDF thì trả null để nơi gọi ghi dòng chữ thay thế.
+   */
+  async taiTep(url: string, ten?: string | null): Promise<TepDaLuu | null> {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(20_000) });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const lon = Number(r.headers.get('content-length') ?? 0);
+      if (lon > GIOI_HAN_TEP_TOI_DA) throw new Error('quá lớn');
+      const buffer = Buffer.from(await r.arrayBuffer());
+      if (buffer.length > GIOI_HAN_TEP_TOI_DA) throw new Error('quá lớn');
+      return await this.tep.luu({ buffer, originalname: ten ?? undefined });
+    } catch (e) {
+      this.log.warn(`Không lưu được tệp từ Zalo: ${(e as Error).message}`);
+      return null;
+    }
+  }
 
   private khoa() {
     const k = this.config.get<string>('ENCRYPTION_KEY');

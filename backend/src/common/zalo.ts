@@ -61,6 +61,72 @@ export function phanTichSuKien(body: unknown): SuKienZalo | null {
   return { userId, msgId, text: `${kem}[Khách gửi ${loai} qua Zalo, xem trên Zalo OA]`.slice(0, 4000), laText: false, tenSuKien: ten, timestamp };
 }
 
+export type DinhKemZalo = { loai: string; url: string; ten: string | null };
+
+const https = (x: unknown): x is string => typeof x === 'string' && /^https:\/\//.test(x) && x.length <= 2000;
+
+/**
+ * Tệp đính kèm trong sự kiện webhook (ảnh, tệp, sticker, ảnh động...). Định dạng theo mô tả của Zalo, chưa kiểm chứng:
+ * mỗi phần tử `message.attachments[]` có `type` và `payload.{url|thumbnail, name}`. Thiếu thì trả mảng rỗng.
+ */
+export function layDinhKem(body: unknown): DinhKemZalo[] {
+  const m = (body as { message?: { attachments?: unknown } } | null)?.message;
+  if (!Array.isArray(m?.attachments)) return [];
+  const ra: DinhKemZalo[] = [];
+  for (const a of m!.attachments as Record<string, any>[]) {
+    if (!a || typeof a !== 'object') continue;
+    const p = (a.payload ?? {}) as Record<string, any>;
+    const url = [p.url, p.thumbnail, p.href].find(https);
+    if (!url) continue;
+    ra.push({ loai: typeof a.type === 'string' ? a.type : 'file', url, ten: typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 200) : null });
+  }
+  return ra;
+}
+
+/** Khách trả lời (trích) một tin: mã tin được trích nếu Zalo gửi kèm (chưa kiểm chứng tên trường), thiếu thì null. */
+export function layTrich(body: unknown): { msgId: string | null; text: string | null } {
+  const m = ((body as { message?: Record<string, any> } | null)?.message ?? {}) as Record<string, any>;
+  const q = (m.quote ?? m.quote_message ?? m.reply_to ?? {}) as Record<string, any>;
+  const id = [m.quote_msg_id, q.msg_id, q.message_id].find((x) => typeof x === 'string' && x);
+  const text = [q.text, q.message, m.quote_text].find((x) => typeof x === 'string' && x.trim());
+  return { msgId: typeof id === 'string' ? id : null, text: typeof text === 'string' ? text.trim().slice(0, 300) : null };
+}
+
+export type TinOa = { userId: string; msgId: string | null; text: string; tenSuKien: string; timestamp: string };
+
+/** Tin do chính OA gửi (nhân viên trả lời ngay trên ứng dụng Zalo): người nhận là khách. Không phải oa_send_* thì null. */
+export function phanTichOa(body: unknown): TinOa | null {
+  if (!body || typeof body !== 'object') return null;
+  const b = body as Record<string, any>;
+  const ten = typeof b.event_name === 'string' ? b.event_name : '';
+  if (!ten.startsWith('oa_send_')) return null;
+  const userId = b.recipient?.id;
+  if (typeof userId !== 'string' || !userId) return null;
+  const msgId = typeof b.message?.msg_id === 'string' ? b.message.msg_id : null;
+  const chu = typeof b.message?.text === 'string' ? b.message.text.trim() : '';
+  const loai = ten.replace('oa_send_', '');
+  const text = chu || `[OA gửi ${TEN_LOAI[`user_send_${loai}`] ?? 'nội dung khác'} qua Zalo, xem trên Zalo OA]`;
+  return { userId, msgId, text: text.slice(0, 4000), tenSuKien: ten, timestamp: b.timestamp === undefined ? '' : String(b.timestamp) };
+}
+
+const CAM_XUC: Record<string, string> = {
+  '/-heart': 'thả tim', '/-strong': 'thích', ':>': 'haha', ':o': 'wow', ':-((': 'buồn', ':-h': 'phẫn nộ', ':-*': 'hôn', '/-shit': 'không thích', '/-rose': 'tặng hoa', '/-break': 'tan vỡ',
+};
+
+/** Khách thả cảm xúc vào một tin (sự kiện chứa "react", tên trường chưa kiểm chứng). Không phải thì null. */
+export function phanTichPhanUng(body: unknown): { userId: string; msgId: string | null; camXuc: string } | null {
+  if (!body || typeof body !== 'object') return null;
+  const b = body as Record<string, any>;
+  const ten = typeof b.event_name === 'string' ? b.event_name : '';
+  if (!/react/i.test(ten)) return null;
+  const userId = b.sender?.id;
+  if (typeof userId !== 'string' || !userId) return null;
+  const m = (b.message ?? {}) as Record<string, any>;
+  const ma = [m.react_icon, m.reaction, m.icon, b.react_icon].find((x) => typeof x === 'string' && x);
+  const msgId = [m.msg_id, m.react_msg_id, m.message_id].find((x) => typeof x === 'string' && x);
+  return { userId, msgId: typeof msgId === 'string' ? msgId : null, camXuc: (typeof ma === 'string' && CAM_XUC[ma]) || 'thả cảm xúc' };
+}
+
 /** Mọi cách xếp thứ tự của các tập con khác rỗng. */
 function xepThuTu<T>(mang: T[]): T[][] {
   if (mang.length <= 1) return [mang];

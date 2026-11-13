@@ -1,4 +1,4 @@
-import { chuanHoaChatGanDay, chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
+import { layDinhKem, layTrich, phanTichOa, phanTichPhanUng, chuanHoaChatGanDay, chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
 import { createHash } from 'crypto';
 
 describe('zalo', () => {
@@ -84,5 +84,21 @@ describe('zalo', () => {
   it('chat gần đây: dùng oaId đã biết khi có', () => {
     const kq = chuanHoaChatGanDay([{ from_id: 'oa', to_id: 'u1', time: 1, message: 'x' }, { from_id: 'oa', to_id: 'u2', time: 2, message: 'y' }], 'oa');
     expect(kq.map((k) => k.userId)).toEqual(['u2', 'u1']);
+  });
+  it('tin OA gửi: lấy người nhận, đặt chữ thay thế cho tin không có chữ', () => {
+    expect(phanTichOa({ event_name: 'oa_send_text', sender: { id: 'oa' }, recipient: { id: 'u1' }, message: { text: ' Dạ ', msg_id: 'o1' } })).toMatchObject({ userId: 'u1', msgId: 'o1', text: 'Dạ' });
+    expect(phanTichOa({ event_name: 'oa_send_image', recipient: { id: 'u1' }, message: {} })?.text).toContain('ảnh');
+    expect(phanTichOa({ event_name: 'user_send_text', recipient: { id: 'u1' } })).toBeNull();
+    expect(phanTichOa({ event_name: 'oa_send_text', message: { text: 'x' } })).toBeNull();
+  });
+  it('tệp đính kèm và trích dẫn: đọc đúng, thiếu dữ liệu thì rỗng', () => {
+    expect(layDinhKem({ message: { attachments: [{ type: 'image', payload: { url: 'https://z/a.jpg' } }, { type: 'file', payload: { url: 'http://x', name: 'a.pdf' } }, null] } })).toEqual([{ loai: 'image', url: 'https://z/a.jpg', ten: null }]);
+    expect(layDinhKem({})).toEqual([]);
+    expect(layTrich({ message: { quote_msg_id: 'q1' } })).toEqual({ msgId: 'q1', text: null });
+    expect(layTrich({ message: {} })).toEqual({ msgId: null, text: null });
+  });
+  it('khách thả cảm xúc', () => {
+    expect(phanTichPhanUng({ event_name: 'user_reacted_message', sender: { id: 'u1' }, message: { msg_id: 'm1', react_icon: '/-heart' } })).toEqual({ userId: 'u1', msgId: 'm1', camXuc: 'thả tim' });
+    expect(phanTichPhanUng({ event_name: 'user_send_text', sender: { id: 'u1' } })).toBeNull();
   });
 });

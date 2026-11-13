@@ -116,7 +116,7 @@ export class IngestService {
   }
 
   /** `file`: khách gửi kèm ảnh hoặc PDF (đã qua kiểm tra và đã lưu ở Storage). Tin có thể không có chữ. */
-  async inbound(dto: InboundDto, file?: TepDaLuu): Promise<InboundResult> {
+  async inbound(dto: InboundDto, file?: TepDaLuu, phu?: { replyToId?: string }): Promise<InboundResult> {
     if (dto.externalMessageId) {
       const cu = await this.prisma.message.findUnique({ where: { externalMessageId: dto.externalMessageId } });
       if (cu) return { conversationId: cu.conversationId, action: 'BOT', duplicate: true };
@@ -134,7 +134,7 @@ export class IngestService {
 
       const khachTin = await tx.message.create({
         // Đặt giờ tường minh để câu của khách luôn đứng trước log và câu trả lời tạo ngay sau đó.
-        data: { conversationId: truoc.id, senderType: 'CUSTOMER', text: dto.text, isTrigger: canNguoi, externalMessageId: dto.externalMessageId, createdAt: now, ...(file ? { attachmentPath: file.path, attachmentType: file.type, attachmentName: file.name, attachmentSize: file.size } : {}) },
+        data: { conversationId: truoc.id, senderType: 'CUSTOMER', text: dto.text, isTrigger: canNguoi, externalMessageId: dto.externalMessageId, createdAt: now, ...(phu?.replyToId ? { replyToId: phu.replyToId } : {}), ...(file ? { attachmentPath: file.path, attachmentType: file.type, attachmentName: file.name, attachmentSize: file.size } : {}) },
       });
       const data: Prisma.ConversationUncheckedUpdateInput = {
         lastMessageAt: now,
@@ -213,6 +213,56 @@ export class IngestService {
       this.realtime.emit('contact:new', { id, name: ketQua.sau.customer.name, channel: ketQua.sau.channel, assignee: ketQua.sau.assignee?.fullName ?? null });
     }
     return { conversationId: id, action: ketQua.action, reply: ketQua.reply };
+  }
+
+  /**
+   * Nhân viên trả lời ngay trên ứng dụng Zalo OA (webhook oa_send_*): ghi vào hội thoại như tin nhân viên, nhãn "Zalo OA".
+   * Không gửi lại sang Zalo, không chạy quy tắc tự động. Tin vừa gửi từ chính trang này cũng được Zalo báo lại nên bỏ qua
+   * nếu cùng nội dung đã có trong 2 phút gần nhất. Khách chưa có trong hệ thống thì bỏ qua (tin cũ sẽ được kéo về khi khách nhắn).
+   */
+  async oaGui(a: { userId: string; text: string; msgId: string | null; file?: TepDaLuu }): Promise<{ saved: boolean }> {
+    const ma = a.msgId ? `zalo:${a.msgId}` : undefined;
+    if (ma && (await this.daCoTin(ma))) return { saved: false };
+    const dt = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: a.userId } }, select: { customerId: true } });
+    if (!dt) return { saved: false };
+    const conv = await this.layHoacTaoHoiThoai(this.prisma, dt.customerId, 'ZALO');
+    const now = new Date();
+    const trung = await this.prisma.message.findFirst({
+      where: { conversationId: conv.id, internal: false, senderType: { in: ['STAFF', 'AUTO', 'BOT'] }, text: a.text, createdAt: { gte: new Date(now.getTime() - 2 * 60_000) } },
+      select: { id: true },
+    });
+    if (trung) return { saved: false };
+    const [message] = await this.prisma.$transaction([
+      this.prisma.message.create({
+        data: { conversationId: conv.id, senderType: 'STAFF', staffLabel: 'Zalo OA', text: a.text, externalMessageId: ma, createdAt: now, ...(a.file ? { attachmentPath: a.file.path, attachmentType: a.file.type, attachmentName: a.file.name, attachmentSize: a.file.size } : {}) },
+      }),
+      this.prisma.conversation.update({
+        where: { id: conv.id },
+        data: {
+          lastMessageAt: now,
+          lastMessagePreview: tomTat(a.file ? tomTatDinhKem(a.text, a.file.type, a.file.name) : a.text),
+          // Có người đã trả lời: Liên hệ thành Chờ xử lý, Chưa xem thành Đã xem.
+          ...(conv.status === 'CONTACT' ? { status: 'PENDING' as const } : conv.status === 'UNREAD' ? { status: 'READ' as const } : {}),
+        },
+      }),
+    ]);
+    this.realtime.emit('message:new', { conversationId: conv.id, message: this.raNgoai(message) });
+    this.realtime.emit('conversation:update', { id: conv.id });
+    return { saved: true };
+  }
+
+  /** Khách thả cảm xúc vào một tin: ghi dòng nhật ký nội bộ (chỉ nhân viên thấy), không đổi trạng thái hay xem trước của danh sách. */
+  async khachThaCamXuc(a: { userId: string; msgId: string | null; camXuc: string }): Promise<{ saved: boolean }> {
+    const dt = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: a.userId } }, select: { customerId: true } });
+    if (!dt) return { saved: false };
+    const conv = await this.prisma.conversation.findUnique({ where: { customerId_channel: { customerId: dt.customerId, channel: 'ZALO' } }, select: { id: true } });
+    if (!conv) return { saved: false };
+    const goc = a.msgId ? await this.prisma.message.findUnique({ where: { externalMessageId: `zalo:${a.msgId}` }, select: { text: true } }) : null;
+    const message = await this.prisma.message.create({
+      data: { conversationId: conv.id, senderType: 'SYSTEM', internal: true, text: `Khách ${a.camXuc}${goc ? ` vào tin: "${tomTat(goc.text).slice(0, 60)}"` : ' vào một tin nhắn'}` },
+    });
+    this.realtime.emit('message:new', { conversationId: conv.id, message: this.raNgoai(message) });
+    return { saved: true };
   }
 
   async daCoTin(externalMessageId: string) {
