@@ -194,6 +194,7 @@ model Conversation {
   messages   Message[]
   deals      Deal[]
   tourTags   TourInterestTag[]
+  placeInterests PlaceInterest[]
 
   @@unique([customerId, channel])
   @@index([status, lastMessageAt])
@@ -229,6 +230,7 @@ model Message {
   replyTo      Message?     @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
   replies      Message[]    @relation("ReplyTo")
   tourTags     TourInterestTag[]
+  placeInterests PlaceInterest[]
 
   @@index([conversationId, createdAt])
   @@map("messages")
@@ -395,4 +397,24 @@ model Voucher {
 
   @@index([departmentId])
   @@map("vouchers")
+}
+
+/// Địa điểm khách tự hỏi, máy nhận ra từ tin của khách ("tour TQ" -> Trung Quốc), chốt 2026-11-13.
+/// Mỗi khách mỗi địa điểm chỉ một dòng trong một ngày (giờ Việt Nam), giữ tin đầu tiên của ngày làm bằng chứng.
+model PlaceInterest {
+  id             String   @id @default(uuid())
+  conversationId String
+  customerId     String
+  messageId      String
+  place          String // Tên chuẩn, vd "Trung Quốc"
+  day            String // YYYY-MM-DD giờ Việt Nam
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  message      Message      @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, place, day])
+  @@index([createdAt])
+  @@index([conversationId])
+  @@map("place_interests")
 }

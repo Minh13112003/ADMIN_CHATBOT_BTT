@@ -25,6 +25,14 @@
 | Chatbot AI tự trả lời Zalo | Chưa làm | Đã có hướng (webhook gọi chatbot), chờ chủ dự án quyết |
 | Xin SĐT qua Zalo (`request_user_info`) | Chưa làm | Chủ dự án bảo để sau |
 
+## Digital (Nhu cầu tour)
+
+| Tính năng | Trạng thái | Ghi chú |
+|---|---|---|
+| Tự nhận địa điểm khách hỏi ("tour TQ" → Trung Quốc), 1 lượt/khách/địa điểm/ngày | Chỉ test giả | Cần migration `place_interests`. Chỉ tính tin MỚI từ lúc cập nhật, chưa quét tin cũ |
+| Theo địa điểm: gộp nhãn sale ghim + khách tự hỏi | Chỉ test giả | |
+| Tour chi tiết xếp theo doanh thu / số đơn chốt | Chỉ test giả | |
+
 ## Giao diện
 
 | Tính năng | Trạng thái | Ghi chú |
@@ -39,6 +47,8 @@ Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration khôn
 - 2026-11-12: ảnh đại diện khách (**có migration** `20261112140000_customer_avatar`), nhập SĐT, nhập khách cũ. Bài học: luôn chạy `prisma migrate deploy` sau khi build.
 - 2026-11-13 (4facaad): tin OA gửi, ảnh/PDF qua webhook, trích dẫn, cảm xúc; danh sách chưa đọc đậm hơn. Không có migration.
 - 2026-11-13: kéo tin cũ tải ảnh/PDF, trích dẫn cho tin cũ và tin OA; thêm file này. Không có migration.
+
+- 2026-11-13: Digital tự nhận địa điểm, xếp tour theo doanh thu/đơn chốt. **Có migration** `20261113090000_place_interests`.
 
 Lệnh cập nhật VPS chuẩn (migrate an toàn kể cả khi không có gì mới):
 

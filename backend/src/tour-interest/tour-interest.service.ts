@@ -27,7 +27,11 @@ type Tour = {
   lastAskedAt: Date;
   rank: number;
   khach: Map<string, string>; // customerId -> kênh
+  closed?: number;
+  revenue?: number;
 };
+
+export type SapXep = 'askers' | 'revenue' | 'closed';
 
 const so = (v: unknown) => (typeof v === 'number' ? v : typeof v === 'string' && /^\d+(\.\d+)?$/.test(v.trim()) ? Number(v) : null);
 
@@ -118,15 +122,41 @@ export class TourInterestService {
     return con;
   }
 
-  async ranking(user: AuthUser, q: { view: 'tour' | 'place'; search?: string; take: number; skip: number; moi?: boolean } & Bo) {
+  /** Đơn đã chốt theo tour (khoá tên bỏ dấu) trong phạm vi, kỳ, kênh. */
+  private async chotTheoTour(user: AuthUser, bo: Bo) {
+    const pham = sqlPhamHoiThoai(phamViPhong(user));
+    const tu = bo.tu ? Prisma.sql`AND d."closedAt" >= ${bo.tu}` : Prisma.empty;
+    const kenh = bo.kenh ? Prisma.sql`AND c.channel::text = ${bo.kenh}` : Prisma.empty;
+    const rows = await this.prisma.$queryRaw<{ key: string; name: string; n: bigint; tien: bigint | null }[]>`
+      SELECT lower(btt_bo_dau(d."tourName")) AS key, max(d."tourName") AS name, COUNT(*) AS n, SUM(d.amount) AS tien
+      FROM deals d JOIN conversations c ON c.id = d."conversationId"
+      WHERE d.status = 'CONFIRMED' AND d."voidedAt" IS NULL AND d."tourName" IS NOT NULL AND ${pham} ${tu} ${kenh}
+      GROUP BY 1`;
+    return new Map(rows.map((r) => [r.key, { name: r.name, closed: Number(r.n), revenue: Number(r.tien ?? 0) }]));
+  }
+
+  /** Địa điểm khách tự hỏi (máy nhận ra từ tin khách): mỗi dòng một khách, một địa điểm, số ngày đã hỏi. */
+  private async khachTuHoi(user: AuthUser, bo: Bo) {
+    const pham = sqlPhamHoiThoai(phamViPhong(user));
+    const tu = bo.tu ? Prisma.sql`AND p."createdAt" >= ${bo.tu}` : Prisma.empty;
+    const kenh = bo.kenh ? Prisma.sql`AND c.channel::text = ${bo.kenh}` : Prisma.empty;
+    return this.prisma.$queryRaw<{ cid: string; place: string; n: bigint }[]>`
+      SELECT p."customerId" AS cid, p.place, COUNT(*) AS n
+      FROM place_interests p JOIN conversations c ON c.id = p."conversationId"
+      WHERE ${pham} ${tu} ${kenh}
+      GROUP BY 1, 2 LIMIT 200000`;
+  }
+
+  async ranking(user: AuthUser, q: { view: 'tour' | 'place'; search?: string; take: number; skip: number; moi?: boolean; sort?: SapXep } & Bo) {
     const ds = await this.tours(user, q);
     const moiTu = Date.now() - 30 * 86_400_000;
-    const tatCaKhach = new Set(ds.flatMap((t) => [...t.khach.keys()]));
-    const noi = this.theoNoi(ds);
+    const tuHoi = await this.khachTuHoi(user, q);
+    const tatCaKhach = new Set([...ds.flatMap((t) => [...t.khach.keys()]), ...tuHoi.map((r) => r.cid)]);
+    const noi = this.theoNoi(ds, tuHoi);
     const summary = {
       tours: ds.length,
       customers: tatCaKhach.size,
-      asks: ds.reduce((s, t) => s + t.asks, 0),
+      asks: ds.reduce((s, t) => s + t.asks, 0) + tuHoi.reduce((s, r) => s + Number(r.n), 0),
       newTours: ds.filter((t) => +t.firstAskedAt >= moiTu).length,
       topPlace: noi[0] ? { name: noi[0].name, askers: noi[0].askers } : null,
     };
@@ -134,20 +164,49 @@ export class TourInterestService {
       const loc = q.search?.trim() ? noi.filter((p) => khopTour({ name: p.name, code: null }, q.search!) > 0 || p.children.some((t) => khopTour({ name: t.name, code: null }, q.search!) > 0)) : noi;
       return { summary, total: loc.length, items: loc.slice(q.skip, q.skip + q.take) };
     }
+    // Gắn số đơn chốt, doanh thu; tour đã bán mà chưa ai ghim quan tâm cũng hiện (0 khách quan tâm).
+    const chot = await this.chotTheoTour(user, q);
+    for (const t of ds) Object.assign(t, chot.get(t.key) ?? { closed: 0, revenue: 0 });
+    const coSan = new Set(ds.map((t) => t.key));
+    for (const [key, c] of chot) {
+      if (coSan.has(key)) continue;
+      ds.push({ key, name: c.name, place: diaDiemTuTen(c.name), price: null, days: null, nights: null, image: null, askers: 0, asks: 0, bot: 0, tag: 0, firstAskedAt: new Date(0), lastAskedAt: new Date(0), rank: 0, khach: new Map(), closed: c.closed, revenue: c.revenue });
+    }
+    const sort = q.sort ?? 'askers';
+    if (sort !== 'askers') {
+      const gt = (t: Tour) => (sort === 'revenue' ? (t.revenue ?? 0) : (t.closed ?? 0));
+      ds.sort((a, b) => gt(b) - gt(a) || b.askers - a.askers);
+      ds.forEach((t, i) => (t.rank = i > 0 && gt(ds[i - 1]) === gt(t) ? ds[i - 1].rank : i + 1));
+    } else {
+      ds.sort((a, b) => b.askers - a.askers || +b.lastAskedAt - +a.lastAskedAt);
+      ds.forEach((t, i) => (t.rank = i > 0 && ds[i - 1].askers === t.askers ? ds[i - 1].rank : i + 1));
+    }
     const loc = ds.filter((t) => (!q.moi || +t.firstAskedAt >= moiTu) && (!q.search?.trim() || khopTour({ name: t.name, code: null }, q.search) > 0));
     return { summary, total: loc.length, items: loc.slice(q.skip, q.skip + q.take).map(TourInterestService.ra) };
   }
 
-  /** Theo địa điểm: khách đếm một lần trong địa điểm dù hỏi nhiều tour. */
-  private theoNoi(ds: Tour[]) {
+  /**
+   * Theo địa điểm: khách đếm một lần trong địa điểm dù hỏi nhiều tour. Gộp chung (chủ dự án chốt 2026-11-13) nhãn sale ghim
+   * với địa điểm khách tự hỏi; tên địa điểm so theo chữ bỏ dấu để "Trung Quốc" của danh mục và của máy nhận ra là một.
+   */
+  private theoNoi(ds: Tour[], tuHoi: { cid: string; place: string; n: bigint }[] = []) {
     const m = new Map<string, { name: string; khach: Set<string>; asks: number; tours: Tour[] }>();
+    const lay = (ten: string) => {
+      const k = khoaTour(ten);
+      let p = m.get(k);
+      if (!p) m.set(k, (p = { name: ten, khach: new Set<string>(), asks: 0, tours: [] }));
+      return p;
+    };
     for (const t of ds) {
-      const ten = t.place ?? 'Địa điểm khác';
-      const p = m.get(ten) ?? { name: ten, khach: new Set<string>(), asks: 0, tours: [] };
+      const p = lay(t.place ?? 'Địa điểm khác');
       t.khach.forEach((_, cid) => p.khach.add(cid));
       p.asks += t.asks;
       p.tours.push(t);
-      m.set(ten, p);
+    }
+    for (const r of tuHoi) {
+      const p = lay(r.place);
+      p.khach.add(r.cid);
+      p.asks += Number(r.n);
     }
     const noi = [...m.values()].map((p) => ({
       name: p.name, askers: p.khach.size, asks: p.asks, tours: p.tours.length, rank: 0,

@@ -1,4 +1,5 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ngayVN, timDiaDiem } from '../common/dia-diem';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Channel, Prisma } from '../generated/prisma/client';
 import { chonQuyTac, ngoaiGioLamViec, RuleInput } from '../common/auto-reply';
@@ -25,6 +26,7 @@ type InboundResult = {
 
 @Injectable()
 export class IngestService {
+  private log = new Logger('Ingest');
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
@@ -207,6 +209,7 @@ export class IngestService {
     });
 
     const id = ketQua.sau.id;
+    void this.ghiDiaDiem(id, ketQua.sau.customerId, ketQua.khachTin.id, dto.text, now);
     for (const m of [ketQua.khachTin, ...ketQua.them]) this.realtime.emit('message:new', { conversationId: id, message: this.raNgoai(m) });
     this.realtime.emit('conversation:update', { id });
     if (ketQua.vuaLienHe) {
@@ -264,6 +267,20 @@ export class IngestService {
     });
     this.realtime.emit('message:new', { conversationId: conv.id, message: this.raNgoai(message) });
     return { saved: true };
+  }
+
+  /**
+   * Địa điểm khách tự hỏi trong tin ("tour TQ" -> Trung Quốc). Mỗi khách mỗi địa điểm một lượt trong ngày: tin sau trùng thì bỏ qua
+   * nhờ khoá duy nhất (customerId, place, day). Lỗi chỉ ghi log, không làm hỏng việc nhận tin.
+   */
+  private async ghiDiaDiem(conversationId: string, customerId: string, messageId: string, text: string, luc: Date) {
+    const noi = timDiaDiem(text);
+    if (!noi.length) return;
+    try {
+      await this.prisma.placeInterest.createMany({ data: noi.map((place) => ({ conversationId, customerId, messageId, place, day: ngayVN(luc), createdAt: luc })), skipDuplicates: true });
+    } catch (e) {
+      this.log.warn(`Không ghi được địa điểm quan tâm: ${(e as Error).message}`);
+    }
   }
 
   async daCoTin(externalMessageId: string) {

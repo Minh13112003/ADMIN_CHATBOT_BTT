@@ -5,7 +5,7 @@ import { fetcher } from '@/lib/api';
 import { CHANNEL, thoiGianTruoc } from '@/lib/labels';
 import type { Channel } from '@/lib/types';
 
-type TourRow = { rank: number; key: string; name: string; place: string | null; askers: number; asks: number; bot: number; tag: number; firstAskedAt: string; lastAskedAt: string; price: number | null; days: number | null; nights: number | null; image: string | null };
+type TourRow = { rank: number; key: string; name: string; place: string | null; askers: number; asks: number; bot: number; tag: number; firstAskedAt: string; lastAskedAt: string; price: number | null; days: number | null; nights: number | null; image: string | null; closed?: number; revenue?: number };
 type PlaceRow = { rank: number; name: string; askers: number; asks: number; tours: number; children: { key: string; name: string; askers: number; asks: number; rank: number; days: number | null; nights: number | null; price: number | null; image: string | null }[] };
 type Summary = { tours: number; customers: number; asks: number; newTours: number; topPlace: { name: string; askers: number } | null };
 type Ranking<T> = { summary: Summary; total: number; items: T[] };
@@ -83,7 +83,7 @@ function Hang({ rank }: { rank: number }) {
 function BangTour({ rows, top, onOpen }: { rows: TourRow[]; top: number; onOpen: (key: string) => void }) {
   return (
     <div className="relative overflow-x-auto">
-      <table className="w-full min-w-[860px] border-collapse text-sm">
+      <table className="w-full min-w-[1040px] border-collapse text-sm">
         <thead>
           <tr className="bg-fill text-left text-[0.6875rem] font-bold uppercase tracking-wider text-muted">
             <th className="w-16 px-4 py-3">Hạng</th>
@@ -91,13 +91,15 @@ function BangTour({ rows, top, onOpen }: { rows: TourRow[]; top: number; onOpen:
             <th className="px-4 py-3 text-right">Giá / người</th>
             <th className="px-4 py-3 text-right">Khách quan tâm</th>
             <th className="px-4 py-3 text-right">Lượt</th>
-            <th className="w-44 px-4 py-3">Mức độ quan tâm</th>
+            <th className="px-4 py-3 text-right">Đơn chốt</th>
+            <th className="px-4 py-3 text-right">Doanh thu</th>
+            <th className="w-36 px-4 py-3">Mức độ quan tâm</th>
             <th className="px-4 py-3"><span className="sr-only">Thao tác</span></th>
           </tr>
         </thead>
         <tbody>
           {rows.map((t) => (
-            <tr key={t.key} onClick={() => onOpen(t.key)} className="cursor-pointer border-t border-line-soft hover:bg-page">
+            <tr key={t.key} onClick={() => t.askers && onOpen(t.key)} className={`border-t border-line-soft hover:bg-page ${t.askers ? 'cursor-pointer' : ''}`}>
               <td className="px-4 py-3"><Hang rank={t.rank} /></td>
               <td className="px-4 py-3">
                 <span className="flex items-center gap-3">
@@ -107,7 +109,7 @@ function BangTour({ rows, top, onOpen }: { rows: TourRow[]; top: number; onOpen:
                 <span className="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
                   {thoiLuong(t) && <span className="rounded border border-line px-1.5 py-0.5 font-semibold text-body">{thoiLuong(t)}</span>}
                   {t.place && <span className="rounded bg-amber-soft px-1.5 py-0.5 font-semibold text-amber-ink">{t.place}</span>}
-                  <span className="text-muted">Gần nhất {thoiGianTruoc(t.lastAskedAt)}</span>
+                  {t.askers > 0 && <span className="text-muted">Gần nhất {thoiGianTruoc(t.lastAskedAt)}</span>}
                 </span>
                 </span>
                 </span>
@@ -115,8 +117,10 @@ function BangTour({ rows, top, onOpen }: { rows: TourRow[]; top: number; onOpen:
               <td className="whitespace-nowrap px-4 py-3 text-right font-semibold">{gia(t.price)}</td>
               <td className="whitespace-nowrap px-4 py-3 text-right"><strong className={t.rank === 1 ? 'text-brand-text' : ''}>{so(t.askers)}</strong> khách</td>
               <td className="whitespace-nowrap px-4 py-3 text-right text-body">{so(t.asks)}</td>
+              <td className="whitespace-nowrap px-4 py-3 text-right font-semibold">{so(t.closed ?? 0)}</td>
+              <td className="whitespace-nowrap px-4 py-3 text-right font-semibold">{t.revenue ? gia(t.revenue) : '—'}</td>
               <td className="px-4 py-3"><Thanh phanTram={top ? (t.askers / top) * 100 : 0} dam={t.rank <= 3} /></td>
-              <td className="px-4 py-3 text-right"><NutThongKe onClick={() => onOpen(t.key)} /></td>
+              <td className="px-4 py-3 text-right">{t.askers > 0 && <NutThongKe onClick={() => onOpen(t.key)} />}</td>
             </tr>
           ))}
         </tbody>
@@ -165,6 +169,9 @@ function BangDiaDiem({ rows, onOpen }: { rows: PlaceRow[]; onOpen: (key: string)
                     <button type="button" aria-expanded={dangMo} aria-label={`${dangMo ? 'Thu gọn' : 'Xem'} tour của ${p.name}`} className="min-h-9 rounded-lg px-2 text-xs font-semibold text-brand-text">{dangMo ? 'Thu gọn' : 'Xem tour'}</button>
                   </td>
                 </tr>
+                {dangMo && !p.children.length && (
+                  <tr className="border-t border-line-soft bg-brand-faint/40"><td /><td colSpan={6} className="px-4 py-2.5 pl-12 text-xs text-muted">Khách tự hỏi địa điểm này trong tin nhắn, chưa có tour nào được sale ghim.</td></tr>
+                )}
                 {dangMo && p.children.map((t) => (
                   <tr key={t.key} onClick={() => onOpen(t.key)} className="cursor-pointer border-t border-line-soft bg-brand-faint/40 hover:bg-brand-faint">
                     <td className="px-4 py-2.5 text-center text-muted">↳</td>
@@ -384,6 +391,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
   const [q, setQ] = useState('');
   const [trang, setTrang] = useState(0);
   const [chon, setChon] = useState<string | null>(null);
+  const [sapXep, setSapXep] = useState<'askers' | 'revenue' | 'closed'>('askers');
 
   useEffect(() => {
     const t = setTimeout(() => { setQ(search); setTrang(0); }, 300);
@@ -395,6 +403,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
   p.set('take', String(full ? TRANG : view === 'place' ? 50 : 10));
   p.set('skip', String(full ? trang * TRANG : 0));
   if (moi && view === 'tour') p.set('moi', '1');
+  if (view === 'tour' && sapXep !== 'askers') p.set('sort', sapXep);
   if (full && q.trim()) p.set('search', q.trim());
   const { data, error, mutate } = useSWR<Ranking<TourRow | PlaceRow>>(`/tour-interest?${p}`, fetcher, { keepPreviousData: true });
   const dungView = !!data?.items.length && ('children' in data.items[0]) === (view === 'place');
@@ -405,7 +414,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
   const thoat = () => { setFull(false); setSearch(''); setQ(''); setTrang(0); };
 
   const xuat = () => {
-    if (view === 'tour') taiCsv('nhu-cau-tour.csv', [['Hạng', 'Tên tour', 'Địa điểm', 'Giá / người', 'Khách quan tâm', 'Lượt ghim', 'Lần đầu', 'Gần nhất'], ...tours.map((t) => [t.rank, t.name, t.place ?? '', t.price ?? '', t.askers, t.asks, ngay(t.firstAskedAt), ngay(t.lastAskedAt)])]);
+    if (view === 'tour') taiCsv('nhu-cau-tour.csv', [['Hạng', 'Tên tour', 'Địa điểm', 'Giá / người', 'Khách quan tâm', 'Lượt ghim', 'Đơn chốt', 'Doanh thu', 'Lần đầu', 'Gần nhất'], ...tours.map((t) => [t.rank, t.name, t.place ?? '', t.price ?? '', t.askers, t.asks, t.closed ?? 0, t.revenue ?? 0, t.askers ? ngay(t.firstAskedAt) : '', t.askers ? ngay(t.lastAskedAt) : ''])]);
     else taiCsv('nhu-cau-theo-dia-diem.csv', [['Hạng', 'Địa điểm', 'Tour', 'Khách quan tâm', 'Lượt'], ...places.flatMap((pl) => [[pl.rank, pl.name, '', pl.askers, pl.asks], ...pl.children.map((t) => ['', pl.name, t.name, t.askers, t.asks])])]);
   };
 
@@ -420,7 +429,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
       ) : (
         <header>
           <h1 className="text-xl font-bold">Nhu cầu tour</h1>
-          <p className="mt-1 max-w-[680px] text-sm text-muted">Tính theo tour sale ghim trên tin nhắn của khách. Xếp theo số khách; bấm một tour để xem thống kê và mở tin nhắn gốc.</p>
+          <p className="mt-1 max-w-[720px] text-sm text-muted">Theo địa điểm: gộp tour sale ghim và địa điểm khách tự hỏi trong tin nhắn (ví dụ "tour TQ", "tour Tàu" là Trung Quốc). Theo tour chi tiết: tour sale ghim, xếp được theo khách quan tâm, doanh thu hoặc số đơn đã chốt.</p>
         </header>
       )}
 
@@ -457,6 +466,15 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
             <input type="checkbox" checked={moi} onChange={(e) => { setMoi(e.target.checked); setTrang(0); }} /> Tour mới 30 ngày
           </label>
         )}
+        {view === 'tour' && (
+          <label className="flex items-center gap-2 text-[0.8125rem] text-muted">Xếp theo
+            <select value={sapXep} onChange={(e) => { setSapXep(e.target.value as typeof sapXep); setTrang(0); }} className={chonClass}>
+              <option value="askers">Khách quan tâm</option>
+              <option value="revenue">Doanh thu</option>
+              <option value="closed">Số đơn đã chốt</option>
+            </select>
+          </label>
+        )}
         {full && <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm tên tour (không cần gõ dấu)" aria-label="Tìm tour" className="min-h-11 min-w-[220px] flex-1 rounded-[10px] border border-field bg-surface px-3 text-sm" />}
         <button type="button" disabled={!data?.items.length} onClick={xuat} className="ml-auto inline-flex min-h-11 items-center rounded-[9px] border border-field bg-surface px-4 text-[0.8125rem] font-semibold hover:bg-fill disabled:opacity-40">Xuất CSV</button>
       </div>
@@ -472,7 +490,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
 
       <section aria-label={view === 'place' ? 'Theo địa điểm' : 'Theo tour chi tiết'} className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
-          <h2 className="text-lg font-bold">{full ? `${data ? so(data.total) : '…'} tour` : view === 'place' ? 'Nhu cầu theo địa điểm' : 'Top 10 tour khách quan tâm'}</h2>
+          <h2 className="text-lg font-bold">{full ? `${data ? so(data.total) : '…'} tour` : view === 'place' ? 'Nhu cầu theo địa điểm' : sapXep === 'revenue' ? 'Top 10 tour theo doanh thu' : sapXep === 'closed' ? 'Top 10 tour theo số đơn chốt' : 'Top 10 tour khách quan tâm'}</h2>
           {!full && view === 'place' && <span className="text-xs text-muted">Bấm vào địa điểm để xem các tour</span>}
           {!full && view === 'tour' && <button type="button" onClick={() => setFull(true)} className="inline-flex min-h-11 items-center rounded-lg border border-alert-line bg-brand-faint px-4 text-[0.8125rem] font-semibold text-brand-text hover:bg-brand-soft">Phóng to – Xem toàn bộ {data ? so(data.summary.tours) : ''} tour →</button>}
         </div>
@@ -481,7 +499,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
         {data?.items.length === 0 && <p className="p-8 text-center text-sm text-muted">{q ? 'Không tìm thấy tour phù hợp.' : 'Chưa có khách quan tâm tour trong phạm vi và khoảng thời gian này.'}</p>}
         {!!tours.length && <BangTour rows={tours} top={top} onOpen={setChon} />}
         {!!places.length && <BangDiaDiem key={`${ky}-${kenh}`} rows={places} onOpen={setChon} />}
-        <p className="border-t border-line bg-fill px-5 py-3 text-xs text-muted">Khách đếm một lần cho mỗi tour (và mỗi địa điểm). Lượt = số lần sale ghim tour.</p>
+        <p className="border-t border-line bg-fill px-5 py-3 text-xs text-muted">Khách đếm một lần cho mỗi tour (và mỗi địa điểm). Lượt = số lần sale ghim tour, cộng số ngày khách tự hỏi địa điểm (mỗi khách mỗi địa điểm tối đa 1 lượt/ngày). Doanh thu, đơn chốt chỉ tính đơn Đã chốt.</p>
         {full && (
           <div className="flex items-center justify-between border-t border-line px-5 py-3">
             <button type="button" disabled={trang === 0} onClick={() => setTrang(trang - 1)} className="min-h-11 rounded-lg border border-field px-4 text-sm font-semibold disabled:opacity-40">← Trước</button>

@@ -18,6 +18,8 @@ class RankingQuery extends KyQuery {
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) skip?: number;
   /** Chỉ tour mới xuất hiện trong 30 ngày qua. */
   @IsOptional() @Transform(({ value }) => value === '1' || value === 'true' || value === true) @IsBoolean() moi?: boolean;
+  /** Bảng tour chi tiết: theo số khách quan tâm, doanh thu, hoặc số đơn đã chốt. */
+  @IsOptional() @IsIn(['askers', 'revenue', 'closed']) sort?: 'askers' | 'revenue' | 'closed';
 }
 
 class KeyQuery extends KyQuery {
@@ -34,7 +36,7 @@ export class TourInterestController {
 
   @Get()
   ranking(@CurrentUser() me: AuthUser, @Query() q: RankingQuery) {
-    return this.svc.ranking(me, { view: q.view ?? 'tour', search: q.search, take: q.take ?? 10, skip: q.skip ?? 0, moi: q.moi, ...ky(q) });
+    return this.svc.ranking(me, { view: q.view ?? 'tour', search: q.search, take: q.take ?? 10, skip: q.skip ?? 0, moi: q.moi, sort: q.sort, ...ky(q) });
   }
 
   /** Hộp "Thống kê tour". `key` là tên tour bỏ dấu (trường `key` của bảng xếp hạng). */

@@ -26,7 +26,9 @@
 
 ## Tour quan tâm (chốt ngày 2026-11-11)
 - Cách gắn chính (đổi ngày 2026-11-11): bấm icon ghim trên từng tin trong khung chat, hộp hiện ra chỉ còn bước chọn tour (gõ tên hoặc mã). Tab Tour quan tâm chỉ xem lịch sử và gỡ nhãn, không còn nút gắn (đổi 2026-11-12).
-- Sale gắn nhãn tour quan tâm ở cột thông tin khách, mỗi nhãn ghim đúng một tin (không ghim log nội bộ). Gắn theo **tour**, không theo ngày khởi hành. Cùng tour gắn lại sau là nhãn mới "Lần 2". Ai trong nhóm sale cũng gắn, gỡ được; có log nội bộ. Digital chỉ xem. Trang Nhu cầu tour chỉ đếm nhãn sale ghim, không đếm thẻ tour chatbot gửi (chốt 2026-11-11).
+- Sale gắn nhãn tour quan tâm ở cột thông tin khách, mỗi nhãn ghim đúng một tin (không ghim log nội bộ). Gắn theo **tour**, không theo ngày khởi hành. Cùng tour gắn lại sau là nhãn mới "Lần 2". Ai trong nhóm sale cũng gắn, gỡ được; có log nội bộ. Digital chỉ xem. Trang Nhu cầu tour không đếm thẻ tour chatbot gửi (chốt 2026-11-11).
+- **Địa điểm khách tự hỏi** (chốt 2026-11-13): máy đọc tin của khách, nhận ra địa điểm kể cả viết tắt, tên gọi khác, sai chính tả 1 ký tự ("tour TQ", "tour Tàu", "tour Trung" là Trung Quốc; danh sách ở `common/dia-diem.ts`). Mỗi khách mỗi địa điểm tối đa 1 lượt mỗi ngày (giờ Việt Nam), giữ tin đầu tiên trong ngày. Bảng `place_interests`. Ở trang Nhu cầu tour, chế độ **Theo địa điểm gộp chung** với nhãn sale ghim thành một số. Chỉ tính tin đi qua backend: tin chatbot ghi thẳng database khi backend ngừng thì không được nhận diện.
+- Bảng **Theo tour chi tiết** xếp được theo khách quan tâm, doanh thu, hoặc **số đơn đã chốt** (đơn `CONFIRMED`, không `voidedAt`); tour đã bán mà chưa ai ghim vẫn hiện.
 
 ## Số điện thoại và chốt tour (chốt ngày 2026-11-12)
 - **Chốt tour bắt buộc khách có số điện thoại** (backend trả `NEED_PHONE`). Khách Zalo không tự có số: sale xin khách rồi nhập ở menu ⋯ → "Cập nhật số điện thoại khách". Chốt khi chưa có số thì hộp hỏi số trước. Số đã thuộc khách khác thì từ chối, không tự gộp. Nhập sẽ ghi log nội bộ. Chưa làm nút xin số qua Zalo.
