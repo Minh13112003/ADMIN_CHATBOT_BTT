@@ -187,6 +187,18 @@ export function thuCongThuc(header: string | undefined, appId: string, raw: stri
   return ra;
 }
 
+/** Link https đầu tiên trong một tin (tìm cả trường lồng nhau, sâu tối đa 3 tầng), bỏ qua ảnh đại diện của người gửi/nhận. */
+export function timLink(x: unknown, sau = 0): string | null {
+  if (sau > 3 || !x || typeof x !== 'object') return null;
+  for (const [k, v] of Object.entries(x as Record<string, unknown>)) {
+    if (/avatar/i.test(k)) continue;
+    if (https(v)) return v;
+    const con = timLink(v, sau + 1);
+    if (con) return con;
+  }
+  return null;
+}
+
 /** `url`: link tệp của Zalo nếu là ảnh/tệp; `chu`: chữ gốc kèm theo (có thể rỗng). */
 export type TinLichSu = { msgId: string; tuKhach: boolean; text: string; thoiGian: Date; loai?: string; url?: string | null; ten?: string | null; chu?: string; trichMa?: string | null };
 
@@ -210,8 +222,9 @@ export function chuanHoaLichSu(raw: unknown, zaloUserId: string): TinLichSu[] {
     const loai = typeof m.type === 'string' ? m.type : 'text';
     const text = loai === 'text' && chu ? chu : `${chu ? `${chu} ` : ''}[${tuKhach ? 'Khách' : 'OA'} gửi ${loai === 'text' ? 'tin nhắn' : loai} qua Zalo, xem trên Zalo OA]`;
     // Ảnh, sticker, tệp: link nằm ở `url`, `thumb` hoặc `links[0].url` (chưa kiểm chứng tài liệu, đọc phòng thủ).
+    // Có tin ảnh Zalo trả loại "text" mà không có chữ, nên tin không có chữ cũng tìm link (mọi trường, trừ ảnh đại diện).
     const lk = Array.isArray(m.links) ? (m.links[0] as Record<string, unknown> | undefined) : undefined;
-    const url = loai === 'text' ? null : ([m.url, m.thumb, m.href, lk?.url, lk?.thumb].find(https) ?? null);
+    const url = loai === 'text' && chu ? null : ([m.url, m.thumb, m.href, lk?.url, lk?.thumb].find(https) ?? timLink(m));
     const ten = [m.name, m.file_name, lk?.title].find((x) => typeof x === 'string' && x.trim()) as string | undefined;
     ra.push({ msgId, tuKhach, text: text.slice(0, 4000), thoiGian: gio, loai, url, ten: ten?.trim().slice(0, 200) ?? null, chu, trichMa: layTrich({ message: m }).msgId });
   }

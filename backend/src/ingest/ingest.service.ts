@@ -231,7 +231,11 @@ export class IngestService {
     const conv = await this.layHoacTaoHoiThoai(this.prisma, dt.customerId, 'ZALO');
     const now = new Date();
     const trung = await this.prisma.message.findFirst({
-      where: { conversationId: conv.id, internal: false, senderType: { in: ['STAFF', 'AUTO', 'BOT'] }, text: a.text, createdAt: { gte: new Date(now.getTime() - 2 * 60_000) } },
+      where: {
+        conversationId: conv.id, internal: false, senderType: { in: ['STAFF', 'AUTO', 'BOT'] }, createdAt: { gte: new Date(now.getTime() - 2 * 60_000) },
+        // Thẻ xin số điện thoại vừa gửi từ trang này: Zalo báo lại dạng không có chữ, không ghi thêm dòng "xem trên Zalo OA".
+        OR: [{ text: a.text }, ...(!a.file && a.text.includes('xem trên Zalo OA') ? [{ text: { startsWith: '[Thẻ xin thông tin]' } }] : [])],
+      },
       select: { id: true },
     });
     if (trung) return { saved: false };
@@ -262,9 +266,10 @@ export class IngestService {
   async khachChiaSeThongTin(a: { userId: string; phone: string | null; name: string | null }): Promise<{ saved: boolean }> {
     const dt = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: a.userId } }, select: { customerId: true, customer: { select: { phone: true } } } });
     if (!dt) return { saved: false };
-    const conv = await this.prisma.conversation.findUnique({ where: { customerId_channel: { customerId: dt.customerId, channel: 'ZALO' } }, select: { id: true } });
+    const conv = await this.prisma.conversation.findUnique({ where: { customerId_channel: { customerId: dt.customerId, channel: 'ZALO' } }, select: { id: true, status: true } });
     if (!conv) return { saved: false };
     const so = a.phone ? chuanHoaSoDienThoai(a.phone) : null;
+    const now = new Date();
     let ghi = 'Khách đã bấm chia sẻ thông tin qua Zalo nhưng không kèm số điện thoại';
     let luu = false;
     if (so) {
@@ -279,6 +284,11 @@ export class IngestService {
     const [message] = await this.prisma.$transaction([
       this.prisma.message.create({ data: { conversationId: conv.id, senderType: 'SYSTEM', internal: true, text: ghi } }),
       ...(luu && so ? [this.prisma.customer.update({ where: { id: dt.customerId }, data: { phone: so, phoneVerified: true } })] : []),
+      // Đưa hội thoại lên đầu danh sách, Đã xem thành Chưa xem để sale thấy khách vừa chia sẻ.
+      this.prisma.conversation.update({
+        where: { id: conv.id },
+        data: { lastMessageAt: now, lastMessagePreview: tomTat(so ? `Khách đã chia sẻ số ${so}` : 'Khách đã bấm chia sẻ thông tin'), ...(conv.status === 'READ' ? { status: 'UNREAD' as const } : {}) },
+      }),
     ]);
     this.realtime.emit('message:new', { conversationId: conv.id, message: this.raNgoai(message as { id: string }) });
     this.realtime.emit('conversation:update', { id: conv.id });

@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Query } from '@nestjs/common';
 import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { Role } from '../generated/prisma/client';
@@ -48,5 +48,19 @@ export class TourInterestController {
   @Get('askers')
   askers(@CurrentUser() me: AuthUser, @Query() q: KeyQuery) {
     return this.svc.askers(me, q.key, ky(q));
+  }
+
+  /** Hộp "Xem thống kê" của một địa điểm: các tin nhắn đã được tính. `key` là tên địa điểm bỏ dấu. */
+  @Get('place-messages')
+  placeMessages(@CurrentUser() me: AuthUser, @Query() q: KeyQuery) {
+    return this.svc.placeMessages(me, q.key, ky(q));
+  }
+
+  /** Admin bấm "Quét tin nhắn cũ": nhận địa điểm trong mọi tin khách đã có, theo đúng ngày của từng tin. */
+  @Roles(Role.ADMIN)
+  @Post('rescan')
+  @HttpCode(200)
+  rescan() {
+    return this.svc.quetTatCa();
   }
 }

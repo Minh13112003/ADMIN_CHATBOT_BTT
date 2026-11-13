@@ -1,13 +1,13 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
 import { Modal, UnderlineTabs } from '@/components/ui';
-import { fetcher } from '@/lib/api';
+import { fetcher, post } from '@/lib/api';
 import { CHANNEL, thoiGianTruoc } from '@/lib/labels';
 import type { Channel } from '@/lib/types';
 
 type TourRow = { rank: number; key: string; name: string; place: string | null; askers: number; asks: number; bot: number; tag: number; firstAskedAt: string; lastAskedAt: string; price: number | null; days: number | null; nights: number | null; image: string | null; closed?: number; revenue?: number };
-type PlaceRow = { rank: number; name: string; askers: number; asks: number; tours: number; children: { key: string; name: string; askers: number; asks: number; rank: number; days: number | null; nights: number | null; price: number | null; image: string | null }[] };
-type Summary = { tours: number; customers: number; asks: number; newTours: number; topPlace: { name: string; askers: number } | null };
+type PlaceRow = { key: string; rank: number; name: string; askers: number; asks: number; share: number; tours: number };
+type Summary = { tours: number; customers: number; asks: number; newTours: number; topPlace: { name: string; askers: number; asks?: number } | null };
 type Ranking<T> = { summary: Summary; total: number; items: T[] };
 type Detail = TourRow & { totalTours: number; newCustomers7d: number; closed: number; revenue: number; closeRate: number; daily: { date: string; count: number }[]; channels: Partial<Record<Channel, number>>; topTaggers: { name: string; department: string | null; count: number }[] };
 type Lan = { messageId: string | null; conversationId: string; text: string; at: string; source: 'BOT' | 'TAG'; by: string | null; time: number };
@@ -129,74 +129,121 @@ function BangTour({ rows, top, onOpen }: { rows: TourRow[]; top: number; onOpen:
   );
 }
 
-function BangDiaDiem({ rows, onOpen }: { rows: PlaceRow[]; onOpen: (key: string) => void }) {
-  const [mo, setMo] = useState<Set<string>>(() => new Set(rows[0] ? [rows[0].name] : []));
-  const doiMo = (ten: string) => setMo((cu) => { const n = new Set(cu); if (n.has(ten)) n.delete(ten); else n.add(ten); return n; });
-  const top = rows[0]?.askers ?? 0;
+/** Theo địa điểm (chủ dự án đổi 2026-11-13): không hiện tour con, chỉ lượt hỏi và phần trăm trên tổng; "Xem thống kê" mở các tin nhắn. */
+function BangDiaDiem({ rows, onOpen }: { rows: PlaceRow[]; onOpen: (p: PlaceRow) => void }) {
   return (
     <div className="relative overflow-x-auto">
-      <table className="w-full min-w-[820px] border-collapse text-sm">
+      <table className="w-full min-w-[720px] border-collapse text-sm">
         <thead>
           <tr className="bg-fill text-left text-[0.6875rem] font-bold uppercase tracking-wider text-muted">
             <th className="w-16 px-4 py-3">Hạng</th>
             <th className="px-4 py-3">Địa điểm</th>
-            <th className="px-4 py-3 text-right">Khách quan tâm</th>
-            <th className="px-4 py-3 text-right">Lượt</th>
-            <th className="px-4 py-3 text-right">Số tour có khách / Giá tour</th>
-            <th className="w-44 px-4 py-3">Mức độ quan tâm</th>
+            <th className="px-4 py-3 text-right">Lượt hỏi</th>
+            <th className="px-4 py-3 text-right">Khách</th>
+            <th className="w-56 px-4 py-3">Chiếm trên tổng lượt</th>
             <th className="px-4 py-3"><span className="sr-only">Thao tác</span></th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((p) => {
-            const dangMo = mo.has(p.name);
-            return (
-              <Fragment key={p.name}>
-                <tr onClick={() => doiMo(p.name)} className="cursor-pointer border-t border-line-soft hover:bg-page">
-                  <td className="px-4 py-3"><Hang rank={p.rank} /></td>
-                  <td className="px-4 py-3">
-                    <span className="flex items-center gap-2">
-                      <span aria-hidden="true" className={`grid size-6 place-items-center rounded border border-line text-xs transition-transform ${dangMo ? 'rotate-90' : ''}`}>›</span>
-                      <strong className="font-semibold">{p.name}</strong>
-                      {p.rank === 1 && <span className="rounded bg-brand-soft px-1.5 py-0.5 text-xs font-semibold text-brand-text">Top 1</span>}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right"><strong>{so(p.askers)}</strong> khách</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-body">{so(p.asks)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-body">{so(p.tours)} tour</td>
-                  <td className="px-4 py-3"><Thanh phanTram={top ? (p.askers / top) * 100 : 0} dam={p.rank <= 3} /></td>
-                  <td className="px-4 py-3 text-right">
-                    <button type="button" aria-expanded={dangMo} aria-label={`${dangMo ? 'Thu gọn' : 'Xem'} tour của ${p.name}`} className="min-h-9 rounded-lg px-2 text-xs font-semibold text-brand-text">{dangMo ? 'Thu gọn' : 'Xem tour'}</button>
-                  </td>
-                </tr>
-                {dangMo && !p.children.length && (
-                  <tr className="border-t border-line-soft bg-brand-faint/40"><td /><td colSpan={6} className="px-4 py-2.5 pl-12 text-xs text-muted">Khách tự hỏi địa điểm này trong tin nhắn, chưa có tour nào được sale ghim.</td></tr>
-                )}
-                {dangMo && p.children.map((t) => (
-                  <tr key={t.key} onClick={() => onOpen(t.key)} className="cursor-pointer border-t border-line-soft bg-brand-faint/40 hover:bg-brand-faint">
-                    <td className="px-4 py-2.5 text-center text-muted">↳</td>
-                    <td className="px-4 py-2.5 pl-12">
-                      <span className="flex items-center gap-3">
-                        <AnhTour src={t.image} />
-                        <span className="min-w-0">
-                          <span className="line-clamp-2 font-medium">{t.name}</span>
-                          <span className="mt-0.5 flex gap-1.5 text-xs text-muted">{thoiLuong(t) && <span>{thoiLuong(t)}</span>}<span>Hạng tour #{t.rank}</span></span>
-                        </span>
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right">{so(t.askers)} khách</td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right text-body">{so(t.asks)}</td>
-                    <td className="whitespace-nowrap px-4 py-2.5 text-right font-semibold text-body">{gia(t.price)}</td>
-                    <td className="px-4 py-2.5"><Thanh phanTram={p.askers ? (t.askers / p.askers) * 100 : 0} /></td>
-                    <td className="px-4 py-2.5 text-right"><NutThongKe onClick={() => onOpen(t.key)} /></td>
-                  </tr>
-                ))}
-              </Fragment>
-            );
-          })}
+          {rows.map((p) => (
+            <tr key={p.key} onClick={() => onOpen(p)} className="cursor-pointer border-t border-line-soft hover:bg-page">
+              <td className="px-4 py-3"><Hang rank={p.rank} /></td>
+              <td className="px-4 py-3">
+                <span className="flex items-center gap-2">
+                  <strong className="font-semibold">{p.name}</strong>
+                  {p.rank === 1 && <span className="rounded bg-brand-soft px-1.5 py-0.5 text-xs font-semibold text-brand-text">Top 1</span>}
+                </span>
+              </td>
+              <td className="whitespace-nowrap px-4 py-3 text-right"><strong className={p.rank === 1 ? 'text-brand-text' : ''}>{so(p.asks)}</strong> lượt</td>
+              <td className="whitespace-nowrap px-4 py-3 text-right text-body">{so(p.askers)} khách</td>
+              <td className="px-4 py-3"><Thanh phanTram={p.share * 100} dam={p.rank <= 3} /></td>
+              <td className="px-4 py-3 text-right"><NutThongKe onClick={() => onOpen(p)} /></td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+type TinNoi = { conversationId: string; messageId: string | null; customerId: string; name: string; phone: string | null; channel: Channel; at: string; text: string; source: 'AUTO' | 'TAG'; tour: string | null; by: string | null };
+
+/** Hộp thống kê một địa điểm: từng tin nhắn đã được tính, mới nhất trước, mở được đúng tin trong hộp thư. */
+function PlaceStatsModal({ place, ky, kenh, onClose }: { place: PlaceRow; ky: Ky; kenh: string; onClose: () => void }) {
+  const p = kyQuery(ky, kenh);
+  p.set('key', place.key);
+  const { data: ds, error } = useSWR<TinNoi[]>(`/tour-interest/place-messages?${p}`, fetcher);
+  const [tim, setTim] = useState('');
+  const [locKenh, setLocKenh] = useState('');
+  const bo = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
+  const loc = useMemo(() => (ds ?? []).filter((t) => (!locKenh || t.channel === locKenh) && (!tim.trim() || bo(`${t.name} ${t.phone ?? ''} ${t.text}`).includes(bo(tim.trim())))), [ds, tim, locKenh]);
+  const theoKenh = useMemo(() => {
+    const m: Partial<Record<Channel, number>> = {};
+    for (const t of ds ?? []) m[t.channel] = (m[t.channel] ?? 0) + 1;
+    return m;
+  }, [ds]);
+  const xuat = () =>
+    ds &&
+    taiCsv(`quan-tam-${place.key.replace(/\W+/g, '-')}.csv`, [
+      ['Khách', 'Số điện thoại', 'Kênh', 'Thời gian', 'Nguồn', 'Tin nhắn'],
+      ...ds.map((t) => [t.name, t.phone ?? '', CHANNEL[t.channel]?.label ?? t.channel, new Date(t.at).toLocaleString('vi-VN'), t.source === 'AUTO' ? 'Máy nhận ra' : `Sale ghim: ${t.by ?? ''} (${t.tour ?? ''})`, t.text]),
+    ]);
+  return (
+    <Modal
+      title={`Quan tâm ${place.name}`}
+      width={760}
+      onClose={onClose}
+      footer={
+        <>
+          <span className="flex-1 text-[0.8125rem] text-muted">{ds ? `Đang hiển thị ${so(loc.length)} / ${so(ds.length)} tin` : ''}</span>
+          <button type="button" onClick={onClose} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
+          <button type="button" disabled={!ds?.length} onClick={xuat} className="inline-flex min-h-11 items-center rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">Xuất danh sách</button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-3 gap-3 max-sm:grid-cols-1">
+          <div className="rounded-xl border border-line bg-page p-3"><p className="text-xs text-muted">Lượt hỏi</p><p className="mt-1 text-2xl font-bold text-brand-text">{so(place.asks)}</p></div>
+          <div className="rounded-xl border border-line bg-page p-3"><p className="text-xs text-muted">Khách</p><p className="mt-1 text-2xl font-bold">{so(place.askers)}</p></div>
+          <div className="rounded-xl border border-line bg-page p-3"><p className="text-xs text-muted">Chiếm trên tổng lượt</p><p className="mt-1 text-2xl font-bold">{(place.share * 100).toLocaleString('vi-VN', { maximumFractionDigits: 1 })}%</p></div>
+        </div>
+        {ds && ds.length > 0 && (
+          <p className="flex flex-wrap gap-2 text-xs">
+            {(['WEB', 'APP', 'ZALO', 'FACEBOOK'] as Channel[]).filter((c) => theoKenh[c]).map((c) => (
+              <span key={c} className="rounded-md border border-line px-2 py-1"><strong>{CHANNEL[c].label}</strong> {so(theoKenh[c]!)} tin</span>
+            ))}
+          </p>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <input value={tim} onChange={(e) => setTim(e.target.value)} placeholder="Tìm tên, số điện thoại, nội dung" aria-label="Tìm tin nhắn" className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-field bg-surface px-3 text-sm" />
+          <select value={locKenh} onChange={(e) => setLocKenh(e.target.value)} aria-label="Lọc kênh" className={chonClass}>
+            <option value="">Mọi kênh</option>
+            {(['WEB', 'APP', 'ZALO', 'FACEBOOK'] as Channel[]).map((c) => <option key={c} value={c}>{CHANNEL[c].label}</option>)}
+          </select>
+        </div>
+        {!ds && !error && <p role="status" className="text-sm text-muted">Đang tải tin nhắn...</p>}
+        {error && <p role="alert" className="text-sm text-brand-text">Không tải được tin nhắn của địa điểm này.</p>}
+        {ds && !loc.length && <p className="text-sm text-muted">{ds.length ? 'Không có tin khớp.' : 'Chưa có tin nhắn nào trong khoảng thời gian này.'}</p>}
+        <ul className="flex flex-col gap-2">
+          {loc.map((t, i) => (
+            <li key={`${t.conversationId}-${t.messageId ?? i}-${t.at}`} className="rounded-xl border border-line bg-page p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="min-w-0">
+                  <strong className="text-sm text-ink">{t.name}</strong>
+                  <span className="text-muted"> · <span className="font-semibold text-blue-ink">{CHANNEL[t.channel]?.label ?? t.channel}</span> · {t.phone ?? 'Chưa có số điện thoại'}</span>
+                </span>
+                <span className="text-muted">{new Date(t.at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              <p className="mt-2 border-l-[3px] border-amber-ink bg-surface px-3 py-2 text-sm italic">“{t.text || 'Không có nội dung tin nhắn'}”</p>
+              <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+                <span>{t.source === 'AUTO' ? 'Máy nhận ra trong tin khách' : <>Sale ghim: <strong className="text-ink">{t.by ?? 'nhân viên đã nghỉ'}</strong>{t.tour ? ` · ${t.tour}` : ''}</>}</span>
+                <a href={linkTin(t)} target="_blank" rel="noopener" className="inline-flex min-h-9 items-center gap-1 font-semibold text-brand-text hover:underline">Mở tin nhắn</a>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Modal>
   );
 }
 
@@ -392,6 +439,19 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
   const [trang, setTrang] = useState(0);
   const [chon, setChon] = useState<string | null>(null);
   const [sapXep, setSapXep] = useState<'askers' | 'revenue' | 'closed'>('askers');
+  const [noiChon, setNoiChon] = useState<PlaceRow | null>(null);
+  const { data: me } = useSWR<{ role: string }>('/auth/me', fetcher);
+  const [quet, setQuet] = useState<{ dang: boolean; kq?: string }>({ dang: false });
+  const quetTinCu = async () => {
+    setQuet({ dang: true });
+    try {
+      const r = await post<{ hoiThoai: number; luotMoi: number }>('/tour-interest/rescan');
+      setQuet({ dang: false, kq: `Đã quét ${so(r.hoiThoai)} hội thoại, thêm ${so(r.luotMoi)} lượt` });
+      void mutate();
+    } catch {
+      setQuet({ dang: false, kq: 'Quét không thành công, thử lại sau' });
+    }
+  };
 
   useEffect(() => {
     const t = setTimeout(() => { setQ(search); setTrang(0); }, 300);
@@ -406,7 +466,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
   if (view === 'tour' && sapXep !== 'askers') p.set('sort', sapXep);
   if (full && q.trim()) p.set('search', q.trim());
   const { data, error, mutate } = useSWR<Ranking<TourRow | PlaceRow>>(`/tour-interest?${p}`, fetcher, { keepPreviousData: true });
-  const dungView = !!data?.items.length && ('children' in data.items[0]) === (view === 'place');
+  const dungView = !!data?.items.length && ('share' in data.items[0]) === (view === 'place');
   const tours = view === 'tour' && dungView ? (data!.items as TourRow[]) : [];
   const places = view === 'place' && dungView ? (data!.items as PlaceRow[]) : [];
   const top = tours[0]?.askers ?? 0;
@@ -415,7 +475,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
 
   const xuat = () => {
     if (view === 'tour') taiCsv('nhu-cau-tour.csv', [['Hạng', 'Tên tour', 'Địa điểm', 'Giá / người', 'Khách quan tâm', 'Lượt ghim', 'Đơn chốt', 'Doanh thu', 'Lần đầu', 'Gần nhất'], ...tours.map((t) => [t.rank, t.name, t.place ?? '', t.price ?? '', t.askers, t.asks, t.closed ?? 0, t.revenue ?? 0, t.askers ? ngay(t.firstAskedAt) : '', t.askers ? ngay(t.lastAskedAt) : ''])]);
-    else taiCsv('nhu-cau-theo-dia-diem.csv', [['Hạng', 'Địa điểm', 'Tour', 'Khách quan tâm', 'Lượt'], ...places.flatMap((pl) => [[pl.rank, pl.name, '', pl.askers, pl.asks], ...pl.children.map((t) => ['', pl.name, t.name, t.askers, t.asks])])]);
+    else taiCsv('nhu-cau-theo-dia-diem.csv', [['Hạng', 'Địa điểm', 'Lượt hỏi', 'Khách', 'Chiếm trên tổng lượt (%)'], ...places.map((pl) => [pl.rank, pl.name, pl.asks, pl.askers, (pl.share * 100).toFixed(1)])]);
   };
 
   return (
@@ -429,7 +489,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
       ) : (
         <header>
           <h1 className="text-xl font-bold">Nhu cầu tour</h1>
-          <p className="mt-1 max-w-[720px] text-sm text-muted">Theo địa điểm: gộp tour sale ghim và địa điểm khách tự hỏi trong tin nhắn (ví dụ "tour TQ", "tour Tàu" là Trung Quốc). Theo tour chi tiết: tour sale ghim, xếp được theo khách quan tâm, doanh thu hoặc số đơn đã chốt.</p>
+          <p className="mt-1 max-w-[720px] text-sm text-muted">Theo địa điểm: số lượt khách hỏi từng nơi (máy tự nhận "tour TQ", "tour Tàu" là Trung Quốc) và phần trăm trên tổng; bấm Xem thống kê để đọc từng tin nhắn. Theo tour chi tiết: tour sale ghim, xếp được theo khách quan tâm, doanh thu hoặc số đơn đã chốt.</p>
         </header>
       )}
 
@@ -484,22 +544,35 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
           <Kpi label="Khách quan tâm" value={data ? so(data.summary.customers) : '—'} unit="khách" hot />
           <Kpi label="Lượt quan tâm" value={data ? so(data.summary.asks) : '—'} unit="lượt" note={data && data.summary.customers ? `Trung bình ${(data.summary.asks / data.summary.customers).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} lượt/khách` : undefined} />
           <Kpi label="Tour có khách quan tâm" value={data ? so(data.summary.tours) : '—'} unit="tour" note={data ? `${so(data.summary.newTours)} tour mới trong 30 ngày` : undefined} />
-          <Kpi label="Địa điểm dẫn đầu" value={data?.summary.topPlace?.name ?? '—'} note={data?.summary.topPlace ? `${so(data.summary.topPlace.askers)} khách quan tâm` : undefined} />
+          <Kpi label="Địa điểm dẫn đầu" value={data?.summary.topPlace?.name ?? '—'} note={data?.summary.topPlace ? `${so(data.summary.topPlace.asks ?? 0)} lượt hỏi · ${so(data.summary.topPlace.askers)} khách` : undefined} />
         </div>
       )}
 
       <section aria-label={view === 'place' ? 'Theo địa điểm' : 'Theo tour chi tiết'} className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
           <h2 className="text-lg font-bold">{full ? `${data ? so(data.total) : '…'} tour` : view === 'place' ? 'Nhu cầu theo địa điểm' : sapXep === 'revenue' ? 'Top 10 tour theo doanh thu' : sapXep === 'closed' ? 'Top 10 tour theo số đơn chốt' : 'Top 10 tour khách quan tâm'}</h2>
-          {!full && view === 'place' && <span className="text-xs text-muted">Bấm vào địa điểm để xem các tour</span>}
+          {!full && view === 'place' && (
+            <span className="flex flex-wrap items-center gap-2">
+              {quet.kq && <span role="status" className="text-xs text-muted">{quet.kq}</span>}
+              {me?.role === 'ADMIN' && (
+                <button type="button" disabled={quet.dang} onClick={() => void quetTinCu()} title="Nhận địa điểm trong mọi tin khách đã có, theo đúng ngày của từng tin" className="inline-flex min-h-11 items-center rounded-lg border border-field bg-surface px-4 text-[0.8125rem] font-semibold hover:bg-fill disabled:opacity-50">
+                  {quet.dang ? 'Đang quét...' : 'Quét tin nhắn cũ'}
+                </button>
+              )}
+            </span>
+          )}
           {!full && view === 'tour' && <button type="button" onClick={() => setFull(true)} className="inline-flex min-h-11 items-center rounded-lg border border-alert-line bg-brand-faint px-4 text-[0.8125rem] font-semibold text-brand-text hover:bg-brand-soft">Phóng to – Xem toàn bộ {data ? so(data.summary.tours) : ''} tour →</button>}
         </div>
         {!data && !error && <p role="status" className="p-6 text-center text-sm text-muted">Đang tải nhu cầu tour...</p>}
         {error && <p role="alert" className="p-6 text-center text-sm text-brand-text">Không tải được dữ liệu. <button className="underline" onClick={() => void mutate()}>Thử lại</button></p>}
         {data?.items.length === 0 && <p className="p-8 text-center text-sm text-muted">{q ? 'Không tìm thấy tour phù hợp.' : 'Chưa có khách quan tâm tour trong phạm vi và khoảng thời gian này.'}</p>}
         {!!tours.length && <BangTour rows={tours} top={top} onOpen={setChon} />}
-        {!!places.length && <BangDiaDiem key={`${ky}-${kenh}`} rows={places} onOpen={setChon} />}
-        <p className="border-t border-line bg-fill px-5 py-3 text-xs text-muted">Khách đếm một lần cho mỗi tour (và mỗi địa điểm). Lượt = số lần sale ghim tour, cộng số ngày khách tự hỏi địa điểm (mỗi khách mỗi địa điểm tối đa 1 lượt/ngày). Doanh thu, đơn chốt chỉ tính đơn Đã chốt.</p>
+        {!!places.length && <BangDiaDiem rows={places} onOpen={setNoiChon} />}
+        <p className="border-t border-line bg-fill px-5 py-3 text-xs text-muted">
+          {view === 'place'
+            ? 'Lượt hỏi = số ngày khách nhắc địa điểm trong tin nhắn (mỗi khách mỗi địa điểm tối đa 1 lượt/ngày; hỏi 2 nơi trong một ngày thì mỗi nơi 1 lượt), cộng lượt sale ghim tour thuộc địa điểm đó.'
+            : 'Khách đếm một lần cho mỗi tour. Lượt = số lần sale ghim tour. Doanh thu, đơn chốt chỉ tính đơn Đã chốt.'}
+        </p>
         {full && (
           <div className="flex items-center justify-between border-t border-line px-5 py-3">
             <button type="button" disabled={trang === 0} onClick={() => setTrang(trang - 1)} className="min-h-11 rounded-lg border border-field px-4 text-sm font-semibold disabled:opacity-40">← Trước</button>
@@ -509,6 +582,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
         )}
       </section>
       {chon && <TourStatsModal tourKey={chon} ky={ky} kenh={kenh} onClose={() => setChon(null)} />}
+      {noiChon && <PlaceStatsModal place={noiChon} ky={ky} kenh={kenh} onClose={() => setNoiChon(null)} />}
     </main>
   );
 }

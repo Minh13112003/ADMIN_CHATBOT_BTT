@@ -11,6 +11,8 @@ import { PrismaService } from '../prisma/prisma.service';
 const OAUTH = 'https://oauth.zaloapp.com/v4/oa';
 const OPENAPI = 'https://openapi.zalo.me';
 const HAN_STATE_MS = 10 * 60_000;
+/** Chữ trên thẻ xin thông tin Zalo; cũng là nội dung tin hiện trong khung chat trang quản trị. */
+export const THE_XIN_SDT = { title: 'BenThanh Tourist xin thông tin liên hệ', subtitle: 'Anh/chị bấm chia sẻ để tư vấn viên gọi lại và giữ chỗ tour nhanh hơn ạ.' };
 const TRUOC_HAN_MS = 20 * 60_000; // Làm mới token khi còn dưới 20 phút (access token Zalo sống ngắn, có thể chỉ 15 phút)
 
 type Tokens = { access_token?: string; refresh_token?: string; expires_in?: string | number; error?: number; error_name?: string; error_reason?: string; message?: string };
@@ -251,14 +253,17 @@ export class ZaloService {
   }
 
   /** Gửi thẻ "Chia sẻ thông tin" của Zalo (mẫu request_user_info): khách bấm thì Zalo gửi lại sự kiện user_submit_info kèm SĐT. */
-  async xinThongTin(zaloUserId: string) {
-    await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, {
+  /** Trả về mã tin Zalo (nếu có) để webhook báo lại tin OA vừa gửi thì không ghi trùng. */
+  async xinThongTin(zaloUserId: string): Promise<string | null> {
+    const j = await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, {
       method: 'POST',
       body: {
         recipient: { user_id: zaloUserId },
-        message: { attachment: { type: 'template', payload: { template_type: 'request_user_info', elements: [{ title: 'BenThanh Tourist xin thông tin liên hệ', subtitle: 'Anh/chị bấm chia sẻ để tư vấn viên gọi lại và giữ chỗ tour nhanh hơn ạ.', image_url: `${this.goc()}/logo.png` }] } } },
+        message: { attachment: { type: 'template', payload: { template_type: 'request_user_info', elements: [{ title: THE_XIN_SDT.title, subtitle: THE_XIN_SDT.subtitle, image_url: `${this.goc()}/logo.png` }] } } },
       },
     });
+    const ma = j?.data?.message_id ?? j?.data?.msg_id;
+    return typeof ma === 'string' && ma ? ma : null;
   }
 
   /** Tình trạng kết nối cho trang Kênh kết nối (chỉ admin). Không trả giá trị token. */
@@ -314,6 +319,12 @@ export class ZaloService {
       // Chẩn đoán tin ảnh/tệp: chỉ ghi loại và tên trường để biết link tệp nằm ở đâu.
       const khac = Array.isArray(j?.data) ? (j.data as Record<string, unknown>[]).find((x) => x && x.type && x.type !== 'text') : undefined;
       if (khac) this.log.log(`Lịch sử Zalo có tin loại ${String(khac.type)}; trường: ${Object.keys(khac).join(',')}; đọc được link: ${mang.some((t) => t.url) ? 'có' : 'không'}`);
+      // Tin không có chữ (ảnh/tệp/trích dẫn có thể nằm ở đây): ghi loại, tên trường và cấu trúc trường lồng nhau (chỉ tên, không ghi nội dung).
+      const rong = Array.isArray(j?.data) ? (j.data as Record<string, unknown>[]).filter((x) => x && typeof x === 'object' && !(typeof x.message === 'string' && x.message.trim())) : [];
+      for (const x of rong.slice(0, 3)) {
+        const cauTruc = Object.entries(x).map(([k, v]) => (v && typeof v === 'object' ? `${k}{${Object.keys(v).join('|')}}` : `${k}:${typeof v}`)).join(',');
+        this.log.log(`Lịch sử Zalo tin không chữ, loại ${String(x.type)}; ${cauTruc}`);
+      }
       tat.push(...mang);
       if (!Array.isArray(j?.data) || j.data.length < 10) break;
     }

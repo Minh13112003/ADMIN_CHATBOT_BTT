@@ -21,6 +21,17 @@ describe('timDiaDiem', () => {
     expect(timDiaDiem('Phân vân giữa tour Nhật với tour Hàn')).toEqual(['Nhật Bản', 'Hàn Quốc']);
     expect(timDiaDiem('Seoul - Nami - Everland')).toEqual(['Hàn Quốc']);
   });
+  it('địa danh lấy thêm từ chatbot', () => {
+    expect(timDiaDiem('Có tour NZ không')).toEqual(['New Zealand']);
+    expect(timDiaDiem('tour Tân Tây Lan')).toEqual(['New Zealand']);
+    expect(timDiaDiem('đi Maldives mấy ngày')).toEqual(['Maldives']);
+    expect(timDiaDiem('Hỏi tour Trung rồi tour New Zealand')).toEqual(['Trung Quốc', 'New Zealand']);
+  });
+  it('các câu thường gặp không bị nhận nhầm', () => {
+    for (const c of ['tour dài ngày không em', 'Bà đến chưa con', 'cho nói chuyện với nhân viên', 'promo tháng này', 'làm quá ẩu', 'đi ngã ba']) {
+      expect(timDiaDiem(c)).toEqual([]);
+    }
+  });
   it('rỗng thì không có gì', () => {
     expect(timDiaDiem('')).toEqual([]);
     expect(timDiaDiem('Cho mình xin giá')).toEqual([]);

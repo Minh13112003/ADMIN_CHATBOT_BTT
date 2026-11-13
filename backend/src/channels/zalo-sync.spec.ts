@@ -22,7 +22,7 @@ describe('ZaloSyncService', () => {
     };
     const zalo = { layLichSu: jest.fn().mockResolvedValue(opt.lichSu ?? tin) };
     const realtime = { emit: jest.fn() };
-    return { svc: new ZaloSyncService(prisma as never, zalo as never, realtime as never), prisma, zalo, realtime };
+    return { svc: new ZaloSyncService(prisma as never, zalo as never, realtime as never, { quetHoiThoai: jest.fn().mockResolvedValue(0) } as never), prisma, zalo, realtime };
   };
 
   it('chỉ dùng cho hội thoại Zalo', async () => {
@@ -92,7 +92,7 @@ describe('ZaloSyncService', () => {
       };
       const zalo = { chatGanDay: jest.fn().mockResolvedValue(khach), layLichSu: jest.fn().mockResolvedValue([]), hoSoKhach: jest.fn().mockResolvedValue({ ten: 'Tên từ hồ sơ', anh: null }) };
       const realtime = { emit: jest.fn() };
-      return { svc: new ZaloSyncService(prisma as never, zalo as never, realtime as never), prisma, tx, zalo, realtime };
+      return { svc: new ZaloSyncService(prisma as never, zalo as never, realtime as never, { quetHoiThoai: jest.fn().mockResolvedValue(0) } as never), prisma, tx, zalo, realtime };
     };
     const chay = async (svc: ZaloSyncService) => {
       svc.batDauNhapKhachCu(300, 0);

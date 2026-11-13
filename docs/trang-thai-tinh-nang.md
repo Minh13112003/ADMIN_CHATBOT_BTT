@@ -23,7 +23,7 @@
 | Trích dẫn (reply): webhook, tin OA, tin cũ | Chỉ test giả | Tên trường (`quote_msg_id`, `quote`...) chưa kiểm chứng; log "trường lạ trong message" |
 | Khách thả cảm xúc → log nội bộ | Chỉ test giả | Tên sự kiện chưa kiểm chứng; log "Bỏ qua sự kiện Zalo" |
 | Chatbot AI tự trả lời Zalo | Chưa làm | Đã có hướng (webhook gọi chatbot), chờ chủ dự án quyết |
-| Xin SĐT qua Zalo (thẻ `request_user_info`, sự kiện `user_submit_info` tự lưu số) | Chỉ test giả | Tên API/trường theo tài liệu, chưa kiểm chứng |
+| Xin SĐT qua Zalo bằng thẻ `request_user_info` | Đã bỏ nút | 2026-11-13: thẻ bắt quét QR trên Zalo PC, form nhiều ô. Chủ dự án chọn dùng mẫu trả lời nhanh "Xin số điện thoại" (phím tắt `sdt`, migration `20261113150000_mau_xin_sdt`). API và sự kiện `user_submit_info` còn trong backend, không có nút gọi |
 | Gửi ảnh (JPG/PNG ≤1 MB) / PDF (≤5 MB) sang Zalo | Chỉ test giả | `/v2.0/oa/upload/image|file`, chưa kiểm chứng |
 | Thanh khung 48 giờ Zalo trong khung chat | Chỉ test giả | Tính từ `lastCustomerMessageAt` |
 | Kênh kết nối: trạng thái token, hạn refresh token, tin gửi lỗi, cảnh báo | Chỉ test giả | Lỗi token và số tin lỗi giữ trong bộ nhớ, khởi động lại thì mất |
@@ -33,8 +33,9 @@
 
 | Tính năng | Trạng thái | Ghi chú |
 |---|---|---|
-| Tự nhận địa điểm khách hỏi ("tour TQ" → Trung Quốc), 1 lượt/khách/địa điểm/ngày | Chỉ test giả | Cần migration `place_interests`. Chỉ tính tin MỚI từ lúc cập nhật, chưa quét tin cũ |
-| Theo địa điểm: gộp nhãn sale ghim + khách tự hỏi | Chỉ test giả | |
+| Tự nhận địa điểm khách hỏi ("tour TQ" → Trung Quốc), 1 lượt/khách/địa điểm/ngày | Chỉ test giả | Cần migration `place_interests`. Danh sách địa danh bổ sung từ `rules.py` chatbot (NZ, Maldives, Bắc Âu...) |
+| Quét tin nhắn cũ (nút admin) và khi Đồng bộ tin cũ Zalo | Chỉ test giả | Theo ngày của từng tin |
+| Theo địa điểm: lượt hỏi, % trên tổng, Xem thống kê ra từng tin nhắn | Chỉ test giả | Bỏ tour con (chủ dự án yêu cầu 2026-11-13) |
 | Tour chi tiết xếp theo doanh thu / số đơn chốt | Chỉ test giả | |
 
 ## Giao diện
@@ -56,6 +57,8 @@ Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration khôn
 
 - 2026-11-13: Digital tự nhận địa điểm, xếp tour theo doanh thu/đơn chốt. **Có migration** `20261113090000_place_interests`.
 - 2026-11-13: hộp thư theo Stitch, gửi ảnh/PDF và xin SĐT qua Zalo, trạng thái Zalo ở Kênh kết nối, giao diện tối mới. Không có migration mới (ngoài `place_interests` ở trên).
+- 2026-11-13: tin cũ Zalo hiện "[OA gửi tin nhắn qua Zalo...]" (loại text, không chữ): nay tìm link ở mọi trường, tải tệp không lọc theo loại, log "Lịch sử Zalo tin không chữ". Không có migration. VPS build lỗi EOF do hết RAM (3,3 GB) và 47 GB bộ nhớ đệm build: dọn `docker builder prune -f`, build từng cái.
+- 2026-11-13: bảng Theo địa điểm bỏ tour con, thêm % và hộp tin nhắn; quét tin cũ; thêm địa danh từ chatbot; khách chia sẻ số thì đẩy hội thoại lên đầu. Bỏ nút Xin số điện thoại, thay bằng mẫu trả lời nhanh. **Có migration** `20261113150000_mau_xin_sdt` (chỉ thêm 1 mẫu).
 
 Lệnh cập nhật VPS chuẩn (migrate an toàn kể cả khi không có gì mới):
 

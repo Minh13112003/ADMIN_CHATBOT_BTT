@@ -4,7 +4,8 @@ import { tomTat } from '../common/text';
 import { Role } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
-import { ZaloService } from './zalo.service';
+import { TourInterestService } from '../tour-interest/tour-interest.service';
+import { THE_XIN_SDT, ZaloService } from './zalo.service';
 
 /**
  * Kéo tin cũ của một khách Zalo về hội thoại. Chỉ GHI LẠI lịch sử: không trả lời tự động, không đổi trạng thái hội thoại,
@@ -18,7 +19,16 @@ const nghi = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export class ZaloSyncService {
   private log = new Logger('ZaloSync');
   private tienDo: TienDoNhap = { ...TIEN_DO_RONG };
-  constructor(private prisma: PrismaService, private zalo: ZaloService, private realtime: RealtimeGateway) {}
+  constructor(private prisma: PrismaService, private zalo: ZaloService, private realtime: RealtimeGateway, private nhuCau: TourInterestService) {}
+
+  /** Sau khi kéo tin cũ: nhận địa điểm khách hỏi theo đúng ngày của từng tin (chủ dự án yêu cầu 2026-11-13). Lỗi chỉ ghi log. */
+  private async quetDiaDiem(conversationId: string) {
+    try {
+      await this.nhuCau.quetHoiThoai(conversationId);
+    } catch (e) {
+      this.log.warn(`Không quét được địa điểm cho tin cũ: ${(e as Error).message}`);
+    }
+  }
 
   layTienDo(): TienDoNhap {
     return this.tienDo;
@@ -90,15 +100,24 @@ export class ZaloSyncService {
     }
   }
 
-  /** Gửi thẻ xin thông tin qua Zalo rồi ghi log nội bộ. Zalo lỗi (hết khung 48 giờ...) thì báo lỗi, không ghi log. */
+  /**
+   * Gửi thẻ xin thông tin qua Zalo. Thẻ hiện thành tin nhân viên trong khung chat (như trên điện thoại) và đưa hội thoại lên đầu danh sách.
+   * Zalo lỗi (hết khung 48 giờ...) thì báo lỗi, không ghi gì.
+   */
   async xinSdt(user: AuthUser, conversationId: string) {
     const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { channel: true, customerId: true } });
     if (!c || c.channel !== 'ZALO') throw new BadRequestException('Chỉ xin số qua Zalo được với hội thoại Zalo');
     const danhTinh = await this.prisma.customerIdentity.findFirst({ where: { customerId: c.customerId, channel: 'ZALO' }, select: { externalId: true } });
     if (!danhTinh) throw new BadRequestException('Không tìm thấy tài khoản Zalo của khách này');
-    await this.zalo.xinThongTin(danhTinh.externalId);
-    const m = await this.prisma.message.create({ data: { conversationId, senderType: 'SYSTEM', internal: true, text: `${user.fullName} đã gửi yêu cầu chia sẻ số điện thoại qua Zalo. Đang chờ khách bấm chia sẻ` } });
+    const maTin = await this.zalo.xinThongTin(danhTinh.externalId);
+    const now = new Date();
+    const text = `[Thẻ xin thông tin] ${THE_XIN_SDT.title}\n${THE_XIN_SDT.subtitle}`;
+    const [m] = await this.prisma.$transaction([
+      this.prisma.message.create({ data: { conversationId, senderType: 'STAFF', staffLabel: user.fullName, text, externalMessageId: maTin ? `zalo:${maTin}` : undefined, createdAt: now } }),
+      this.prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: now, lastMessagePreview: tomTat(`Đã gửi thẻ xin số điện thoại`) } }),
+    ]);
     this.realtime.emit('message:new', { conversationId, message: m });
+    this.realtime.emit('conversation:update', { id: conversationId });
     return { ok: true };
   }
 
@@ -118,7 +137,8 @@ export class ZaloSyncService {
     for (const cu of daCoMa) {
       if (cu.attachmentPath || !cu.text?.includes('xem trên Zalo OA')) continue;
       const t = tin.find((x) => `zalo:${x.msgId}` === cu.externalMessageId);
-      const tep = t?.url && /^(photo|image|sticker|gif|file)$/i.test(t.loai ?? '') ? await this.zalo.taiTep(t.url, t.ten) : null;
+      // Không lọc theo loại: Zalo có thể trả tin ảnh với loại "text". Tệp tải về được kiểm tra theo nội dung nên link trang web sẽ bị bỏ.
+      const tep = t?.url ? await this.zalo.taiTep(t.url, t.ten) : null;
       if (!tep) continue;
       await this.prisma.message.update({ where: { id: cu.id }, data: { text: t!.chu ?? '', attachmentPath: tep.path, attachmentType: tep.type, attachmentName: tep.name, attachmentSize: tep.size } });
       nangCap++;
@@ -131,13 +151,14 @@ export class ZaloSyncService {
     const moi = tin.filter((t) => !maCo.has(`zalo:${t.msgId}`) && !trung(t));
     if (!moi.length) {
       if (nangCap) this.realtime.emit('message:new', { conversationId });
+      await this.quetDiaDiem(conversationId);
       return { them: 0, tong: tin.length };
     }
 
     const data = [];
     for (const t of moi) {
       // Ảnh/PDF: tải về lưu để xem trong khung chat; không tải được thì giữ dòng chữ thay thế.
-      const tep = t.url && /^(photo|image|sticker|gif|file)$/i.test(t.loai ?? '') ? await this.zalo.taiTep(t.url, t.ten) : null;
+      const tep = t.url ? await this.zalo.taiTep(t.url, t.ten) : null;
       data.push({
         conversationId,
         senderType: t.tuKhach ? ('CUSTOMER' as const) : ('STAFF' as const),
@@ -156,6 +177,7 @@ export class ZaloSyncService {
     }
     this.realtime.emit('conversation:update', { id: conversationId });
     this.realtime.emit('message:new', { conversationId });
+    await this.quetDiaDiem(conversationId);
     return { them: moi.length, tong: tin.length };
   }
 }

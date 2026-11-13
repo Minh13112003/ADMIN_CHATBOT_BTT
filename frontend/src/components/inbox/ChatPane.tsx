@@ -335,7 +335,6 @@ function Composer({
   const { sendTyping, typing } = useRealtime();
   const [draft, setDraft] = useState('');
   const [loi, setLoi] = useState('');
-  const [xinSo, setXinSo] = useState<'' | 'dang' | 'xong'>('');
   const [dangGui, setDangGui] = useState(false);
   const [hoiLai, setHoiLai] = useState<string | null>(null);
   const lanGo = useRef(0);
@@ -555,24 +554,6 @@ function Composer({
             <path d="m21 12-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9" />
           </svg>
         </button>
-        {conv.channel === 'ZALO' && !conv.customer.phone && (
-          <button
-            type="button"
-            disabled={xinSo === 'dang'}
-            onClick={() => {
-              setXinSo('dang');
-              setLoi('');
-              post(`/conversations/${conv.id}/zalo-request-phone`)
-                .then(() => setXinSo('xong'))
-                .catch((err) => { setLoi(loiCua(err)); setXinSo(''); });
-            }}
-            title="Gửi thẻ chia sẻ số điện thoại của Zalo, khách bấm là số tự lưu vào hồ sơ"
-            className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-[10px] border border-blue-soft bg-blue-soft/40 px-2.5 text-[0.8125rem] font-semibold text-blue-ink hover:bg-blue-soft disabled:opacity-60"
-          >
-            <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z" /></svg>
-            <span className="hidden sm:inline">{xinSo === 'xong' ? 'Đã gửi yêu cầu' : xinSo === 'dang' ? 'Đang gửi...' : 'Xin số điện thoại'}</span>
-          </button>
-        )}
         <textarea
           ref={textarea}
           rows={1}

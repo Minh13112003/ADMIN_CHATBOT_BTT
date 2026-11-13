@@ -178,6 +178,28 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
   }
   const mau = m.senderType === 'STAFF' ? 'bg-brand-button text-white' : m.senderType === 'AUTO' ? 'bg-auto text-auto-ink' : 'bg-neutral-soft text-ink';
   const ai = m.senderType === 'STAFF' ? (m.staffLabel ?? 'Nhân viên') : m.senderType === 'AUTO' ? `Tự động · ${m.ruleName}` : CHANNEL.WEB.bot;
+  // Thẻ xin số điện thoại đã gửi qua Zalo: vẽ giống thẻ khách thấy trên điện thoại.
+  const THE = '[Thẻ xin thông tin] ';
+  if (m.senderType === 'STAFF' && m.text?.startsWith(THE)) {
+    const [tieuDe, ...phu] = m.text.slice(THE.length).split('\n');
+    return (
+      <div className="min-w-0 max-w-[88%] self-end sm:max-w-[320px]">
+        <div className="overflow-hidden rounded-[14px_14px_4px_14px] border border-line bg-surface text-sm">
+          <div className="grid h-24 place-items-center bg-fill">
+            <img src="/logo.png" alt="" className="h-16 w-16 object-contain" />
+          </div>
+          <div className="px-3 py-2.5">
+            <p className="font-semibold">{tieuDe}</p>
+            {phu.length > 0 && <p className="mt-1 text-xs text-muted">{phu.join(' ')}</p>}
+            <p className="mt-2 text-xs font-semibold text-blue-ink">Thẻ xin số điện thoại · Zalo</p>
+          </div>
+        </div>
+        <div className="mt-1 flex items-center justify-end gap-2 text-xs text-muted">
+          {m.staffLabel ?? 'Nhân viên'} · {new Date(m.createdAt).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-w-0 max-w-[88%] self-end sm:max-w-[72%]">
       <div className={`whitespace-pre-line break-words rounded-[14px_14px_4px_14px] px-3 py-2 text-sm leading-normal ${mau}`}>

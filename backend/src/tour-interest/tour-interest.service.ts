@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { AuthUser } from '../auth/auth.decorators';
 import { phamViPhong, sqlPhamHoiThoai } from '../common/scope';
+import { ngayVN, timDiaDiem } from '../common/dia-diem';
 import { diaDiemTuTen, khoaTour, khopTour } from '../common/tours';
 import { PrismaService } from '../prisma/prisma.service';
 import { TourCatalogService, type CatalogTour } from '../tours/tour-catalog.service';
@@ -158,10 +159,10 @@ export class TourInterestService {
       customers: tatCaKhach.size,
       asks: ds.reduce((s, t) => s + t.asks, 0) + tuHoi.reduce((s, r) => s + Number(r.n), 0),
       newTours: ds.filter((t) => +t.firstAskedAt >= moiTu).length,
-      topPlace: noi[0] ? { name: noi[0].name, askers: noi[0].askers } : null,
+      topPlace: noi[0] ? { name: noi[0].name, askers: noi[0].askers, asks: noi[0].asks } : null,
     };
     if (q.view === 'place') {
-      const loc = q.search?.trim() ? noi.filter((p) => khopTour({ name: p.name, code: null }, q.search!) > 0 || p.children.some((t) => khopTour({ name: t.name, code: null }, q.search!) > 0)) : noi;
+      const loc = q.search?.trim() ? noi.filter((p) => khopTour({ name: p.name, code: null }, q.search!) > 0) : noi;
       return { summary, total: loc.length, items: loc.slice(q.skip, q.skip + q.take) };
     }
     // Gắn số đơn chốt, doanh thu; tour đã bán mà chưa ai ghim quan tâm cũng hiện (0 khách quan tâm).
@@ -208,13 +209,97 @@ export class TourInterestService {
       p.khach.add(r.cid);
       p.asks += Number(r.n);
     }
-    const noi = [...m.values()].map((p) => ({
-      name: p.name, askers: p.khach.size, asks: p.asks, tours: p.tours.length, rank: 0,
-      children: p.tours.map((t) => ({ key: t.key, name: t.name, askers: t.askers, asks: t.asks, rank: t.rank, days: t.days, nights: t.nights, price: t.price, image: t.image })),
-    }));
-    noi.sort((a, b) => b.askers - a.askers || b.asks - a.asks);
-    noi.forEach((p, i) => (p.rank = i > 0 && noi[i - 1].askers === p.askers ? noi[i - 1].rank : i + 1));
+    // Chủ dự án đổi 2026-11-13: bảng địa điểm không hiện tour con, chỉ số lượt hỏi và phần trăm trên tổng lượt; bấm "Xem thống kê" để xem tin nhắn.
+    const tong = [...m.values()].reduce((s, p) => s + p.asks, 0);
+    const noi = [...m.values()].map((p) => ({ key: khoaTour(p.name), name: p.name, askers: p.khach.size, asks: p.asks, share: tong ? p.asks / tong : 0, tours: p.tours.length, rank: 0 }));
+    noi.sort((a, b) => b.asks - a.asks || b.askers - a.askers);
+    noi.forEach((p, i) => (p.rank = i > 0 && noi[i - 1].asks === p.asks ? noi[i - 1].rank : i + 1));
     return noi;
+  }
+
+  /**
+   * Hộp "Xem thống kê" của một địa điểm: từng tin nhắn đã được tính (máy nhận ra trong tin khách, hoặc tin sale ghim tour thuộc địa điểm đó),
+   * mới nhất trước. `key` là tên địa điểm bỏ dấu (trường `key` của bảng địa điểm).
+   */
+  async placeMessages(user: AuthUser, key: string, bo: Bo) {
+    const pham = sqlPhamHoiThoai(phamViPhong(user));
+    const tu = bo.tu ? Prisma.sql`AND p."createdAt" >= ${bo.tu}` : Prisma.empty;
+    const kenh = bo.kenh ? Prisma.sql`AND c.channel::text = ${bo.kenh}` : Prisma.empty;
+    type Dong = { conv_id: string; message_id: string | null; cid: string; name: string; phone: string | null; ch: string; at: Date; text: string | null; place: string; tour: string | null; by_name: string | null };
+    const tuHoi = await this.prisma.$queryRaw<Dong[]>`
+      SELECT p."conversationId" AS conv_id, p."messageId" AS message_id, p."customerId" AS cid, cu.name, cu.phone, c.channel::text AS ch,
+             p."createdAt" AS at, m.text, p.place, NULL::text AS tour, NULL::text AS by_name
+      FROM place_interests p
+      JOIN conversations c ON c.id = p."conversationId"
+      JOIN customers cu ON cu.id = p."customerId"
+      LEFT JOIN messages m ON m.id = p."messageId"
+      WHERE lower(btt_bo_dau(p.place)) = ${key} AND ${pham} ${tu} ${kenh}
+      ORDER BY p."createdAt" DESC LIMIT 2000`;
+    // Nhãn sale ghim: địa điểm của tour tính như bảng xếp hạng (danh mục website, nhóm tour, rồi tên tour).
+    const keys = (await this.tours(user, bo)).filter((t) => khoaTour(t.place ?? 'Địa điểm khác') === key).map((t) => t.key);
+    const ghim = keys.length
+      ? await this.prisma.$queryRaw<Dong[]>`
+          WITH e AS (${this.suKien(user, bo)})
+          SELECT e.conv_id, e.msg_id AS message_id, e.cid, cu.name, cu.phone, e.ch, e.at, m.text, NULL::text AS place, e.name AS tour, u."fullName" AS by_name
+          FROM e JOIN customers cu ON cu.id = e.cid
+          LEFT JOIN messages m ON m.id = e.msg_id
+          LEFT JOIN users u ON u.id = e.by_id
+          WHERE lower(btt_bo_dau(e.name)) IN (${Prisma.join(keys)})
+          ORDER BY e.at DESC LIMIT 2000`
+      : [];
+    return [...tuHoi, ...ghim]
+      .sort((a, b) => +b.at - +a.at)
+      .slice(0, 2000)
+      .map((r) => ({
+        conversationId: r.conv_id, messageId: r.message_id, customerId: r.cid, name: r.name, phone: r.phone, channel: r.ch, at: r.at,
+        text: r.text ?? '', source: r.tour ? ('TAG' as const) : ('AUTO' as const), tour: r.tour, by: r.by_name,
+      }));
+  }
+
+  /**
+   * Quét lại tin khách đã có của một hội thoại để nhận địa điểm (tin kéo về từ Zalo, tin trước khi có tính năng).
+   * Đi từ tin cũ nhất, theo giờ của từng tin: mỗi khách mỗi địa điểm mỗi ngày chỉ tính một lượt (khoá duy nhất bỏ qua lượt trùng).
+   */
+  async quetHoiThoai(conversationId: string): Promise<number> {
+    const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { customerId: true } });
+    if (!c) return 0;
+    const tin = await this.prisma.message.findMany({
+      where: { conversationId, senderType: 'CUSTOMER', internal: false, text: { not: '' } },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, text: true, createdAt: true },
+      take: 20000,
+    });
+    const data: Prisma.PlaceInterestCreateManyInput[] = [];
+    const daCo = new Set<string>();
+    for (const m of tin) {
+      for (const place of timDiaDiem(m.text ?? '')) {
+        const day = ngayVN(m.createdAt);
+        if (daCo.has(`${place}|${day}`)) continue;
+        daCo.add(`${place}|${day}`);
+        data.push({ conversationId, customerId: c.customerId, messageId: m.id, place, day, createdAt: m.createdAt });
+      }
+    }
+    if (!data.length) return 0;
+    const r = await this.prisma.placeInterest.createMany({ data, skipDuplicates: true });
+    return r.count;
+  }
+
+  /** Admin bấm "Quét tin nhắn cũ" ở trang Nhu cầu tour: quét mọi hội thoại, mỗi lần 200. */
+  async quetTatCa(): Promise<{ hoiThoai: number; luotMoi: number }> {
+    let hoiThoai = 0;
+    let luotMoi = 0;
+    let sau: string | undefined;
+    for (;;) {
+      const ds = await this.prisma.conversation.findMany({ select: { id: true }, orderBy: { id: 'asc' }, take: 200, ...(sau ? { cursor: { id: sau }, skip: 1 } : {}) });
+      if (!ds.length) break;
+      for (const c of ds) {
+        luotMoi += await this.quetHoiThoai(c.id);
+        hoiThoai++;
+      }
+      sau = ds[ds.length - 1].id;
+    }
+    this.log.log(`Quét địa điểm tin cũ: ${hoiThoai} hội thoại, ${luotMoi} lượt mới`);
+    return { hoiThoai, luotMoi };
   }
 
   /** Hộp "Thống kê tour": tổng quan một tour trong phạm vi và kỳ đang chọn. */

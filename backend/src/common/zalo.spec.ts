@@ -105,6 +105,17 @@ describe('zalo', () => {
     const [t] = chuanHoaLichSu([{ message_id: 'm2', time: 1700000000000, from_id: 'u1', type: 'photo', message: '', url: 'https://z/a.jpg', quote_msg_id: 'm1' }], 'u1');
     expect(t).toMatchObject({ msgId: 'm2', tuKhach: true, url: 'https://z/a.jpg', trichMa: 'm1', loai: 'photo' });
   });
+  it('lịch sử: tin loại text không có chữ vẫn tìm link lồng nhau, bỏ ảnh đại diện; tin có chữ thì không lấy link', () => {
+    const [a, b] = chuanHoaLichSu(
+      [
+        { message_id: 'm1', time: 1, from_id: 'oa', type: 'text', message: '', from_avatar: 'https://z/avt.jpg', attachment: { payload: { url: 'https://z/b.jpg' } } },
+        { message_id: 'm2', time: 2, from_id: 'oa', type: 'text', message: 'xem https://x.vn', href: 'https://x.vn' },
+      ],
+      'u1',
+    );
+    expect(a.url).toBe('https://z/b.jpg');
+    expect(b.url).toBeNull();
+  });
   it('khách chia sẻ thông tin: lấy số và tên, sự kiện khác thì null', () => {
     expect(phanTichChiaSe({ event_name: 'user_submit_info', sender: { id: 'u1' }, info: { phone: ' 84912345678 ', name: 'An' } })).toEqual({ userId: 'u1', phone: '84912345678', name: 'An' });
     expect(phanTichChiaSe({ event_name: 'user_submit_info', sender: { id: 'u1' }, info: {} })).toEqual({ userId: 'u1', phone: null, name: null });
