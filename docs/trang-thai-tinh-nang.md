@@ -23,7 +23,11 @@
 | Trích dẫn (reply): webhook, tin OA, tin cũ | Chỉ test giả | Tên trường (`quote_msg_id`, `quote`...) chưa kiểm chứng; log "trường lạ trong message" |
 | Khách thả cảm xúc → log nội bộ | Chỉ test giả | Tên sự kiện chưa kiểm chứng; log "Bỏ qua sự kiện Zalo" |
 | Chatbot AI tự trả lời Zalo | Chưa làm | Đã có hướng (webhook gọi chatbot), chờ chủ dự án quyết |
-| Xin SĐT qua Zalo (`request_user_info`) | Chưa làm | Chủ dự án bảo để sau |
+| Xin SĐT qua Zalo (thẻ `request_user_info`, sự kiện `user_submit_info` tự lưu số) | Chỉ test giả | Tên API/trường theo tài liệu, chưa kiểm chứng |
+| Gửi ảnh (JPG/PNG ≤1 MB) / PDF (≤5 MB) sang Zalo | Chỉ test giả | `/v2.0/oa/upload/image|file`, chưa kiểm chứng |
+| Thanh khung 48 giờ Zalo trong khung chat | Chỉ test giả | Tính từ `lastCustomerMessageAt` |
+| Kênh kết nối: trạng thái token, hạn refresh token, tin gửi lỗi, cảnh báo | Chỉ test giả | Lỗi token và số tin lỗi giữ trong bộ nhớ, khởi động lại thì mất |
+| Gợi ý trả lời bằng AI | Chưa làm | Cần gọi Gemini, chờ làm đợt sau |
 
 ## Digital (Nhu cầu tour)
 
@@ -39,6 +43,8 @@
 |---|---|---|
 | Chưa đọc đậm + chấm xanh, Liên hệ có chuông | Chỉ test giả | 2026-11-13 |
 | Xoá hội thoại (admin) | Chỉ test giả | |
+| Hộp thư theo bản Stitch: bộ lọc trạng thái vào nút Bộ lọc, cột danh sách 380px | Chỉ test giả | |
+| Giao diện tối mới (than ấm, bỏ tông xanh tím) | Chỉ test giả | |
 
 ## Nhật ký
 
@@ -49,6 +55,7 @@ Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration khôn
 - 2026-11-13: kéo tin cũ tải ảnh/PDF, trích dẫn cho tin cũ và tin OA; thêm file này. Không có migration.
 
 - 2026-11-13: Digital tự nhận địa điểm, xếp tour theo doanh thu/đơn chốt. **Có migration** `20261113090000_place_interests`.
+- 2026-11-13: hộp thư theo Stitch, gửi ảnh/PDF và xin SĐT qua Zalo, trạng thái Zalo ở Kênh kết nối, giao diện tối mới. Không có migration mới (ngoài `place_interests` ở trên).
 
 Lệnh cập nhật VPS chuẩn (migrate an toàn kể cả khi không có gì mới):
 
