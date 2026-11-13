@@ -30,7 +30,7 @@ export default function InboxPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col lg:flex-row">
-      <div className={`min-h-0 min-w-0 flex-col lg:flex lg:w-[340px] lg:flex-none lg:shrink-0 ${selected ? 'hidden' : 'flex flex-1'}`}>
+      <div className={`min-h-0 min-w-0 flex-col lg:flex lg:w-[380px] lg:flex-none lg:shrink-0 ${selected ? 'hidden' : 'flex flex-1'}`}>
         <ConversationList selected={selected} onSelect={selectConversation} />
       </div>
       <div className={`min-h-0 min-w-0 flex-1 ${selected ? 'flex' : 'hidden lg:flex'}`}>

@@ -116,6 +116,19 @@ export function phanTichOa(body: unknown): TinOa | null {
   return { userId, msgId, text: text.slice(0, 4000), tenSuKien: ten, timestamp: b.timestamp === undefined ? '' : String(b.timestamp) };
 }
 
+/** Khách bấm chia sẻ thông tin trên thẻ xin thông tin (sự kiện user_submit_info). Tên trường theo tài liệu Zalo, chưa kiểm chứng. */
+export function phanTichChiaSe(body: unknown): { userId: string; phone: string | null; name: string | null } | null {
+  if (!body || typeof body !== 'object') return null;
+  const b = body as Record<string, any>;
+  if (b.event_name !== 'user_submit_info') return null;
+  const userId = b.sender?.id;
+  if (typeof userId !== 'string' || !userId) return null;
+  const info = (b.info ?? b.message?.info ?? {}) as Record<string, unknown>;
+  const phone = typeof info.phone === 'string' && info.phone.trim() ? info.phone.trim() : null;
+  const name = typeof info.name === 'string' && info.name.trim() ? info.name.trim().slice(0, 120) : null;
+  return { userId, phone, name };
+}
+
 const CAM_XUC: Record<string, string> = {
   '/-heart': 'thả tim', '/-strong': 'thích', ':>': 'haha', ':o': 'wow', ':-((': 'buồn', ':-h': 'phẫn nộ', ':-*': 'hôn', '/-shit': 'không thích', '/-rose': 'tặng hoa', '/-break': 'tan vỡ',
 };

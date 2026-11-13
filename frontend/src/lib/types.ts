@@ -41,6 +41,8 @@ export type Conversation = {
   followUp: { at: string; note: string | null; by: Person | null } | null;
   /** Lần cuối khung chat phía khách mở và lấy tin nhân viên. */
   customerSeenAt: string | null;
+  /** Lần cuối khách nhắn (khung 48 giờ của Zalo tính từ đây). */
+  lastCustomerMessageAt?: string | null;
   lastMessageAt: string;
   lastMessagePreview: string | null;
 };

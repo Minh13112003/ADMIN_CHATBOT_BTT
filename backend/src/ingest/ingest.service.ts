@@ -255,6 +255,36 @@ export class IngestService {
     return { saved: true };
   }
 
+  /**
+   * Khách bấm chia sẻ thông tin trên thẻ Zalo: lưu SĐT nếu khách chưa có số và số chưa thuộc khách khác (không tự gộp).
+   * Luôn ghi log nội bộ để nhân viên thấy khách đã chia sẻ.
+   */
+  async khachChiaSeThongTin(a: { userId: string; phone: string | null; name: string | null }): Promise<{ saved: boolean }> {
+    const dt = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: a.userId } }, select: { customerId: true, customer: { select: { phone: true } } } });
+    if (!dt) return { saved: false };
+    const conv = await this.prisma.conversation.findUnique({ where: { customerId_channel: { customerId: dt.customerId, channel: 'ZALO' } }, select: { id: true } });
+    if (!conv) return { saved: false };
+    const so = a.phone ? chuanHoaSoDienThoai(a.phone) : null;
+    let ghi = 'Khách đã bấm chia sẻ thông tin qua Zalo nhưng không kèm số điện thoại';
+    let luu = false;
+    if (so) {
+      const cua = await this.prisma.customer.findUnique({ where: { phone: so }, select: { id: true, name: true } });
+      if (cua && cua.id !== dt.customerId) ghi = `Khách chia sẻ số ${so} qua Zalo, nhưng số này đã thuộc khách "${cua.name}". Chưa lưu, nhân viên kiểm tra lại`;
+      else if (dt.customer.phone && dt.customer.phone !== so) ghi = `Khách chia sẻ số ${so} qua Zalo (khác số đang lưu ${dt.customer.phone}). Chưa thay, nhân viên sửa ở menu nếu cần`;
+      else {
+        luu = dt.customer.phone !== so;
+        ghi = `Khách đã chia sẻ số ${so} qua Zalo${luu ? ', đã lưu vào hồ sơ' : ''}`;
+      }
+    }
+    const [message] = await this.prisma.$transaction([
+      this.prisma.message.create({ data: { conversationId: conv.id, senderType: 'SYSTEM', internal: true, text: ghi } }),
+      ...(luu && so ? [this.prisma.customer.update({ where: { id: dt.customerId }, data: { phone: so, phoneVerified: true } })] : []),
+    ]);
+    this.realtime.emit('message:new', { conversationId: conv.id, message: this.raNgoai(message as { id: string }) });
+    this.realtime.emit('conversation:update', { id: conv.id });
+    return { saved: luu };
+  }
+
   /** Khách thả cảm xúc vào một tin: ghi dòng nhật ký nội bộ (chỉ nhân viên thấy), không đổi trạng thái hay xem trước của danh sách. */
   async khachThaCamXuc(a: { userId: string; msgId: string | null; camXuc: string }): Promise<{ saved: boolean }> {
     const dt = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: a.userId } }, select: { customerId: true } });

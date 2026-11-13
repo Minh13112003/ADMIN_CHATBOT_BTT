@@ -220,14 +220,16 @@ export class ConversationsService {
       if (!goc) throw new BadRequestException('Không tìm thấy tin được trích');
     }
     // Kênh Zalo: gửi sang Zalo trước khi lưu, lỗi thì báo ngay và không lưu tin giả vờ đã gửi.
+    // Kiểm tra và thu nhỏ file trước (chưa lưu), để gửi sang Zalo đúng bản đã thu nhỏ.
+    const chuanBi = file ? await this.tep.chuanBi(file) : null;
     if (c.channel === 'ZALO') {
-      if (file) throw new BadRequestException('Zalo OA chưa hỗ trợ gửi ảnh/PDF từ trang này, bạn nhắn chữ giúp nhé');
       const danhTinh = await this.prisma.customerIdentity.findFirst({ where: { customerId: c.customerId, channel: 'ZALO' }, select: { externalId: true } });
       if (!danhTinh) throw new BadRequestException('Không tìm thấy tài khoản Zalo của khách này');
-      await this.zalo.guiTin(danhTinh.externalId, noiDung);
+      if (chuanBi) await this.zalo.guiTep(danhTinh.externalId, chuanBi, noiDung);
+      else await this.zalo.guiTin(danhTinh.externalId, noiDung);
     }
     // Lưu file sau cùng các kiểm tra khác để không tải lên rồi mới báo lỗi.
-    const dinhKem = file ? await this.tep.luu(file) : null;
+    const dinhKem = chuanBi ? await this.tep.luuDaChuanBi(chuanBi) : null;
 
     const sau = nguoiPhuTrachSauKhiGui(c, user.id);
     const nguoiCu = c.assignee?.fullName;

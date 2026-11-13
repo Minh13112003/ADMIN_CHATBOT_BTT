@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, Controller, Get, HttpCode, Injectable, Logger, Param, ParseUUIDPipe, Post } from '@nestjs/common';
-import { Roles } from '../auth/auth.decorators';
+import { AuthUser, CurrentUser, Roles } from '../auth/auth.decorators';
 import { tomTat } from '../common/text';
 import { Role } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -90,6 +90,18 @@ export class ZaloSyncService {
     }
   }
 
+  /** Gửi thẻ xin thông tin qua Zalo rồi ghi log nội bộ. Zalo lỗi (hết khung 48 giờ...) thì báo lỗi, không ghi log. */
+  async xinSdt(user: AuthUser, conversationId: string) {
+    const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { channel: true, customerId: true } });
+    if (!c || c.channel !== 'ZALO') throw new BadRequestException('Chỉ xin số qua Zalo được với hội thoại Zalo');
+    const danhTinh = await this.prisma.customerIdentity.findFirst({ where: { customerId: c.customerId, channel: 'ZALO' }, select: { externalId: true } });
+    if (!danhTinh) throw new BadRequestException('Không tìm thấy tài khoản Zalo của khách này');
+    await this.zalo.xinThongTin(danhTinh.externalId);
+    const m = await this.prisma.message.create({ data: { conversationId, senderType: 'SYSTEM', internal: true, text: `${user.fullName} đã gửi yêu cầu chia sẻ số điện thoại qua Zalo. Đang chờ khách bấm chia sẻ` } });
+    this.realtime.emit('message:new', { conversationId, message: m });
+    return { ok: true };
+  }
+
   async dongBo(conversationId: string, toiDa = 50): Promise<{ them: number; tong: number }> {
     const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { channel: true, customerId: true } });
     if (!c || c.channel !== 'ZALO') throw new BadRequestException('Chỉ dùng được cho hội thoại Zalo');
@@ -151,6 +163,13 @@ export class ZaloSyncService {
 @Controller('conversations')
 export class ZaloSyncController {
   constructor(private sync: ZaloSyncService) {}
+
+  /** Sale hoặc admin bấm "Xin số điện thoại": gửi thẻ chia sẻ thông tin của Zalo cho khách. */
+  @Post(':id/zalo-request-phone')
+  @HttpCode(200)
+  xinSdt(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.sync.xinSdt(me, id);
+  }
 
   /** Admin bấm "Đồng bộ tin cũ từ Zalo" trong menu ⋯ của hội thoại Zalo. */
   @Roles(Role.ADMIN)

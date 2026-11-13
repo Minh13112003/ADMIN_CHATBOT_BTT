@@ -51,7 +51,7 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M4 7h16M7 12h10M10 17h4" />
             </svg>
-            Bộ lọc{(tag || coHen || timTin) && <span className="size-2 rounded-full bg-brand" />}
+            Bộ lọc{(tag || coHen || timTin || status) && <span className="size-2 rounded-full bg-brand" />}
           </button>
         </div>
         <label className="flex min-h-11 items-center gap-2 rounded-[10px] bg-fill px-3">
@@ -69,6 +69,12 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
         </label>
 
         <div id="inbox-advanced-filters" hidden={!filtersOpen} className={filtersOpen ? 'flex flex-wrap items-center gap-2 text-[0.8125rem]' : 'hidden'}>
+          {!timTin && (
+            <div role="group" aria-label="Lọc theo trạng thái" className="flex w-full flex-wrap gap-1.5">
+              <button type="button" aria-pressed={!status} onClick={() => setStatus(null)} className={`min-h-9 whitespace-nowrap rounded-lg px-3 text-xs font-semibold ${!status ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>Tất cả ({tong})</button>
+              {STATUS_LIST.map((s) => <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)} className={`min-h-9 whitespace-nowrap rounded-lg px-3 text-xs font-semibold ${status === s ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>{STATUS[s].label} ({data?.counts[s] ?? 0})</button>)}
+            </div>
+          )}
           <button
             type="button"
             aria-pressed={timTin}
@@ -120,18 +126,6 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
               ))}
             </div>
 
-            <div
-              role="group"
-              aria-label="Lọc theo trạng thái"
-              className="-mx-4 flex snap-x scroll-px-4 gap-1.5 overflow-x-auto overscroll-x-contain px-4 pb-1.5 [scrollbar-width:thin]"
-              onWheel={(e) => {
-                // Lăn chuột dọc thì cuộn ngang hàng trạng thái.
-                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) e.currentTarget.scrollLeft += e.deltaY;
-              }}
-            >
-              <button type="button" aria-pressed={!status} onClick={() => setStatus(null)} className={`min-h-10 shrink-0 snap-start whitespace-nowrap rounded-lg px-3 text-xs font-semibold ${!status ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>Tất cả ({tong})</button>
-              {STATUS_LIST.map((s) => <button key={s} type="button" aria-pressed={status === s} onClick={(e) => { setStatus(s); e.currentTarget.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); }} className={`min-h-10 shrink-0 snap-start whitespace-nowrap rounded-lg px-3 text-xs font-semibold ${status === s ? 'bg-brand-soft text-brand-text' : 'bg-fill text-body'}`}>{STATUS[s].label} ({data?.counts[s] ?? 0})</button>)}
-            </div>
           </>
         )}
       </div>

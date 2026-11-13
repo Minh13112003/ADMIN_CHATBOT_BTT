@@ -6,6 +6,7 @@ import { duongDanLuuTru, kyLinkTep, loiTep, nhanRaLoaiTep, tenTepAnToan } from '
 import { StorageService } from './storage.service';
 
 export type TepDaLuu = { path: string; type: string; name: string; size: number };
+export type TepChuanBi = { data: Buffer; type: string; ext: string; name: string; anh: boolean };
 export type TepTraVe = { url: string; type: string; name: string; size: number };
 
 const CANH_DAI_TOI_DA = 1600;
@@ -26,6 +27,18 @@ export class AttachmentsService {
    * rồi lưu vào Storage. Gọi SAU khi đã qua các kiểm tra khác để không lưu file rồi mới báo lỗi.
    */
   async luu(file: { buffer: Buffer; originalname?: string }): Promise<TepDaLuu> {
+    return this.luuDaChuanBi(await this.chuanBi(file));
+  }
+
+  /** Lưu file đã qua `chuanBi` (dùng khi cần gửi đúng bản đã thu nhỏ sang nơi khác, ví dụ Zalo, trước khi lưu). */
+  async luuDaChuanBi(cb: TepChuanBi): Promise<TepDaLuu> {
+    const path = duongDanLuuTru(randomUUID(), cb.ext, new Date());
+    await this.storage.upload(path, cb.data, cb.type);
+    return { path, type: cb.type, name: cb.name, size: cb.data.length };
+  }
+
+  /** Kiểm tra theo nội dung và thu nhỏ ảnh, chưa lưu. */
+  async chuanBi(file: { buffer: Buffer; originalname?: string }): Promise<TepChuanBi> {
     const loi = loiTep(file.buffer);
     if (loi) throw new BadRequestException(loi);
     const loai = nhanRaLoaiTep(file.buffer)!;
@@ -41,9 +54,7 @@ export class AttachmentsService {
         throw new BadRequestException('Không đọc được ảnh này, bạn thử ảnh khác nhé');
       }
     }
-    const path = duongDanLuuTru(randomUUID(), loai.ext, new Date());
-    await this.storage.upload(path, data, loai.type);
-    return { path, type: loai.type, name: tenTepAnToan(file.originalname, loai.ext), size: data.length };
+    return { data, type: loai.type, ext: loai.ext, name: tenTepAnToan(file.originalname, loai.ext), anh: loai.anh };
   }
 
   /** Link xem có hạn cho một tin. Đường dẫn tương đối: nơi nhận tự thêm địa chỉ máy chủ. */

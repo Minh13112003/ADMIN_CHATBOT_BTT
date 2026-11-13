@@ -85,12 +85,12 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
           </button>
           <AnhKhach ten={conv.customer.name} anh={conv.customer.avatarUrl} className="hidden size-10 shrink-0 place-items-center rounded-full bg-brand-soft font-semibold text-brand-text sm:grid" />
           <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-semibold" title={conv.customer.name}>
-              {conv.customer.name}
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="truncate text-base font-semibold" title={conv.customer.name}>{conv.customer.name}</span>
+              <span className={`hidden shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold md:inline ${STATUS[conv.status].className}`}>{STATUS[conv.status].label}</span>
             </div>
             <div className="truncate text-[0.8125rem] text-muted">{dinhDangSo(conv.customer.phone)} · {CHANNEL[conv.channel].label}</div>
           </div>
-          <span className={`hidden shrink-0 whitespace-nowrap rounded-xl px-2.5 py-1 text-[0.8125rem] font-semibold 2xl:inline ${STATUS[conv.status].className}`}>{STATUS[conv.status].label}</span>
           {!chiXem && (
             <button type="button" onClick={() => setTimTin(!timTin)} aria-label="Tìm tin nhắn trong hội thoại" aria-pressed={timTin} title="Tìm tin nhắn" className={`grid size-11 shrink-0 place-items-center rounded-lg border border-line hover:bg-fill ${timTin ? 'bg-fill' : ''}`}>
               <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
@@ -114,6 +114,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
           </button>
         </div>
 
+        {conv.channel === 'ZALO' && <KhungZalo lan={conv.lastCustomerMessageAt ?? null} />}
         {(choNhanVien || donCho) && <div className="flex min-h-12 items-center gap-2 border-b border-amber-line bg-auto-soft px-3 py-1.5 text-sm text-amber-ink"><strong className="shrink-0">Cần làm:</strong><span className="min-w-0 flex-1 truncate">{donCho ? `Gọi khách xác nhận đơn ${donCho.tourName} (${trieu(donCho.amount)})` : conv.assignee ? `Khách chờ nhân viên ${conv.assignee.fullName}` : 'Khách đang chờ nhân viên'}</span>{conv.customer.phone && <a className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" href={`tel:${conv.customer.phone}`}>Gọi khách</a>}{donCho && <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => setXacNhan(donCho)}>Xác nhận đơn</button>}</div>}
 
         {timTin && <TimTinTrongChat id={id} onClose={() => setTimTin(false)} />}
@@ -128,6 +129,43 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
       {xoaHoiThoai && <XoaHoiThoaiDialog id={id} ten={conv.customer.name} onClose={() => setXoaHoiThoai(false)} onXong={() => { setXoaHoiThoai(false); onBack(); void globalMutate((k) => typeof k === 'string' && (k.startsWith('/conversations') || k.startsWith('/customers') || k.startsWith('/stats')), undefined, { revalidate: true }); }} />}
       {headerHandover && <HandoverDialog conv={conv} onClose={() => setHeaderHandover(false)} onDone={refresh} />}
       {ghimTin && <TagTourDialog conv={conv} tags={tags ?? []} ghimSan={ghimTin} onClose={() => setGhimTin(null)} onDone={() => void mutateTags()} />}
+    </div>
+  );
+}
+
+/**
+ * Khung nhắn của Zalo: tin tư vấn miễn phí trong 48 giờ từ lần cuối khách nhắn; hết khung thì OpenAPI không gửi được,
+ * phải chờ khách nhắn lại. Tự cập nhật mỗi phút.
+ */
+function KhungZalo({ lan }: { lan: string | null }) {
+  const [bay, setBay] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setBay(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  if (!lan) return null;
+  const KHUNG = 48 * 3600_000;
+  const con = KHUNG - (bay - new Date(lan).getTime());
+  const gio = Math.max(0, Math.floor(con / 3600_000));
+  const phut = Math.max(0, Math.floor((con % 3600_000) / 60_000));
+  const het = con <= 0;
+  const sap = !het && con < 6 * 3600_000;
+  const mau = het ? 'border-alert-line bg-brand-faint text-alert-ink' : sap ? 'border-amber-line bg-auto-soft text-amber-ink' : 'border-line bg-blue-soft/40 text-blue-ink';
+  return (
+    <div role="status" className={`flex min-h-10 items-center gap-3 border-b px-3 py-1.5 text-[0.8125rem] sm:px-4 ${mau}`}>
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+      <span className="min-w-0 flex-1 truncate">
+        {het ? (
+          <><strong>Hết khung nhắn miễn phí của Zalo.</strong> Khách cần nhắn lại trước, hoặc trả lời trên Trang quản lý Zalo OA.</>
+        ) : (
+          <>Còn <strong>{gio > 0 ? `${gio} giờ` : `${phut} phút`}</strong> để nhắn miễn phí (khung 48 giờ của Zalo, tính từ tin cuối của khách)</>
+        )}
+      </span>
+      {!het && (
+        <span aria-hidden="true" className="hidden h-1.5 w-28 shrink-0 overflow-hidden rounded-full bg-surface sm:block">
+          <span className={`block h-full rounded-full ${sap ? 'bg-amber-ink' : 'bg-blue-ink'}`} style={{ width: `${Math.max(3, (con / KHUNG) * 100)}%` }} />
+        </span>
+      )}
     </div>
   );
 }
@@ -297,6 +335,7 @@ function Composer({
   const { sendTyping, typing } = useRealtime();
   const [draft, setDraft] = useState('');
   const [loi, setLoi] = useState('');
+  const [xinSo, setXinSo] = useState<'' | 'dang' | 'xong'>('');
   const [dangGui, setDangGui] = useState(false);
   const [hoiLai, setHoiLai] = useState<string | null>(null);
   const lanGo = useRef(0);
@@ -498,7 +537,8 @@ function Composer({
         <button
           type="button"
           onClick={() => chonTep.current?.click()}
-          aria-label="Đính kèm ảnh hoặc PDF"
+          aria-label={conv.channel === 'ZALO' ? 'Đính kèm ảnh JPG/PNG (tối đa 1 MB) hoặc PDF (tối đa 5 MB) gửi qua Zalo' : 'Đính kèm ảnh hoặc PDF'}
+          title={conv.channel === 'ZALO' ? 'Zalo: ảnh JPG/PNG tối đa 1 MB, PDF tối đa 5 MB' : undefined}
           className="flex min-h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-field bg-surface hover:bg-fill"
         >
           <svg
@@ -515,6 +555,24 @@ function Composer({
             <path d="m21 12-8.6 8.6a5.5 5.5 0 0 1-7.8-7.8l8.6-8.6a3.7 3.7 0 0 1 5.2 5.2l-8.6 8.6a1.8 1.8 0 0 1-2.6-2.6l7.9-7.9" />
           </svg>
         </button>
+        {conv.channel === 'ZALO' && !conv.customer.phone && (
+          <button
+            type="button"
+            disabled={xinSo === 'dang'}
+            onClick={() => {
+              setXinSo('dang');
+              setLoi('');
+              post(`/conversations/${conv.id}/zalo-request-phone`)
+                .then(() => setXinSo('xong'))
+                .catch((err) => { setLoi(loiCua(err)); setXinSo(''); });
+            }}
+            title="Gửi thẻ chia sẻ số điện thoại của Zalo, khách bấm là số tự lưu vào hồ sơ"
+            className="flex min-h-11 shrink-0 items-center gap-1.5 rounded-[10px] border border-blue-soft bg-blue-soft/40 px-2.5 text-[0.8125rem] font-semibold text-blue-ink hover:bg-blue-soft disabled:opacity-60"
+          >
+            <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z" /></svg>
+            <span className="hidden sm:inline">{xinSo === 'xong' ? 'Đã gửi yêu cầu' : xinSo === 'dang' ? 'Đang gửi...' : 'Xin số điện thoại'}</span>
+          </button>
+        )}
         <textarea
           ref={textarea}
           rows={1}

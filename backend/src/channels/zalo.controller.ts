@@ -1,7 +1,7 @@
 import { Controller, Get, Headers, HttpCode, Logger, Post, Query, Req, Res, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public, Roles } from '../auth/auth.decorators';
-import { chuKyHopLe, layDinhKem, layTrich, phanTichOa, phanTichPhanUng, phanTichSuKien, thuCongThuc, truongLa, type DinhKemZalo } from '../common/zalo';
+import { chuKyHopLe, layDinhKem, layTrich, phanTichChiaSe, phanTichOa, phanTichPhanUng, phanTichSuKien, thuCongThuc, truongLa, type DinhKemZalo } from '../common/zalo';
 import type { TepDaLuu } from '../storage/attachments.service';
 import { Role } from '../generated/prisma/client';
 import { IngestService } from '../ingest/ingest.service';
@@ -94,6 +94,11 @@ export class ZaloWebhookController {
       } catch (err) {
         this.log.warn(`Không ghi được tin OA gửi: ${(err as Error).message}`);
       }
+      return { ok: true };
+    }
+    const chiaSe = phanTichChiaSe(body);
+    if (chiaSe) {
+      await this.ingest.khachChiaSeThongTin(chiaSe).catch((err: Error) => this.log.warn(`Không lưu được thông tin khách chia sẻ: ${err.message}`));
       return { ok: true };
     }
     const pu = phanTichPhanUng(body);

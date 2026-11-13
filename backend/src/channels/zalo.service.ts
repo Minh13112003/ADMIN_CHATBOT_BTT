@@ -194,6 +194,62 @@ export class ZaloService {
     return j;
   }
 
+  /** Tải tệp lên Zalo (multipart, trường `file`) để lấy mã dùng khi gửi. Tên API theo tài liệu Zalo, chưa kiểm chứng khi chạy thật. */
+  private async taiLenZalo(loai: 'image' | 'file', data: Buffer, ten: string, mime: string): Promise<string> {
+    const c = await this.doc();
+    if (!c.accessToken) throw new BadRequestException('Zalo chưa được kết nối (thiếu access token)');
+    const goi = async (token: string) => {
+      const form = new FormData();
+      form.append('file', new Blob([new Uint8Array(data)], { type: mime }), ten);
+      const r = await fetch(`${OPENAPI}/v2.0/oa/upload/${loai}`, { method: 'POST', headers: { access_token: token }, body: form, signal: AbortSignal.timeout(60_000) });
+      return (await r.json().catch(() => ({}))) as any;
+    };
+    let j = await goi(c.accessToken);
+    if (j?.error === -216 && c.refreshToken) {
+      await this.lamMoiToken();
+      j = await goi((await this.doc()).accessToken ?? '');
+    }
+    if (j?.error) throw new BadRequestException(`Zalo không nhận tệp (lỗi ${j.error}: ${j.message ?? 'không rõ'})`);
+    const ma = loai === 'image' ? j?.data?.attachment_id : j?.data?.token;
+    if (typeof ma !== 'string' || !ma) {
+      this.log.warn(`Tải tệp lên Zalo: không thấy mã trong phản hồi, khoá: ${Object.keys(j?.data ?? {}).join(',')}`);
+      throw new BadRequestException('Zalo không trả mã tệp, chưa gửi được');
+    }
+    return ma;
+  }
+
+  /**
+   * Gửi ảnh (JPG/PNG tối đa 1 MB) hoặc PDF (tối đa 5 MB) cho khách qua tin tư vấn. Giới hạn theo tài liệu Zalo, chưa kiểm chứng.
+   * Ảnh có chữ kèm thì gửi chung một tin; PDF có chữ kèm thì gửi chữ thành tin riêng sau tệp.
+   */
+  async guiTep(zaloUserId: string, tep: { data: Buffer; type: string; name: string; anh: boolean }, chu: string) {
+    if (tep.anh) {
+      if (tep.type === 'image/webp') throw new BadRequestException('Zalo chỉ nhận ảnh JPG hoặc PNG');
+      if (tep.data.length > 1024 * 1024) throw new BadRequestException('Ảnh gửi sang Zalo tối đa 1 MB');
+      const ma = await this.taiLenZalo('image', tep.data, tep.name, tep.type);
+      await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, {
+        method: 'POST',
+        body: { recipient: { user_id: zaloUserId }, message: { ...(chu ? { text: chu } : {}), attachment: { type: 'template', payload: { template_type: 'media', elements: [{ media_type: 'image', attachment_id: ma }] } } } },
+      });
+      return;
+    }
+    if (tep.data.length > 5 * 1024 * 1024) throw new BadRequestException('Tệp gửi sang Zalo tối đa 5 MB');
+    const ma = await this.taiLenZalo('file', tep.data, tep.name, tep.type);
+    await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: { recipient: { user_id: zaloUserId }, message: { attachment: { type: 'file', payload: { token: ma } } } } });
+    if (chu) await this.guiTin(zaloUserId, chu);
+  }
+
+  /** Gửi thẻ "Chia sẻ thông tin" của Zalo (mẫu request_user_info): khách bấm thì Zalo gửi lại sự kiện user_submit_info kèm SĐT. */
+  async xinThongTin(zaloUserId: string) {
+    await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, {
+      method: 'POST',
+      body: {
+        recipient: { user_id: zaloUserId },
+        message: { attachment: { type: 'template', payload: { template_type: 'request_user_info', elements: [{ title: 'BenThanh Tourist xin thông tin liên hệ', subtitle: 'Anh/chị bấm chia sẻ để tư vấn viên gọi lại và giữ chỗ tour nhanh hơn ạ.', image_url: `${this.goc()}/logo.png` }] } } },
+      },
+    });
+  }
+
   /** Gửi tin chữ tư vấn cho khách. Zalo chỉ cho nhắn trong khung thời gian sau lần khách tương tác cuối. */
   async guiTin(zaloUserId: string, text: string) {
     await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: { recipient: { user_id: zaloUserId }, message: { text } } });

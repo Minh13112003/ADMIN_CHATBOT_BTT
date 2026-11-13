@@ -1,4 +1,4 @@
-import { layDinhKem, layTrich, phanTichOa, phanTichPhanUng, chuanHoaChatGanDay, chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
+import { phanTichChiaSe, layDinhKem, layTrich, phanTichOa, phanTichPhanUng, chuanHoaChatGanDay, chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
 import { createHash } from 'crypto';
 
 describe('zalo', () => {
@@ -104,5 +104,10 @@ describe('zalo', () => {
   it('lịch sử: đọc mã tin được trích dẫn và link ảnh', () => {
     const [t] = chuanHoaLichSu([{ message_id: 'm2', time: 1700000000000, from_id: 'u1', type: 'photo', message: '', url: 'https://z/a.jpg', quote_msg_id: 'm1' }], 'u1');
     expect(t).toMatchObject({ msgId: 'm2', tuKhach: true, url: 'https://z/a.jpg', trichMa: 'm1', loai: 'photo' });
+  });
+  it('khách chia sẻ thông tin: lấy số và tên, sự kiện khác thì null', () => {
+    expect(phanTichChiaSe({ event_name: 'user_submit_info', sender: { id: 'u1' }, info: { phone: ' 84912345678 ', name: 'An' } })).toEqual({ userId: 'u1', phone: '84912345678', name: 'An' });
+    expect(phanTichChiaSe({ event_name: 'user_submit_info', sender: { id: 'u1' }, info: {} })).toEqual({ userId: 'u1', phone: null, name: null });
+    expect(phanTichChiaSe({ event_name: 'follow', sender: { id: 'u1' } })).toBeNull();
   });
 });
