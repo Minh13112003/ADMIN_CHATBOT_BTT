@@ -59,6 +59,8 @@ Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration khôn
 - 2026-11-13: hộp thư theo Stitch, gửi ảnh/PDF và xin SĐT qua Zalo, trạng thái Zalo ở Kênh kết nối, giao diện tối mới. Không có migration mới (ngoài `place_interests` ở trên).
 - 2026-11-13: tin cũ Zalo hiện "[OA gửi tin nhắn qua Zalo...]" (loại text, không chữ): nay tìm link ở mọi trường, tải tệp không lọc theo loại, log "Lịch sử Zalo tin không chữ". Không có migration. VPS build lỗi EOF do hết RAM (3,3 GB) và 47 GB bộ nhớ đệm build: dọn `docker builder prune -f`, build từng cái.
 - 2026-11-13: bảng Theo địa điểm bỏ tour con, thêm % và hộp tin nhắn; quét tin cũ; thêm địa danh từ chatbot; khách chia sẻ số thì đẩy hội thoại lên đầu. Bỏ nút Xin số điện thoại, thay bằng mẫu trả lời nhanh. **Có migration** `20261113150000_mau_xin_sdt` (chỉ thêm 1 mẫu).
+- 2026-11-13: danh sách hội thoại ghi người gửi tin cuối ("Bạn:", "Khách:", tên đồng nghiệp, "Zalo OA:"), đọc 1 dòng/hội thoại qua chỉ mục. Không có migration.
+- 2026-11-13: hộp thống kê địa điểm thêm biểu đồ 7 ngày, tin nhắn dạng bảng 10 dòng/trang có nút số trang, bộ lọc kênh chỉ hiện kênh có tin. Chỉ frontend, không có migration.
 
 Lệnh cập nhật VPS chuẩn (migrate an toàn kể cả khi không có gì mới):
 

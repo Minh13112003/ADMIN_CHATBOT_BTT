@@ -175,6 +175,7 @@ function PlaceStatsModal({ place, ky, kenh, onClose }: { place: PlaceRow; ky: Ky
   const { data: ds, error } = useSWR<TinNoi[]>(`/tour-interest/place-messages?${p}`, fetcher);
   const [tim, setTim] = useState('');
   const [locKenh, setLocKenh] = useState('');
+  const [trang, setTrang] = useState(0);
   const bo = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
   const loc = useMemo(() => (ds ?? []).filter((t) => (!locKenh || t.channel === locKenh) && (!tim.trim() || bo(`${t.name} ${t.phone ?? ''} ${t.text}`).includes(bo(tim.trim())))), [ds, tim, locKenh]);
   const theoKenh = useMemo(() => {
@@ -182,6 +183,26 @@ function PlaceStatsModal({ place, ky, kenh, onClose }: { place: PlaceRow; ky: Ky
     for (const t of ds ?? []) m[t.channel] = (m[t.channel] ?? 0) + 1;
     return m;
   }, [ds]);
+  // Bộ lọc kênh chỉ hiện kênh có tin.
+  const kenhCo = (['WEB', 'APP', 'ZALO', 'FACEBOOK'] as Channel[]).filter((c) => theoKenh[c]);
+  // Biểu đồ 7 ngày qua theo giờ Việt Nam, kể cả ngày không có lượt nào.
+  const ngayVN = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Ho_Chi_Minh' });
+  const bayNgay = useMemo(() => {
+    const dem = new Map<string, number>();
+    for (const t of ds ?? []) dem.set(ngayVN(new Date(t.at)), (dem.get(ngayVN(new Date(t.at))) ?? 0) + 1);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = ngayVN(new Date(Date.now() - (6 - i) * 86_400_000));
+      return { date: d, count: dem.get(d) ?? 0 };
+    });
+  }, [ds]);
+  const cao = Math.max(1, ...bayNgay.map((x) => x.count));
+  const MOI_TRANG = 10;
+  const soTrang = Math.max(1, Math.ceil(loc.length / MOI_TRANG));
+  const trangDung = Math.min(trang, soTrang - 1);
+  const dangXem = loc.slice(trangDung * MOI_TRANG, (trangDung + 1) * MOI_TRANG);
+  // Nút số trang: tối đa 5 số quanh trang đang xem.
+  const dau = Math.max(0, Math.min(trangDung - 2, soTrang - 5));
+  const cacTrang = Array.from({ length: Math.min(5, soTrang) }, (_, i) => dau + i);
   const xuat = () =>
     ds &&
     taiCsv(`quan-tam-${place.key.replace(/\W+/g, '-')}.csv`, [
@@ -214,34 +235,80 @@ function PlaceStatsModal({ place, ky, kenh, onClose }: { place: PlaceRow; ky: Ky
             ))}
           </p>
         )}
+        {ds && (
+          <section className="rounded-2xl border border-line p-4">
+            <div className="flex items-baseline justify-between"><h4 className="font-semibold">Lượt hỏi theo ngày (7 ngày qua)</h4><span className="text-xs text-muted">Tổng {so(bayNgay.reduce((s, x) => s + x.count, 0))} lượt</span></div>
+            <div className="mt-4 flex h-40 items-end gap-3 border-b border-line pb-1" role="img" aria-label={`Lượt hỏi 7 ngày: ${bayNgay.map((x) => x.count).join(', ')}`}>
+              {bayNgay.map((x, i) => {
+                const homNay = i === bayNgay.length - 1;
+                return (
+                  <div key={x.date} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
+                    <span className={`text-xs font-semibold ${homNay ? 'text-brand-text' : 'text-body'}`}>{x.count}</span>
+                    <span className={`w-full max-w-10 rounded-t ${homNay ? 'bg-brand-button' : 'bg-brand-soft'}`} style={{ height: `${Math.max(2, (x.count / cao) * 100)}%` }} />
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-1.5 flex gap-3">
+              {bayNgay.map((x, i) => (
+                <span key={x.date} className={`flex-1 text-center text-xs ${i === bayNgay.length - 1 ? 'font-semibold text-brand-text' : 'text-muted'}`}>{i === bayNgay.length - 1 ? 'Hôm nay' : `${x.date.slice(8, 10)}/${x.date.slice(5, 7)}`}</span>
+              ))}
+            </div>
+          </section>
+        )}
         <div className="flex flex-wrap gap-2">
-          <input value={tim} onChange={(e) => setTim(e.target.value)} placeholder="Tìm tên, số điện thoại, nội dung" aria-label="Tìm tin nhắn" className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-field bg-surface px-3 text-sm" />
-          <select value={locKenh} onChange={(e) => setLocKenh(e.target.value)} aria-label="Lọc kênh" className={chonClass}>
-            <option value="">Mọi kênh</option>
-            {(['WEB', 'APP', 'ZALO', 'FACEBOOK'] as Channel[]).map((c) => <option key={c} value={c}>{CHANNEL[c].label}</option>)}
-          </select>
+          <input value={tim} onChange={(e) => { setTim(e.target.value); setTrang(0); }} placeholder="Tìm tên, số điện thoại, nội dung" aria-label="Tìm tin nhắn" className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-field bg-surface px-3 text-sm" />
+          {kenhCo.length > 0 && (
+            <select value={locKenh} onChange={(e) => { setLocKenh(e.target.value); setTrang(0); }} aria-label="Lọc kênh" className={chonClass}>
+              <option value="">Mọi kênh</option>
+              {kenhCo.map((c) => <option key={c} value={c}>{CHANNEL[c].label}</option>)}
+            </select>
+          )}
         </div>
         {!ds && !error && <p role="status" className="text-sm text-muted">Đang tải tin nhắn...</p>}
         {error && <p role="alert" className="text-sm text-brand-text">Không tải được tin nhắn của địa điểm này.</p>}
         {ds && !loc.length && <p className="text-sm text-muted">{ds.length ? 'Không có tin khớp.' : 'Chưa có tin nhắn nào trong khoảng thời gian này.'}</p>}
-        <ul className="flex flex-col gap-2">
-          {loc.map((t, i) => (
-            <li key={`${t.conversationId}-${t.messageId ?? i}-${t.at}`} className="rounded-xl border border-line bg-page p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                <span className="min-w-0">
-                  <strong className="text-sm text-ink">{t.name}</strong>
-                  <span className="text-muted"> · <span className="font-semibold text-blue-ink">{CHANNEL[t.channel]?.label ?? t.channel}</span> · {t.phone ?? 'Chưa có số điện thoại'}</span>
-                </span>
-                <span className="text-muted">{new Date(t.at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-              <p className="mt-2 border-l-[3px] border-amber-ink bg-surface px-3 py-2 text-sm italic">“{t.text || 'Không có nội dung tin nhắn'}”</p>
-              <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
-                <span>{t.source === 'AUTO' ? 'Máy nhận ra trong tin khách' : <>Sale ghim: <strong className="text-ink">{t.by ?? 'nhân viên đã nghỉ'}</strong>{t.tour ? ` · ${t.tour}` : ''}</>}</span>
-                <a href={linkTin(t)} target="_blank" rel="noopener" className="inline-flex min-h-9 items-center gap-1 font-semibold text-brand-text hover:underline">Mở tin nhắn</a>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {dangXem.length > 0 && (
+          <div className="overflow-x-auto rounded-xl border border-line">
+            <table className="w-full min-w-[640px] border-collapse text-sm">
+              <thead>
+                <tr className="bg-fill text-left text-[0.6875rem] font-bold uppercase tracking-wider text-muted">
+                  <th className="w-10 px-3 py-2.5">#</th>
+                  <th className="px-3 py-2.5">Khách</th>
+                  <th className="px-3 py-2.5">Tin nhắn</th>
+                  <th className="px-3 py-2.5">Thời gian</th>
+                  <th className="px-3 py-2.5"><span className="sr-only">Mở tin nhắn</span></th>
+                </tr>
+              </thead>
+              <tbody>
+                {dangXem.map((t, i) => (
+                  <tr key={`${t.conversationId}-${t.messageId ?? i}-${t.at}`} className="border-t border-line-soft align-top">
+                    <td className="px-3 py-2.5 text-muted">{trangDung * MOI_TRANG + i + 1}</td>
+                    <td className="px-3 py-2.5">
+                      <p className="font-semibold">{t.name}</p>
+                      <p className="text-xs"><span className="font-semibold text-blue-ink">{CHANNEL[t.channel]?.label ?? t.channel}</span><span className="text-muted"> · {t.phone ?? 'Chưa có SĐT'}</span></p>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <p className="line-clamp-3 italic">“{t.text || 'Không có nội dung tin nhắn'}”</p>
+                      <p className="mt-1 text-xs text-muted">{t.source === 'AUTO' ? 'Máy nhận ra trong tin khách' : <>Sale ghim: <strong className="text-ink">{t.by ?? 'nhân viên đã nghỉ'}</strong>{t.tour ? ` · ${t.tour}` : ''}</>}</p>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-xs text-muted">{new Date(t.at).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                    <td className="px-3 py-2.5 text-right"><a href={linkTin(t)} target="_blank" rel="noopener" className="inline-flex min-h-9 items-center whitespace-nowrap text-xs font-semibold text-brand-text hover:underline">Mở tin nhắn</a></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {soTrang > 1 && (
+          <nav aria-label="Chuyển trang" className="flex flex-wrap items-center justify-center gap-1.5">
+            <button type="button" disabled={trangDung === 0} onClick={() => setTrang(trangDung - 1)} aria-label="Trang trước" className="grid size-11 place-items-center rounded-lg border border-field text-sm font-semibold disabled:opacity-40">‹</button>
+            {cacTrang.map((n) => (
+              <button key={n} type="button" onClick={() => setTrang(n)} aria-current={n === trangDung ? 'page' : undefined} className={`grid size-11 place-items-center rounded-lg border text-sm font-semibold ${n === trangDung ? 'border-brand-button bg-brand-button text-white' : 'border-field hover:bg-fill'}`}>{n + 1}</button>
+            ))}
+            <button type="button" disabled={trangDung + 1 >= soTrang} onClick={() => setTrang(trangDung + 1)} aria-label="Trang sau" className="grid size-11 place-items-center rounded-lg border border-field text-sm font-semibold disabled:opacity-40">›</button>
+          </nav>
+        )}
       </div>
     </Modal>
   );

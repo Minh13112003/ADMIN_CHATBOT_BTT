@@ -45,6 +45,8 @@ export type Conversation = {
   lastCustomerMessageAt?: string | null;
   lastMessageAt: string;
   lastMessagePreview: string | null;
+  /** Ai gửi tin (không phải log nội bộ) mới nhất; chỉ có trong danh sách hội thoại. */
+  lastMessageFrom?: { type: 'CUSTOMER' | 'STAFF' | 'BOT' | 'AUTO' | 'SYSTEM'; staffLabel: string | null; staffId: string | null } | null;
 };
 
 export type ConversationList = { items: Conversation[]; counts: Partial<Record<Status, number>>; hasMore: boolean };

@@ -137,11 +137,30 @@ export class ConversationsService {
           }),
       this.prisma.conversation.groupBy({ by: ['status'], where, _count: { _all: true } }),
     ]);
+    const ds = [...contacts, ...others];
+    const nguoiCuoi = await this.nguoiNhanCuoi(ds.map((c) => c.id));
     return {
-      items: await Promise.all([...contacts, ...others].map((c) => this.toDto(c, user.id, ten))),
+      items: await Promise.all(ds.map(async (c) => ({ ...(await this.toDto(c, user.id, ten)), lastMessageFrom: nguoiCuoi.get(c.id) ?? null }))),
       counts: Object.fromEntries(counts.map((c) => [c.status, c._count._all])),
       hasMore: others.length === take,
     };
+  }
+
+  /**
+   * Ai gửi tin (không phải log nội bộ) mới nhất của từng hội thoại, để danh sách ghi "Bạn:", "Khách:"...
+   * Mỗi hội thoại đọc đúng 1 dòng qua chỉ mục (conversationId, createdAt), không quét bảng tin nhắn.
+   */
+  private async nguoiNhanCuoi(ids: string[]): Promise<Map<string, { type: string; staffLabel: string | null; staffId: string | null }>> {
+    if (!ids.length) return new Map();
+    const rows = await this.prisma.$queryRaw<{ id: string; type: string; label: string | null; staff_id: string | null }[]>`
+      SELECT c.id, m."senderType"::text AS type, m."staffLabel" AS label, m."staffId" AS staff_id
+      FROM unnest(${ids}::text[]) AS c(id)
+      CROSS JOIN LATERAL (
+        SELECT "senderType", "staffLabel", "staffId" FROM messages
+        WHERE "conversationId" = c.id AND internal = false
+        ORDER BY "createdAt" DESC LIMIT 1
+      ) m`;
+    return new Map(rows.map((r) => [r.id, { type: r.type, staffLabel: r.label, staffId: r.staff_id }]));
   }
 
   /** Admin phòng chỉ thấy hội thoại của phòng mình; sale và admin toàn quyền như cũ. */

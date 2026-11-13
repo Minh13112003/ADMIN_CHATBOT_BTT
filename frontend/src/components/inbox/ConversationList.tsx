@@ -3,7 +3,17 @@ import useSWR from 'swr';
 import { AnhKhach } from '../ui';
 import { fetcher } from '@/lib/api';
 import { CHANNEL, CHANNEL_LIST, dinhDangSo, gioTin, STATUS, STATUS_LIST, TAGS, thoiGianTruoc } from '@/lib/labels';
-import type { Channel, ConversationList as ListData, MessageHit, Status } from '@/lib/types';
+import type { Channel, Conversation, ConversationList as ListData, MessageHit, Status } from '@/lib/types';
+
+/** Ai gửi tin cuối, ghi trước dòng xem trước: "Bạn", "Khách", tên đồng nghiệp, "Zalo OA", "Bot", "Tự động". */
+function nguoiGui(f: Conversation['lastMessageFrom'], meId: string | undefined): string | null {
+  if (!f) return null;
+  if (f.type === 'CUSTOMER') return 'Khách';
+  if (f.type === 'STAFF') return f.staffId && f.staffId === meId ? 'Bạn' : (f.staffLabel ?? 'Nhân viên');
+  if (f.type === 'BOT') return 'Bot';
+  if (f.type === 'AUTO') return 'Tự động';
+  return null;
+}
 
 export function ConversationList({ selected, onSelect }: { selected: string | null; onSelect: (id: string) => void }) {
   const [search, setSearch] = useState('');
@@ -16,6 +26,7 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
   /** Tìm trong nội dung tin nhắn thay vì tên / SĐT khách. */
   const [timTin, setTimTin] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const { data: me } = useSWR<{ id: string }>('/auth/me', fetcher);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search), 300);
@@ -164,7 +175,10 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
                     <span className={`shrink-0 text-xs ${lh || chuaXem ? 'font-semibold text-ink' : 'text-muted'}`}>{thoiGianTruoc(c.lastMessageAt)}</span>
                   </span>
                   <span className="text-[0.8125rem] text-muted">{dinhDangSo(c.customer.phone)}</span>
-                  <span className={`truncate text-[0.8125rem] ${lh || chuaXem ? 'font-semibold text-ink' : 'text-body'}`}>{c.lastMessagePreview}</span>
+                  <span className={`truncate text-[0.8125rem] ${lh || chuaXem ? 'font-semibold text-ink' : 'text-body'}`}>
+                    {nguoiGui(c.lastMessageFrom, me?.id) && <span className="font-semibold text-muted">{nguoiGui(c.lastMessageFrom, me?.id)}: </span>}
+                    {c.lastMessagePreview}
+                  </span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-[5px]">
                     <span className={`rounded-[10px] px-2 py-0.5 text-xs font-semibold ${STATUS[c.status].className}`}>{STATUS[c.status].label}</span>
                     <span className={`rounded-[10px] px-2 py-0.5 text-xs font-medium ${CHANNEL[c.channel].className}`}>{CHANNEL[c.channel].label}</span>
