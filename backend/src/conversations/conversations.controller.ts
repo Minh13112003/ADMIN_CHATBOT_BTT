@@ -67,6 +67,10 @@ class CloseDto {
   @IsOptional() @IsString() @MaxLength(100) tourKey?: string;
   @IsString({ message: 'Chọn ngày khởi hành' }) @MaxLength(60) dayCode: string;
   @Type(() => Number) @IsInt() @Min(1, { message: 'Số khách phải từ 1' }) @Max(1000) guests: number;
+  /** Người lớn, trẻ em (80% giá), em bé (40% giá). Có `adults` thì `guests` chỉ để tương thích. */
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1, { message: 'Cần ít nhất 1 người lớn' }) @Max(1000) adults?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(1000) children?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(1000) infants?: number;
   @Transform(({ value }) => (typeof value === 'string' && value.trim() ? value.trim() : undefined))
   @IsOptional() @IsString() @MaxLength(40) voucherCode?: string;
   @Transform(({ value }) => (typeof value === 'string' && value.trim() ? value.trim() : undefined))

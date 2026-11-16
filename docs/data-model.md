@@ -14,9 +14,15 @@ Nguồn chuẩn: `backend/prisma/schema.prisma`.
 | `auto_reply_rules` | Quy tắc tự động: tin đầu, từ khoá, ngoài giờ |
 | `deals` | Đơn đặt tour. `status`: chờ xác nhận / đã chốt / huỷ, chỉ `CONFIRMED` không `voidedAt` tính doanh thu. `source`: khách tự đặt qua chatbot hay sale nhập. `tourCode` mã đợt khởi hành, `orderCode` id booking BE Mobile, `bookingStatus` trạng thái BE Mobile báo về; `bookingUpdatedAt` là mốc `occurredAt` mới nhất đã áp dụng để bỏ cập nhật cũ. Từ 11/11/2026 sale chốt thì backend tự ghi `tourKey`, `departureDate`, `unitPrice` (giá/người theo ngày khởi hành), `subtotal`, `voucherId`/`voucherCode`, `discount`, và `amount = subtotal - discount`; đơn cũ để trống các cột này |
 | `tour_interest_tags` | Sale gắn "tour quan tâm" cho hội thoại, mỗi dòng ghim một tin (`messageId`). Cùng tour gắn lại là dòng mới (lần 2, lần 3). Tên tour và địa điểm lấy từ danh mục website lúc gắn |
-| `vouchers` | Voucher của admin phòng ban hoặc admin toàn quyền: giảm số tiền hoặc phần trăm có trần, phạm vi một tour / một địa điểm / mọi tour, ngày hiệu lực, số lần tối đa, tạm khoá. Số lần đã dùng đếm từ đơn đã chốt còn tính, không lưu bộ đếm |
+| `vouchers` | Voucher của admin phòng ban hoặc admin toàn quyền: giảm số tiền hoặc phần trăm có trần, phạm vi một tour / một địa điểm / mọi tour, ngày hiệu lực, số lần tối đa, tạm khoá. `tier`: chỉ khách app đúng hạng đó; `maxUsesPerCustomerMonth`: lượt mỗi khách mỗi tháng (2026-11-16). Số lần đã dùng đếm từ đơn đã chốt còn tính, không lưu bộ đếm |
 | `contact_responses` | Mỗi lần khách đòi gặp nhân viên được trả lời: bao nhiêu giây, ai trả lời. Nguồn số "thời gian phản hồi" |
 | `ai_usage` | Token Gemini từng lần gọi, nguồn chi phí |
+| `place_interests` | Địa điểm máy nhận ra trong tin khách, mỗi khách mỗi địa điểm tối đa 1 dòng mỗi ngày (giờ Việt Nam) |
+| `deal_guests` | Hành khách của đơn đặt từ app (khách 1 = người đặt), họ tên, ngày sinh, CCCD, hộ chiếu để làm thủ tục |
+| `app_accounts` | Tài khoản đăng nhập app Mobile, một khách tối đa một tài khoản (`customerId` duy nhất). Đăng nhập bằng `phone`; mật khẩu, PIN, refresh token chỉ lưu bản băm. Thông tin làm thủ tục (ngày sinh, CCCD, hộ chiếu), `earnedPoints` xét hạng, `avatarPath` ảnh đại diện |
+| `app_notifications` | Thông báo trong app (tab chuông), tạo khi đơn app đổi trạng thái, `refType = BOOKING` + `refId` id đơn |
+| `app_favorites` | Tour yêu thích của tài khoản app, giữ tên, ảnh, giá lúc thêm. Một tour một dòng mỗi tài khoản |
+| `app_feedbacks` | Góp ý khách gửi trong app |
 
 Quan hệ chính: một khách có nhiều mã kênh và nhiều hội thoại (mỗi kênh một), một hội thoại có nhiều tin và nhiều đơn.
 

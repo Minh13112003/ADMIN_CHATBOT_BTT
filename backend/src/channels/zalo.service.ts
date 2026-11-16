@@ -46,7 +46,8 @@ export class ZaloService {
       if (lon > GIOI_HAN_TEP_TOI_DA) throw new Error('quá lớn');
       const buffer = Buffer.from(await r.arrayBuffer());
       if (buffer.length > GIOI_HAN_TEP_TOI_DA) throw new Error('quá lớn');
-      return await this.tep.luu({ buffer, originalname: ten ?? undefined });
+      // Tệp từ Zalo (sticker, ảnh động) có thể là GIF: nhận luôn.
+      return await this.tep.luu({ buffer, originalname: ten ?? undefined }, { choGif: true });
     } catch (e) {
       this.log.warn(`Không lưu được tệp từ Zalo: ${(e as Error).message}`);
       return null;

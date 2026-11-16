@@ -67,6 +67,7 @@ enum DealStatus {
 enum DealSource {
   CHATBOT // Khách tự đặt trong khung chat
   STAFF // Sale nhập khi chốt
+  APP // Khách tự đặt trong app Mobile
 }
 
 // Voucher giảm theo số tiền, hoặc theo phần trăm có mức trần (chủ dự án chốt 11/11/2026).
@@ -115,6 +116,7 @@ model User {
   templates QuickTemplate[]
   tourTags  TourInterestTag[]
   vouchers  Voucher[]
+  appAccountsCreated AppAccount[]
 
   @@index([departmentId])
   @@map("users")
@@ -135,6 +137,7 @@ model Customer {
   identities    CustomerIdentity[]
   conversations Conversation[]
   deals         Deal[]
+  appAccount    AppAccount?
 
   // Tìm "chứa chuỗi" (LIKE '%...%') cần chỉ mục trigram, chỉ mục thường không dùng được.
   @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin)
@@ -292,6 +295,17 @@ model Deal {
   createdAt        DateTime   @default(now()) // Lúc khách đặt hoặc sale nhập
   closedAt         DateTime   @default(now()) // Lúc chốt; đơn chờ xác nhận thì cập nhật khi xác nhận
   voidedAt         DateTime? // Mở lại hội thoại thì đơn không còn tính doanh thu
+  // Đơn khách đặt trong app (nguồn APP), xem common/app-booking.ts. Đơn khác để trống.
+  adults           Int?
+  children         Int? // 2–15 tuổi, 80% giá
+  infants          Int? // dưới 2 tuổi, 40% giá
+  notice           String? // Ghi chú của khách
+  departureKey     String? // id đợt khởi hành trên benthanhtourist.com (tour_days[].id)
+  returnDate       DateTime? @db.Date // Ngày về, để tự chuyển Hoàn thành
+  tourImage        String?
+  pointsAwarded    Int? // Điểm đã cộng khi Hoàn thành; có giá trị thì không cộng lần nữa
+
+  guestList DealGuest[]
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
@@ -385,6 +399,10 @@ model Voucher {
   startsAt     DateTime
   endsAt       DateTime
   maxUses      Int? // null = không giới hạn
+  /// Chỉ khách đúng bậc thành viên này dùng được (DONG, BAC, VANG, BACH_KIM, KIM_CUONG, RUBY). null = mọi khách. Chốt 2026-11-16.
+  tier         String?
+  /// Mỗi khách dùng tối đa bấy nhiêu lần trong một tháng (giờ Việt Nam). null = không giới hạn.
+  maxUsesPerCustomerMonth Int?
   note         String?
   isActive     Boolean      @default(true) // false = tạm khoá
   departmentId String? // Phòng tạo voucher; admin toàn quyền tạo thì để trống
@@ -417,4 +435,105 @@ model PlaceInterest {
   @@index([createdAt])
   @@index([conversationId])
   @@map("place_interests")
+}
+
+/// Tài khoản đăng nhập app Mobile của khách (chủ dự án chốt 2026-11-16). Chỉ sale tạo, khi khách đã có SĐT và đã chốt tour.
+/// Tên đăng nhập là SĐT; mật khẩu ngẫu nhiên 6 ký tự, chỉ hiện cho sale một lần. Tên, SĐT nằm ở bảng customers.
+model AppAccount {
+  id               String    @id @default(uuid())
+  customerId       String    @unique
+  phone            String    @unique // SĐT đăng nhập, dạng 0xxxxxxxxx
+  passwordHash     String
+  refreshTokenHash String? // Băm của refresh token đang dùng; đăng xuất thì xoá
+  pinHash          String? // Mã PIN 6 số (băm)
+  fcmToken         String? // Token thông báo đẩy Firebase của máy đang đăng nhập
+  email            String?
+  dateOfBirth      DateTime? @db.Date
+  gender           String?
+  nationalId       String?
+  passportNumber   String?
+  passportExpiry   DateTime? @db.Date
+  isActive         Boolean   @default(true)
+  earnedPoints     Int       @default(0) // Điểm tích luỹ xét bậc thành viên, 1.000 đ = 1 điểm, cộng khi đơn Hoàn thành
+  avatarPath       String? // Ảnh đại diện khách tải lên trong app (đường dẫn trong nơi lưu file, không phải link)
+  createdById      String?
+  lastLoginAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  customer      Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdBy     User?             @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  notifications AppNotification[]
+  favorites     AppFavorite[]
+  feedbacks     AppFeedback[]
+
+  @@map("app_accounts")
+}
+
+/// Thông báo trong app (danh sách chuông). Chưa gửi thông báo đẩy. Tạo khi đơn đổi trạng thái.
+model AppNotification {
+  id        String   @id @default(uuid())
+  accountId String
+  title     String
+  message   String
+  type      String // BOOKING_STATUS, SYSTEM
+  refType   String? // BOOKING: refId là id đơn (deals.id)
+  refId     String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  account AppAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId, createdAt])
+  @@map("app_notifications")
+}
+
+/// Tour yêu thích. Giữ ảnh chụp tên, ảnh, giá lúc thêm để hiện danh sách không cần gọi website.
+model AppFavorite {
+  id            String    @id @default(uuid())
+  accountId     String
+  tourKey       String
+  tourName      String
+  tourImage     String?
+  durationText  String?
+  unitPrice     BigInt?
+  departureDate DateTime? @db.Date
+  createdAt     DateTime  @default(now())
+
+  account AppAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, tourKey])
+  @@map("app_favorites")
+}
+
+/// Góp ý khách gửi trong app.
+model AppFeedback {
+  id        String   @id @default(uuid())
+  accountId String
+  subject   String
+  content   String
+  createdAt DateTime @default(now())
+
+  account AppAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt])
+  @@map("app_feedbacks")
+}
+
+/// Hành khách của một đơn đặt từ app (khách 1 = người đặt, position 0). Dùng làm thủ tục vé, visa.
+model DealGuest {
+  id             String    @id @default(uuid())
+  dealId         String
+  position       Int
+  fullName       String
+  dateOfBirth    DateTime? @db.Date
+  gender         String?
+  nationalId     String?
+  passportNumber String?
+  phone          String?
+
+  deal Deal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+
+  @@index([dealId])
+  @@map("deal_guests")
 }

@@ -1,3 +1,4 @@
+import { AppNotificationsService } from '../app-mobile/app-notifications.service';
 import { ZaloService } from '../channels/zalo.service';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -44,14 +45,15 @@ const MESSAGE_SELECT = {
   replyTo: { select: { id: true, text: true, senderType: true } },
 } satisfies Prisma.MessageSelect;
 
-export type CloseInput = { dealId?: string; tourKey?: string; dayCode: string; guests: number; voucherCode?: string; orderCode?: string };
+/** `adults`, `children`, `infants`: số người lớn, trẻ em (80%), em bé (40%) sale nhập (chốt 2026-11-16). Không có thì tính `guests` người lớn. */
+export type CloseInput = { dealId?: string; tourKey?: string; dayCode: string; guests: number; adults?: number; children?: number; infants?: number; voucherCode?: string; orderCode?: string };
 export type PatchInput = { tags?: string[]; note?: string; interest?: string; autoReplyOn?: boolean; followUpAt?: string | null; followUpNote?: string };
 
 @Injectable()
 export class ConversationsService {
   private log = new Logger('Conversations');
 
-  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService, private zalo: ZaloService) {}
+  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService, private zalo: ZaloService, private appThongBao?: AppNotificationsService) {}
 
   /** Bỏ đường dẫn lưu trữ, thêm `attachment` (link xem có hạn) trước khi gửi ra ngoài. */
   private ra<T extends { id: string; attachmentPath: string | null; attachmentType: string | null; attachmentName: string | null; attachmentSize: number | null }>(m: T) {
@@ -356,20 +358,33 @@ export class ConversationsService {
       const trung = await this.prisma.deal.findUnique({ where: { orderCode: dto.orderCode }, select: { id: true } });
       if (trung && trung.id !== dto.dealId) throw new ConflictException('Mã đơn này đã được ghi nhận');
     }
+    const don = dto.dealId
+      ? await this.prisma.deal.findFirst({ where: { id: dto.dealId, conversationId: id }, select: { status: true, source: true, adults: true, children: true, infants: true } })
+      : null;
     if (dto.dealId) {
-      const don = await this.prisma.deal.findFirst({ where: { id: dto.dealId, conversationId: id }, select: { status: true } });
       if (!don) throw new NotFoundException('Không tìm thấy đơn này');
       if (don.status !== 'PENDING') throw new ConflictException(don.status === 'CONFIRMED' ? 'Đơn này đã được chốt' : 'Đơn này đã huỷ');
     }
-    const gia = await this.pricing.bao({ ...dto, conversationId: id });
+    const tuApp = don?.source === 'APP';
+    // Số người lớn, trẻ em, em bé: sale nhập trong hộp Chốt tour; không gửi thì giữ theo đơn khách đặt trong app, hoặc tính tất cả là người lớn.
+    const khach =
+      dto.adults !== undefined
+        ? { adults: dto.adults, children: dto.children ?? 0, infants: dto.infants ?? 0 }
+        : tuApp && don.adults !== null
+          ? { adults: don.adults, children: don.children ?? 0, infants: don.infants ?? 0 }
+          : { adults: dto.guests, children: 0, infants: 0 };
+    if (khach.adults < 1) throw new BadRequestException('Cần ít nhất 1 người lớn');
+    const gia = await this.pricing.bao({ ...dto, conversationId: id, customerId: c.customerId, guests: khach.adults, children: khach.children, infants: khach.infants });
+    const soKhach = khach.adults + khach.children + khach.infants;
     if (gia.voucherError) throw new BadRequestException(gia.voucherError);
     const tourCode = gia.dayCode;
     const data = {
-      tourName: gia.tourName, tourCode, tourKey: gia.tourKey, guests: gia.guests,
+      tourName: gia.tourName, tourCode, tourKey: gia.tourKey, guests: soKhach, ...khach,
       departureDate: gia.departureDate ? new Date(`${gia.departureDate}T00:00:00Z`) : null,
       unitPrice: BigInt(gia.unitPrice), subtotal: BigInt(gia.subtotal), discount: BigInt(gia.discount), amount: BigInt(gia.total),
       voucherId: gia.voucher?.id ?? null, voucherCode: gia.voucher?.code ?? null,
       status: 'CONFIRMED' as const, closedById: user.id, closedAt: new Date(),
+      ...(tuApp ? { bookingStatus: 'CONFIRMED', bookingUpdatedAt: new Date() } : {}),
     };
     const tien = gia.total.toLocaleString('vi-VN');
     const voucherLog = gia.voucher ? `, voucher ${gia.voucher.code} giảm ${gia.discount.toLocaleString('vi-VN')} đ` : '';
@@ -377,17 +392,22 @@ export class ConversationsService {
       if (gia.voucher) {
         // Hai sale cùng dùng voucher sắp hết lượt: khoá theo voucher rồi đếm lại.
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${'voucher:' + gia.voucher.id}))`;
-        const v = await tx.voucher.findUnique({ where: { id: gia.voucher.id }, select: { maxUses: true } });
+        const v = await tx.voucher.findUnique({ where: { id: gia.voucher.id }, select: { maxUses: true, maxUsesPerCustomerMonth: true } });
         if (v?.maxUses !== null && v?.maxUses !== undefined && (await this.pricing.daDung(gia.voucher.id, tx, dto.dealId)) >= v.maxUses) {
           throw new ConflictException('Voucher này vừa dùng hết lượt');
         }
+        if (v?.maxUsesPerCustomerMonth && (await this.pricing.daDungTrongThang(gia.voucher.id, c.customerId, tx, dto.dealId)) >= v.maxUsesPerCustomerMonth) {
+          throw new ConflictException('Khách đã dùng đủ số lần voucher này trong tháng');
+        }
       }
       if (dto.dealId) await tx.deal.update({ where: { id: dto.dealId }, data: { ...data, ...(dto.orderCode ? { orderCode: dto.orderCode } : {}) } });
+      if (dto.dealId && tuApp) await this.appThongBao?.baoDon(tx, { customerId: c.customerId, dealId: dto.dealId, tourName: data.tourName, status: 'CONFIRMED' });
       else await tx.deal.create({ data: { ...data, conversationId: id, customerId: c.customerId, channel: c.channel, source: 'STAFF', orderCode: dto.orderCode } });
     });
+    const thanhPhan = [`${khach.adults} người lớn`, khach.children && `${khach.children} trẻ em`, khach.infants && `${khach.infants} em bé`].filter(Boolean).join(', ');
     const log = dto.dealId
-      ? `${user.fullName} xác nhận đơn khách đặt qua bttAI: ${data.tourName} (${tourCode}), ${gia.guests} khách${voucherLog}, còn ${tien} đ`
-      : `${user.fullName} chốt tour ${data.tourName} (${tourCode}), ${gia.guests} khách${voucherLog}, còn ${tien} đ`;
+      ? `${user.fullName} xác nhận đơn khách đặt${tuApp ? ' trong app' : ' qua bttAI'}: ${data.tourName} (${tourCode}), ${thanhPhan}${voucherLog}, còn ${tien} đ`
+      : `${user.fullName} chốt tour ${data.tourName} (${tourCode}), ${thanhPhan}${voucherLog}, còn ${tien} đ`;
     return this.capNhat(user, id, { status: 'CLOSED' }, log);
   }
 
@@ -395,7 +415,7 @@ export class ConversationsService {
   async dealByOrder(id: string, code: string) {
     const d = await this.prisma.deal.findFirst({
       where: { conversationId: id, orderCode: { equals: code.trim(), mode: 'insensitive' } },
-      select: { id: true, orderCode: true, tourCode: true, tourKey: true, tourName: true, guests: true, amount: true, status: true, voidedAt: true, createdAt: true },
+      select: { id: true, orderCode: true, tourCode: true, tourKey: true, tourName: true, guests: true, adults: true, children: true, infants: true, source: true, amount: true, status: true, voidedAt: true, createdAt: true },
     });
     if (!d) throw new NotFoundException('Không tìm thấy đơn có mã này trong hội thoại');
     return { ...d, amount: Number(d.amount) };
@@ -406,7 +426,10 @@ export class ConversationsService {
     const don = await this.prisma.deal.findFirst({ where: { id: dealId, conversationId: id } });
     if (!don) throw new NotFoundException('Không tìm thấy đơn này');
     if (don.status !== 'PENDING') throw new ConflictException('Chỉ huỷ được đơn đang chờ xác nhận');
-    await this.prisma.deal.update({ where: { id: dealId }, data: { status: 'CANCELLED' } });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.deal.update({ where: { id: dealId }, data: { status: 'CANCELLED', ...(don.source === 'APP' ? { bookingStatus: 'CANCELLED', bookingUpdatedAt: new Date() } : {}) } });
+      if (don.source === 'APP') await this.appThongBao?.baoDon(tx, { customerId: don.customerId, dealId, tourName: don.tourName, status: 'CANCELLED' });
+    });
     const c = await this.lay(id);
     const conLai = await this.prisma.deal.count({ where: { conversationId: id, status: { in: ['PENDING', 'CONFIRMED'] }, voidedAt: null } });
     return this.capNhat(
@@ -504,6 +527,10 @@ export class ConversationsService {
         voucherCode: true,
         departureDate: true,
         bookingStatus: true,
+        pointsAwarded: true,
+        adults: true,
+        children: true,
+        infants: true,
         createdAt: true,
         closedAt: true,
         voidedAt: true,

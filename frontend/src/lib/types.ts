@@ -76,11 +76,16 @@ export type Deal = {
   conversationId: string;
   channel: Channel;
   status: DealStatus;
-  source: 'CHATBOT' | 'STAFF';
+  source: 'CHATBOT' | 'STAFF' | 'APP';
+  pointsAwarded?: number | null;
   orderCode: string | null;
   tourCode: string | null;
   tourName: string;
   guests: number;
+  /** Người lớn, trẻ em, em bé (đơn đặt trong app, hoặc sale nhập khi chốt từ 2026-11-16). */
+  adults?: number | null;
+  children?: number | null;
+  infants?: number | null;
   amount: number;
   bookingStatus: string | null;
   createdAt: string;
@@ -183,6 +188,11 @@ export type Quote = {
   departureDate: string | null;
   unitPrice: number;
   guests: number;
+  adults: number;
+  children: number;
+  infants: number;
+  childPrice: number;
+  infantPrice: number;
   subtotal: number;
   voucher: { id: string; code: string; label: string } | null;
   voucherError: string | null;
@@ -218,6 +228,9 @@ export type Voucher = {
   startsAt: string;
   endsAt: string;
   maxUses: number | null;
+  /** Chỉ khách đúng hạng này dùng được (mã DONG...RUBY). */
+  tier: string | null;
+  maxUsesPerCustomerMonth: number | null;
   used: number;
   note: string | null;
   isActive: boolean;

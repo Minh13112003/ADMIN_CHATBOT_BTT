@@ -5,7 +5,7 @@ export const GIOI_HAN_ANH = 10 * 1024 * 1024;
 export const GIOI_HAN_PDF = 20 * 1024 * 1024;
 export const GIOI_HAN_TEP_TOI_DA = Math.max(GIOI_HAN_ANH, GIOI_HAN_PDF);
 
-export type LoaiTep = { type: 'image/jpeg' | 'image/png' | 'image/webp' | 'application/pdf'; ext: 'jpg' | 'png' | 'webp' | 'pdf'; anh: boolean };
+export type LoaiTep = { type: 'image/jpeg' | 'image/png' | 'image/webp' | 'image/gif' | 'application/pdf'; ext: 'jpg' | 'png' | 'webp' | 'gif' | 'pdf'; anh: boolean };
 
 const PNG_DAU = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
@@ -18,13 +18,17 @@ export function nhanRaLoaiTep(b: Buffer): LoaiTep | null {
   if (b.length >= 8 && b.subarray(0, 8).equals(PNG_DAU)) return { type: 'image/png', ext: 'png', anh: true };
   if (b.length >= 12 && b.toString('latin1', 0, 4) === 'RIFF' && b.toString('latin1', 8, 12) === 'WEBP') return { type: 'image/webp', ext: 'webp', anh: true };
   if (b.length >= 5 && b.toString('latin1', 0, 5) === '%PDF-') return { type: 'application/pdf', ext: 'pdf', anh: false };
+  if (b.length >= 6 && /^GIF8[79]a$/.test(b.toString('latin1', 0, 6))) return { type: 'image/gif', ext: 'gif', anh: true };
   return null;
 }
 
-/** Lỗi bằng tiếng Việt để hiện cho người dùng, null nếu hợp lệ. */
-export function loiTep(b: Buffer): string | null {
+/**
+ * Lỗi bằng tiếng Việt để hiện cho người dùng, null nếu hợp lệ.
+ * GIF chỉ nhận khi `choGif` (sticker, ảnh động khách gửi qua Zalo); nhân viên tải lên thì không, vì Zalo không nhận GIF qua cổng gửi ảnh.
+ */
+export function loiTep(b: Buffer, choGif = false): string | null {
   const loai = nhanRaLoaiTep(b);
-  if (!loai) return 'Chỉ gửi được ảnh (JPG, PNG, WebP) hoặc file PDF';
+  if (!loai || (loai.ext === 'gif' && !choGif)) return 'Chỉ gửi được ảnh (JPG, PNG, WebP) hoặc file PDF';
   if (loai.anh && b.length > GIOI_HAN_ANH) return 'Ảnh quá lớn, tối đa 10 MB';
   if (!loai.anh && b.length > GIOI_HAN_PDF) return 'File PDF quá lớn, tối đa 20 MB';
   return null;

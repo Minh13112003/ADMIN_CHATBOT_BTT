@@ -13,6 +13,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "create-admin": "tsx scripts/create-admin.ts",
+    "create-app-account": "tsx scripts/create-app-account.ts",
     "simulate": "tsx scripts/simulate-chat.ts",
     "smoke": "tsx scripts/smoke.ts",
     "postinstall": "prisma generate"

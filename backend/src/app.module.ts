@@ -33,6 +33,14 @@ import { ChannelSettingsController } from './channels/channel-settings.controlle
 import { ZaloOAuthController, ZaloWebhookController } from './channels/zalo.controller';
 import { ZaloService } from './channels/zalo.service';
 import { ZaloImportController, ZaloSyncController, ZaloSyncService } from './channels/zalo-sync.service';
+import { AppAccountService } from './app-mobile/app-account.service';
+import { AppAuthGuard } from './app-mobile/app-auth.guard';
+import { AppAuthController, AppUsersController, ConversationAppAccountController } from './app-mobile/app-mobile.controller';
+import { AppBookingsController, AppCatalogController, ConversationAppBookingController } from './app-mobile/app-bookings.controller';
+import { AppBookingsService } from './app-mobile/app-bookings.service';
+import { AppFavoritesController, AppMiscController, AppNotificationsController } from './app-mobile/app-extras.controller';
+import { AppExtrasService } from './app-mobile/app-extras.service';
+import { AppNotificationsService } from './app-mobile/app-notifications.service';
 
 @Module({
   imports: [
@@ -65,6 +73,15 @@ import { ZaloImportController, ZaloSyncController, ZaloSyncService } from './cha
     ZaloWebhookController,
     ZaloSyncController,
     ZaloImportController,
+    AppAuthController,
+    AppUsersController,
+    ConversationAppAccountController,
+    AppBookingsController,
+    AppCatalogController,
+    ConversationAppBookingController,
+    AppNotificationsController,
+    AppFavoritesController,
+    AppMiscController,
     ConversationsController,
     CustomersController,
     DealsController,
@@ -82,6 +99,11 @@ import { ZaloImportController, ZaloSyncController, ZaloSyncService } from './cha
     ZaloSyncService,
     IngestService,
     TourInterestService,
+    AppAccountService,
+    AppBookingsService,
+    AppExtrasService,
+    AppNotificationsService,
+    AppAuthGuard,
     TourCatalogService,
     PricingService,
     ConversationScopeGuard,

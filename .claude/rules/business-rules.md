@@ -12,7 +12,7 @@
 
 - Chỉ khi khách **muốn gặp nhân viên** mới ping lên admin. Câu như "nhân viên hướng dẫn có đi cùng không" không tính. Danh sách cụm từ ở `common/text.ts`, khớp với `TU_KHOA_CAN_NHAN_VIEN` của chatbot; chatbot có thể tự gửi cờ `wantsHuman`.
 - Nhân viên trả lời xong thì Liên hệ chuyển thành Chờ xử lý.
-- Chuyển sang Đã chốt qua hộp Chốt tour (`close`), vì đây là nguồn số doanh thu. Đổi ngày 2026-11-11: sale chỉ chọn tour, ngày khởi hành (mã đợt), số khách, voucher; **sale không sửa được giá**. Backend lấy giá/người của ngày khởi hành từ API tour, nhân số khách, trừ voucher (`tours/pricing.service.ts`). Tab "Theo mã đơn" xác nhận đúng đơn chatbot; đợt không còn trên website thì giữ giá/người lúc khách đặt. Mở lại hội thoại thì đơn bị đánh dấu `voidedAt`, không còn tính.
+- Chuyển sang Đã chốt qua hộp Chốt tour (`close`), vì đây là nguồn số doanh thu. Đổi ngày 2026-11-11: sale chỉ chọn tour, ngày khởi hành (mã đợt), số khách, voucher; **sale không sửa được giá**. Backend lấy giá/người của ngày khởi hành từ API tour, nhân số khách, trừ voucher (`tours/pricing.service.ts`). Từ 2026-11-16 sale nhập riêng người lớn (100%), trẻ em 2-11 tuổi (80%), em bé dưới 2 tuổi (40%). Tab "Theo mã đơn" xác nhận đúng đơn chatbot; đợt không còn trên website thì giữ giá/người lúc khách đặt. Mở lại hội thoại thì đơn bị đánh dấu `voidedAt`, không còn tính.
 
 ## Đơn đặt tour (chốt ngày 2026-11-06)
 - Khách tự đặt qua chatbot: đơn **Chờ xác nhận** (`PENDING`), chưa tính doanh thu, hội thoại Chờ xử lý và được chia cho một sale. Sale gọi khách rồi **xác nhận đúng đơn đó** (sửa số người, tiền nếu khách đổi), không tạo đơn mới, để không tính doanh thu hai lần. Khách không đi nữa thì bấm Khách huỷ.
@@ -22,7 +22,8 @@
 ## Voucher (chốt ngày 2026-11-11)
 - Chỉ `ADMIN` và `DEPT_ADMIN` (admin chi nhánh) tạo, sửa, tạm khoá; admin phòng chỉ thấy voucher của phòng mình. Không xoá voucher. Sale nhập mã khi chốt, mã dùng được cho mọi sale.
 - Hai loại: giảm số tiền, hoặc phần trăm có mức trần. Phạm vi: một tour, một địa điểm, mọi tour. Giảm **một lần trên tổng đơn**, không nhân theo khách, không quá tổng đơn (giả định, chưa hỏi lại chủ dự án). Quy tắc ở `common/vouchers.ts`.
-- Số lần đã dùng đếm từ đơn `CONFIRMED` không `voidedAt`; mở lại hội thoại thì voucher được trả lượt. Chốt có voucher khoá theo voucher (`pg_advisory_xact_lock`) để không vượt số lần tối đa.
+- Số lần đã dùng đếm từ đơn `CONFIRMED` không `voidedAt`; mở lại hội thoại thì voucher được trả lượt.
+- **Theo hạng** (chốt 2026-11-16): voucher có thể chỉ cho khách app **đúng** một hạng (không dùng cho hạng cao hơn hay thấp hơn), và giới hạn số lần mỗi khách mỗi tháng (giờ VN, đếm đơn đã chốt trong tháng + đơn app chờ xác nhận). App chỉ hiện voucher khách đang dùng được. Khách chưa có tài khoản app thì không có hạng. Chốt có voucher khoá theo voucher (`pg_advisory_xact_lock`) để không vượt số lần tối đa.
 
 ## Tour quan tâm (chốt ngày 2026-11-11)
 - Cách gắn chính (đổi ngày 2026-11-11): bấm icon ghim trên từng tin trong khung chat, hộp hiện ra chỉ còn bước chọn tour (gõ tên hoặc mã). Tab Tour quan tâm chỉ xem lịch sử và gỡ nhãn, không còn nút gắn (đổi 2026-11-12).
@@ -33,6 +34,14 @@
 
 ## Số điện thoại và chốt tour (chốt ngày 2026-11-12)
 - **Chốt tour bắt buộc khách có số điện thoại** (backend trả `NEED_PHONE`). Khách Zalo không tự có số: sale xin khách rồi nhập ở menu ⋯ → "Cập nhật số điện thoại khách". Chốt khi chưa có số thì hộp hỏi số trước. Số đã thuộc khách khác thì từ chối, không tự gộp. Nhập sẽ ghi log nội bộ. Chưa làm nút xin số qua Zalo.
+
+## Tài khoản app Mobile (chốt ngày 2026-11-16)
+- API app nằm trong backend này ở `/api/v1/app/...`, chi tiết và tiến độ ở `docs/app-mobile-api.md`. Không chuyển dữ liệu từ backend e-commerce cũ.
+- **Không có đăng ký trong app.** Sale tạo ở menu ⋯ → "Tài khoản app của khách", chỉ khi khách có SĐT và có đơn đã chốt. Tên đăng nhập = SĐT, mật khẩu ngẫu nhiên 6 ký tự (hoa, thường, số) chỉ hiện cho sale một lần, không lưu dạng đọc được, không ghi vào log. Cấp lại mật khẩu đăng xuất máy đang dùng.
+- Tài khoản nối với khách chat theo `app_accounts.customerId`. Khách đổi họ tên trong app thì đổi `customers.name`, tên cũ vào `aliases`.
+- **Đặt tour trong app** (chốt 2026-11-16): đơn `deals` nguồn `APP`, hội thoại kênh APP lên đầu hộp thư ở Chờ xử lý, chia sale. Trạng thái khách thấy (`deals.bookingStatus`): Chờ xác nhận → Đã xác nhận (sale chốt) → Đã cọc (cọc 50%, sale bấm) → Đã thanh toán → Đang đi tour, Hoàn thành (máy tự đổi theo ngày, cả đơn chưa cọc); Đã huỷ; Đã hoàn tiền (thôi tính doanh thu). Giá trẻ em 80%, em bé 40%, giá lấy từ website.
+- **Đợt 3** (2026-11-16): thông báo trong app khi đơn đổi trạng thái (chưa có thông báo đẩy), tour yêu thích, góp ý (ghi log nội bộ vào hội thoại app), ảnh đại diện. **Bỏ thân nhân.**
+- **Điểm thưởng** chỉ xét bậc, không trừ tiền: 1.000 đ = 1 điểm, cộng một lần khi Hoàn thành. 6 bậc Đồng 0, Bạc 10.000, Vàng 50.000, Bạch Kim 100.000, Kim Cương 200.000, Ruby 500.000. Bỏ mã giới thiệu. Thông báo đẩy để sau.
 
 ## Xoá hội thoại (chốt ngày 2026-11-12)
 - Chỉ `ADMIN` toàn quyền, menu ⋯ trong khung chat, dùng dọn dữ liệu thử. Xoá hẳn hội thoại, tin nhắn, đơn, nhãn tour, file đính kèm; khách không còn hội thoại nào khác thì xoá luôn khách. Hội thoại có đơn đã chốt (đang tính doanh thu) phải xác nhận thêm vì doanh thu thống kê giảm theo. Có ghi log server.

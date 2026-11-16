@@ -11,6 +11,11 @@ const nhanNgay = (d: TourDay) => `${ngay(d.departureDate)} · ${d.code} · ${vnd
 const thoiLuong = (t: { days: number | null; nights: number | null }) => (t.days ? `${t.days}N${t.nights ?? Math.max(0, t.days - 1)}Đ` : null);
 const conCho = (d: TourDay) => d.available && (d.stock === null || d.stock > 0);
 
+type Khach = { adults: number; children: number; infants: number };
+/** Số khách ban đầu: theo đơn (đơn app có sẵn người lớn, trẻ em, em bé; đơn cũ coi tất cả là người lớn). */
+const tuDon = (d: Deal | null): Khach =>
+  d?.adults ? { adults: d.adults, children: d.children ?? 0, infants: d.infants ?? 0 } : { adults: d?.guests ?? 1, children: 0, infants: 0 };
+
 /**
  * Chốt tour (thay hộp cũ, theo Stitch "Chốt tour & Đặt cọc"). Sale chỉ chọn tour, ngày khởi hành, số khách, voucher;
  * giá theo ngày khởi hành và số tiền cuối do backend tính (/tours/quote, rồi tính lại khi chốt).
@@ -48,8 +53,9 @@ function CloseDealForm({
   const [loiDon, setLoiDon] = useState('');
   const [dangTaiDon, setDangTaiDon] = useState(false);
 
-  // Chung
-  const [guests, setGuests] = useState(deal?.guests ?? 1);
+  // Chung: người lớn 100%, trẻ em (2-11 tuổi) 80%, em bé (dưới 2 tuổi) 40% giá tour.
+  const [khach, setKhach] = useState(() => tuDon(deal));
+  const guests = khach.adults + khach.children + khach.infants;
   const [voucherGo, setVoucherGo] = useState('');
   const [voucher, setVoucher] = useState('');
 
@@ -80,7 +86,7 @@ function CloseDealForm({
   function chonDon(d: Deal) {
     setDon(d);
     setMaDon(d.orderCode ?? '');
-    setGuests(d.guests);
+    setKhach(tuDon(d));
     setLoiDon('');
   }
 
@@ -117,7 +123,7 @@ function CloseDealForm({
   const dangDon = tab === 'order';
   const ngayChon = tour?.tourDays.find((d) => d.code === dayCode) ?? null;
   const toiDa = ngayChon?.stock ?? null;
-  const duThongTin = !!dayCode && guests >= 1 && (dangDon ? !!don && don.status === 'PENDING' : !!tourKey);
+  const duThongTin = !!dayCode && khach.adults >= 1 && (dangDon ? !!don && don.status === 'PENDING' : !!tourKey);
 
   const [quote, setQuote] = useState<Quote | null>(null);
   const [loiQuote, setLoiQuote] = useState('');
@@ -132,6 +138,8 @@ function CloseDealForm({
       post<Quote>('/tours/quote', {
         dayCode,
         guests,
+        ...khach,
+        conversationId: conv.id,
         ...(dangDon ? (theoMa ? { tourKey: theoMa.tour.key } : {}) : { tourKey }),
         ...(dangDon && don ? { dealId: don.id } : {}),
         ...(voucher ? { voucherCode: voucher } : {}),
@@ -143,12 +151,12 @@ function CloseDealForm({
       bo = true;
       clearTimeout(t);
     };
-  }, [duThongTin, dayCode, guests, voucher, tourKey, dangDon, don, theoMa]);
+  }, [duThongTin, dayCode, guests, khach, voucher, tourKey, dangDon, don, theoMa, conv.id]);
 
   const doiTab = (t: 'tour' | 'order') => {
     setTab(t);
     setDayCode(t === 'order' ? (don?.tourCode ?? '') : '');
-    setGuests(t === 'order' && don ? don.guests : 1);
+    setKhach(tuDon(t === 'order' ? don : null));
     setLoi('');
   };
 
@@ -161,6 +169,7 @@ function CloseDealForm({
         await post<Conversation>(`/conversations/${conv.id}/close`, {
           dayCode,
           guests,
+          ...khach,
           ...(quote.tourKey ? { tourKey: quote.tourKey } : {}),
           ...(dangDon && don ? { dealId: don.id } : {}),
           ...(quote.voucher ? { voucherCode: quote.voucher.code } : {}),
@@ -209,26 +218,42 @@ function CloseDealForm({
     </div>
   );
 
+  const loaiKhach: { key: keyof Khach; ten: string; phu: string; min: number }[] = [
+    { key: 'adults', ten: 'Người lớn', phu: 'Từ 12 tuổi, 100% giá', min: 1 },
+    { key: 'children', ten: 'Trẻ em', phu: '2-11 tuổi, 80% giá', min: 0 },
+    { key: 'infants', ten: 'Em bé', phu: 'Dưới 2 tuổi, 40% giá', min: 0 },
+  ];
+  const doiKhach = (k: keyof Khach, v: number) => setKhach((x) => ({ ...x, [k]: Math.max(k === 'adults' ? 1 : 0, Math.min(1000, v)) }));
+  const hetCho = toiDa !== null && guests >= toiDa;
+
   const oSoKhach = (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-baseline gap-2 text-sm font-medium">
-        <span id="so-khach">Số khách <span className="text-brand">*</span></span>
-        {toiDa !== null && <span className="text-xs font-normal text-muted">(tối đa {toiDa})</span>}
+    <fieldset className="flex flex-col gap-1.5">
+      <legend className="mb-1 flex items-baseline gap-2 text-sm font-medium">
+        Số khách <span className="text-brand">*</span>
+        <span className="text-xs font-normal text-muted">{guests} khách{toiDa !== null ? ` (còn ${toiDa} chỗ)` : ''}</span>
+      </legend>
+      <div className="grid gap-2 sm:grid-cols-3">
+        {loaiKhach.map((l) => (
+          <div key={l.key} className="flex items-center justify-between gap-2 rounded-xl border border-line px-3 py-2 sm:flex-col sm:items-start">
+            <span className="min-w-0">
+              <span id={`khach-${l.key}`} className="block text-sm font-semibold">{l.ten}</span>
+              <span className="block text-xs text-muted">{l.phu}</span>
+            </span>
+            <div role="group" aria-labelledby={`khach-${l.key}`} className="flex shrink-0 items-center rounded-[10px] border border-field bg-surface">
+              <button type="button" aria-label={`Bớt một ${l.ten.toLowerCase()}`} disabled={khach[l.key] <= l.min} onClick={() => doiKhach(l.key, khach[l.key] - 1)} className="grid size-11 place-items-center text-lg disabled:opacity-40">−</button>
+              <input
+                aria-label={`Số ${l.ten.toLowerCase()}`}
+                inputMode="numeric"
+                value={khach[l.key]}
+                onChange={(e) => doiKhach(l.key, Number(e.target.value.replace(/\D/g, '')) || 0)}
+                className="h-11 w-10 border-x border-field text-center text-sm font-semibold"
+              />
+              <button type="button" aria-label={`Thêm một ${l.ten.toLowerCase()}`} disabled={hetCho} onClick={() => doiKhach(l.key, khach[l.key] + 1)} className="grid size-11 place-items-center text-lg disabled:opacity-40">+</button>
+            </div>
+          </div>
+        ))}
       </div>
-      <div className="flex items-center gap-3">
-        <div role="group" aria-labelledby="so-khach" className="flex items-center rounded-[10px] border border-field bg-surface">
-          <button type="button" aria-label="Bớt một khách" disabled={guests <= 1} onClick={() => setGuests((g) => Math.max(1, g - 1))} className="grid size-11 place-items-center text-lg disabled:opacity-40">−</button>
-          <input
-            aria-label="Số khách"
-            inputMode="numeric"
-            value={guests}
-            onChange={(e) => setGuests(Math.max(1, Math.min(1000, Number(e.target.value.replace(/\D/g, '')) || 1)))}
-            className="h-11 w-12 border-x border-field text-center text-sm font-semibold"
-          />
-          <button type="button" aria-label="Thêm một khách" disabled={toiDa !== null && guests >= toiDa} onClick={() => setGuests((g) => g + 1)} className="grid size-11 place-items-center text-lg disabled:opacity-40">+</button>
-        </div>
-      </div>
-    </div>
+    </fieldset>
   );
 
   const oVoucher = (
@@ -264,19 +289,25 @@ function CloseDealForm({
     </div>
   );
 
-  // Số khách và voucher cùng một hàng cho hộp ngắn lại, không phải cuộn.
   const hangKhachVoucher = (
-    <div className="grid items-start gap-3 sm:grid-cols-[auto_minmax(0,1fr)]">
+    <>
       {oSoKhach}
       {oVoucher}
-    </div>
+    </>
   );
 
   const tongTien = (
     <div className="rounded-xl bg-fill px-3.5 py-2.5 text-sm">
       {quote ? (
         <>
-          <div className="flex justify-between gap-3 text-body"><span>Giá tour: {vnd(quote.unitPrice)} × {quote.guests} khách</span><span className="whitespace-nowrap font-semibold text-ink">{vnd(quote.subtotal)}</span></div>
+          <div className="flex justify-between gap-3 text-body">
+            <span>
+              Người lớn: {vnd(quote.unitPrice)} × {quote.adults}
+              {quote.children > 0 && <><br />Trẻ em: {vnd(quote.childPrice)} × {quote.children}</>}
+              {quote.infants > 0 && <><br />Em bé: {vnd(quote.infantPrice)} × {quote.infants}</>}
+            </span>
+            <span className="self-end whitespace-nowrap font-semibold text-ink">{vnd(quote.subtotal)}</span>
+          </div>
           <div className="mt-1 flex justify-between gap-3 text-body">
             <span>Voucher{quote.voucher ? ` (${quote.voucher.code})` : voucher ? ` (${voucher})` : ''}</span>
             <span className={`whitespace-nowrap ${quote.discount ? 'font-semibold text-green-ink' : 'text-muted'}`}>{quote.discount ? `−${vnd(quote.discount)}` : '0 đ'}</span>
@@ -367,7 +398,7 @@ function CloseDealForm({
             <div className="flex flex-col gap-1">
               <div className="flex flex-wrap items-baseline gap-x-2 text-sm font-medium">
                 <label htmlFor="ma-don">Mã đơn đặt <span className="text-brand">*</span></label>
-                {don && <span className="min-w-0 flex-1 truncate text-xs font-normal text-muted">{don.source === 'CHATBOT' ? 'Khách đặt qua bttAI' : 'Sale nhập'} · {CHANNEL[conv.channel].label}</span>}
+                {don && <span className="min-w-0 flex-1 truncate text-xs font-normal text-muted">{don.source === 'CHATBOT' ? 'Khách đặt qua bttAI' : don.source === 'APP' ? 'Khách đặt trong app' : 'Sale nhập'} · {CHANNEL[conv.channel].label}</span>}
                 {don && <span className={`ml-auto rounded px-1.5 py-0.5 text-xs font-semibold ${don.voidedAt ? DEAL_STATUS.CANCELLED.className : DEAL_STATUS[don.status].className}`}>{don.voidedAt ? 'Đã mở lại' : DEAL_STATUS[don.status].label}</span>}
               </div>
               <div className="flex gap-2">

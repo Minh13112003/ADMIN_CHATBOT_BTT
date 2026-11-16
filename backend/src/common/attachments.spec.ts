@@ -24,6 +24,12 @@ describe('nhanRaLoaiTep', () => {
 describe('loiTep', () => {
   it('file hợp lệ không có lỗi', () => expect(loiTep(JPG)).toBeNull());
   it('file lạ bị từ chối', () => expect(loiTep(Buffer.from('MZ....'))).toMatch(/Chỉ gửi được/));
+  it('GIF chỉ nhận khi cho phép (sticker Zalo), nhân viên tải lên thì không', () => {
+    const gif = Buffer.from('GIF89a......');
+    expect(nhanRaLoaiTep(gif)?.type).toBe('image/gif');
+    expect(loiTep(gif)).toMatch(/Chỉ gửi được/);
+    expect(loiTep(gif, true)).toBeNull();
+  });
   it('ảnh quá 10 MB', () => expect(loiTep(Buffer.concat([JPG, Buffer.alloc(10 * 1024 * 1024)]))).toMatch(/10 MB/));
   it('PDF 15 MB vẫn nhận, quá 20 MB thì không', () => {
     expect(loiTep(Buffer.concat([PDF, Buffer.alloc(15 * 1024 * 1024)]))).toBeNull();

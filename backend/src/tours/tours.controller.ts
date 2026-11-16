@@ -16,6 +16,12 @@ export class QuoteDto {
   @Transform(({ value }) => (typeof value === 'string' && value.trim() ? value.trim() : undefined))
   @IsOptional() @IsString() @MaxLength(40) voucherCode?: string;
   @IsOptional() @IsUUID() dealId?: string;
+  /** Hội thoại đang chốt: để xét voucher theo bậc thành viên và lượt mỗi tháng của khách. */
+  @IsOptional() @IsUUID() conversationId?: string;
+  /** Có `adults` thì tính người lớn 100%, trẻ em 80%, em bé 40%; `guests` khi đó bị bỏ qua. */
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1, { message: 'Cần ít nhất 1 người lớn' }) @Max(1000) adults?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(1000) children?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(1000) infants?: number;
 }
 
 /** Danh mục tour từ benthanhtourist.com qua backend (lưu tạm 1 giờ). Sale, admin phòng, admin toàn quyền. */
@@ -50,6 +56,7 @@ export class ToursController {
   @Post('quote')
   @HttpCode(200)
   quote(@Body() dto: QuoteDto) {
-    return this.pricing.bao(dto);
+    const { adults, children, infants, ...con } = dto;
+    return this.pricing.bao(adults !== undefined ? { ...con, guests: adults, children: children ?? 0, infants: infants ?? 0 } : con);
   }
 }

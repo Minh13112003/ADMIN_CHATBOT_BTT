@@ -26,8 +26,8 @@ export class AttachmentsService {
    * Kiểm tra theo nội dung file, thu nhỏ ảnh (cạnh dài tối đa 1600 px, xoay đúng chiều, bỏ EXIF gồm cả vị trí chụp)
    * rồi lưu vào Storage. Gọi SAU khi đã qua các kiểm tra khác để không lưu file rồi mới báo lỗi.
    */
-  async luu(file: { buffer: Buffer; originalname?: string }): Promise<TepDaLuu> {
-    return this.luuDaChuanBi(await this.chuanBi(file));
+  async luu(file: { buffer: Buffer; originalname?: string }, tuy: { choGif?: boolean } = {}): Promise<TepDaLuu> {
+    return this.luuDaChuanBi(await this.chuanBi(file, tuy));
   }
 
   /** Lưu file đã qua `chuanBi` (dùng khi cần gửi đúng bản đã thu nhỏ sang nơi khác, ví dụ Zalo, trước khi lưu). */
@@ -38,14 +38,16 @@ export class AttachmentsService {
   }
 
   /** Kiểm tra theo nội dung và thu nhỏ ảnh, chưa lưu. */
-  async chuanBi(file: { buffer: Buffer; originalname?: string }): Promise<TepChuanBi> {
-    const loi = loiTep(file.buffer);
+  async chuanBi(file: { buffer: Buffer; originalname?: string }, tuy: { choGif?: boolean } = {}): Promise<TepChuanBi> {
+    const loi = loiTep(file.buffer, tuy.choGif);
     if (loi) throw new BadRequestException(loi);
     const loai = nhanRaLoaiTep(file.buffer)!;
     let data = file.buffer;
-    if (loai.anh) {
+    // GIF (sticker, ảnh động Zalo) giữ nguyên: thường nhỏ, và thu nhỏ có thể làm mất chuyển động.
+    if (loai.anh && loai.ext !== 'gif') {
       try {
-        data = await sharp(file.buffer, { limitInputPixels: 80_000_000 })
+        // `animated`: WebP động (sticker Zalo) giữ đủ khung hình, không chỉ khung đầu.
+        data = await sharp(file.buffer, { limitInputPixels: 80_000_000, animated: loai.ext === 'webp' })
           .rotate()
           .resize({ width: CANH_DAI_TOI_DA, height: CANH_DAI_TOI_DA, fit: 'inside', withoutEnlargement: true })
           .toFormat(loai.ext === 'jpg' ? 'jpeg' : loai.ext, loai.ext === 'png' ? { compressionLevel: 9 } : { quality: 82 })

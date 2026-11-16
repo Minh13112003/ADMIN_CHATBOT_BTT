@@ -25,6 +25,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
   const [headerHandover, setHeaderHandover] = useState(false);
   const [xoaHoiThoai, setXoaHoiThoai] = useState(false);
   const [capSdt, setCapSdt] = useState(false);
+  const [taiKhoanApp, setTaiKhoanApp] = useState(false);
   const [dongBoZalo, setDongBoZalo] = useState(false);
   const [replyTo, setReplyTo] = useState<Message | null>(null);
   const [ghimTin, setGhimTin] = useState<Message | null>(null);
@@ -97,7 +98,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
             </button>
           )}
           <button className="hidden min-h-11 rounded-lg bg-brand-button px-4 text-sm font-semibold text-white sm:block" onClick={() => setCloseNew(true)}>Chốt tour</button>
-          <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-11 place-items-center rounded-lg border border-line text-xl">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-surface shadow-sm p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button>{me?.role === 'ADMIN' && conv.channel === 'ZALO' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setDongBoZalo(true); setChatMenu(false); }}>Đồng bộ tin cũ từ Zalo</button>}{!chiXem && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setCapSdt(true); setChatMenu(false); }}>{conv.customer.phone ? 'Sửa số điện thoại khách' : 'Cập nhật số điện thoại khách'}</button>}{me?.role === 'ADMIN' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold text-brand-text hover:bg-brand-soft" onClick={() => { setXoaHoiThoai(true); setChatMenu(false); }}>Xoá hội thoại</button>}</div>}</div>
+          <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-11 place-items-center rounded-lg border border-line text-xl">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-surface shadow-sm p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button>{me?.role === 'ADMIN' && conv.channel === 'ZALO' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setDongBoZalo(true); setChatMenu(false); }}>Đồng bộ tin cũ từ Zalo</button>}{!chiXem && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setCapSdt(true); setChatMenu(false); }}>{conv.customer.phone ? 'Sửa số điện thoại khách' : 'Cập nhật số điện thoại khách'}</button>}{!chiXem && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setTaiKhoanApp(true); setChatMenu(false); }}>Tài khoản app của khách</button>}{me?.role === 'ADMIN' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold text-brand-text hover:bg-brand-soft" onClick={() => { setXoaHoiThoai(true); setChatMenu(false); }}>Xoá hội thoại</button>}</div>}</div>
           <button
             type="button"
             onClick={() => setPanelOpen(!panelOpen)}
@@ -126,6 +127,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
       {closeNew && <CloseDealDialog conv={conv} deal={null} pending={donChoTatCa} onClose={() => setCloseNew(false)} onDone={refresh} />}
       {dongBoZalo && <DongBoZaloDialog id={id} onClose={() => setDongBoZalo(false)} />}
       {capSdt && <SoDienThoaiDialog conv={conv} onClose={() => setCapSdt(false)} />}
+      {taiKhoanApp && <TaiKhoanAppDialog id={id} onClose={() => setTaiKhoanApp(false)} onNeedPhone={() => { setTaiKhoanApp(false); setCapSdt(true); }} />}
       {xoaHoiThoai && <XoaHoiThoaiDialog id={id} ten={conv.customer.name} onClose={() => setXoaHoiThoai(false)} onXong={() => { setXoaHoiThoai(false); onBack(); void globalMutate((k) => typeof k === 'string' && (k.startsWith('/conversations') || k.startsWith('/customers') || k.startsWith('/stats')), undefined, { revalidate: true }); }} />}
       {headerHandover && <HandoverDialog conv={conv} onClose={() => setHeaderHandover(false)} onDone={refresh} />}
       {ghimTin && <TagTourDialog conv={conv} tags={tags ?? []} ghimSan={ghimTin} onClose={() => setGhimTin(null)} onDone={() => void mutateTags()} />}
@@ -736,6 +738,112 @@ function DongBoZaloDialog({ id, onClose }: { id: string; onClose: () => void }) 
           <button type="button" onClick={onClose} className={secondaryClass}>Đóng</button>
           <button type="button" disabled={dang} onClick={() => void chay()} className={primaryClass}>{dang ? 'Đang lấy...' : kq ? 'Lấy lại' : 'Đồng bộ'}</button>
         </div>
+      </div>
+    </Dialog>
+  );
+}
+
+type TrangThaiTaiKhoan = {
+  account: { phone: string; createdAt: string; lastLoginAt: string | null; isActive: boolean } | null;
+  canCreate: boolean;
+  reason: 'NEED_PHONE' | 'NEED_CLOSED_DEAL' | null;
+};
+
+/**
+ * Tài khoản app Mobile của khách (chủ dự án chốt 2026-11-16): sale tạo khi khách đã có SĐT và đã chốt tour.
+ * Mật khẩu chỉ hiện một lần ngay sau khi tạo hoặc cấp lại, kèm câu soạn sẵn để gửi khách.
+ */
+function TaiKhoanAppDialog({ id, onClose, onNeedPhone }: { id: string; onClose: () => void; onNeedPhone: () => void }) {
+  const { data, error, mutate } = useSWR<TrangThaiTaiKhoan>(`/conversations/${id}/app-account`, fetcher);
+  const [kq, setKq] = useState<{ phone: string; password: string; created: boolean } | null>(null);
+  const [dang, setDang] = useState(false);
+  const [loi, setLoi] = useState('');
+  const [hoiCapLai, setHoiCapLai] = useState(false);
+  const [daChep, setDaChep] = useState(false);
+
+  const tao = async () => {
+    setDang(true);
+    setLoi('');
+    try {
+      setKq(await post<{ phone: string; password: string; created: boolean }>(`/conversations/${id}/app-account`));
+      void mutate();
+    } catch (err) {
+      setLoi(loiCua(err));
+    } finally {
+      setDang(false);
+      setHoiCapLai(false);
+    }
+  };
+  const tinGuiKhach = kq
+    ? `Dạ BenThanh Tourist gửi anh/chị tài khoản app BenThanh Tourist:\n- Số điện thoại đăng nhập: ${kq.phone}\n- Mật khẩu: ${kq.password}\nAnh/chị đăng nhập rồi đổi mật khẩu trong mục Tài khoản để bảo mật nhé ạ.`
+    : '';
+  const chep = async () => {
+    try {
+      await navigator.clipboard.writeText(tinGuiKhach);
+      setDaChep(true);
+    } catch {
+      setLoi('Trình duyệt không cho sao chép, bạn bôi đen rồi sao chép tay nhé.');
+    }
+  };
+  const ngayGio = (s: string) => new Date(s).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <Dialog title="Tài khoản app của khách" onClose={onClose}>
+      <div className="flex flex-col gap-3 text-sm">
+        {!data && !error && <p role="status" className="text-muted">Đang kiểm tra...</p>}
+        {error && <ErrorText>{loiCua(error)}</ErrorText>}
+
+        {kq ? (
+          <>
+            <p className="text-body">{kq.created ? 'Đã tạo tài khoản app.' : 'Đã cấp lại mật khẩu, máy đang đăng nhập của khách sẽ phải đăng nhập lại.'} Mật khẩu <strong>chỉ hiện lần này</strong>, bạn gửi ngay cho khách nhé.</p>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-xl border border-line bg-fill p-3">
+              <dt className="text-muted">Đăng nhập</dt>
+              <dd className="font-semibold">{kq.phone}</dd>
+              <dt className="text-muted">Mật khẩu</dt>
+              <dd className="select-all font-mono text-lg font-bold tracking-widest">{kq.password}</dd>
+            </dl>
+            <textarea readOnly value={tinGuiKhach} rows={4} aria-label="Tin soạn sẵn gửi khách" className={`${inputClass} text-xs`} />
+            <div className="flex justify-end gap-2">
+              <button type="button" className={secondaryClass} onClick={onClose}>Đóng</button>
+              <button type="button" className={primaryClass} onClick={() => void chep()}>{daChep ? 'Đã sao chép' : 'Sao chép tin gửi khách'}</button>
+            </div>
+          </>
+        ) : data?.account ? (
+          <>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
+              <dt className="text-muted">Đăng nhập</dt>
+              <dd className="font-semibold">{data.account.phone}</dd>
+              <dt className="text-muted">Tạo lúc</dt>
+              <dd>{ngayGio(data.account.createdAt)}</dd>
+              <dt className="text-muted">Đăng nhập gần nhất</dt>
+              <dd>{data.account.lastLoginAt ? ngayGio(data.account.lastLoginAt) : 'Chưa đăng nhập lần nào'}</dd>
+            </dl>
+            {hoiCapLai ? (
+              <p className="rounded-lg bg-brand-soft p-3 text-alert-ink">Cấp mật khẩu mới thì mật khẩu cũ hết dùng và khách đang đăng nhập sẽ bị đăng xuất. Tiếp tục?</p>
+            ) : (
+              <p className="text-muted">Khách quên mật khẩu thì bấm Cấp lại mật khẩu để tạo mật khẩu mới gửi khách.</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button type="button" className={secondaryClass} onClick={hoiCapLai ? () => setHoiCapLai(false) : onClose}>{hoiCapLai ? 'Huỷ' : 'Đóng'}</button>
+              <button type="button" className={primaryClass} disabled={dang} onClick={hoiCapLai ? () => void tao() : () => setHoiCapLai(true)}>{dang ? 'Đang tạo...' : hoiCapLai ? 'Cấp mật khẩu mới' : 'Cấp lại mật khẩu'}</button>
+            </div>
+          </>
+        ) : data ? (
+          <>
+            <p className="text-body">Khách chưa có tài khoản app. Tài khoản đăng nhập bằng số điện thoại của khách, mật khẩu do máy tạo ngẫu nhiên (6 ký tự gồm chữ hoa, chữ thường và số).</p>
+            {data.reason === 'NEED_PHONE' && <p className="rounded-lg bg-fill p-3">Khách chưa có số điện thoại. Cập nhật số điện thoại trước khi tạo tài khoản.</p>}
+            {data.reason === 'NEED_CLOSED_DEAL' && <p className="rounded-lg bg-fill p-3">Chỉ tạo tài khoản cho khách đã chốt tour. Bạn chốt tour cho khách trước nhé.</p>}
+            <div className="flex justify-end gap-2">
+              <button type="button" className={secondaryClass} onClick={onClose}>Đóng</button>
+              {data.reason === 'NEED_PHONE' ? (
+                <button type="button" className={primaryClass} onClick={onNeedPhone}>Cập nhật số điện thoại</button>
+              ) : (
+                <button type="button" className={primaryClass} disabled={!data.canCreate || dang} onClick={() => void tao()}>{dang ? 'Đang tạo...' : 'Tạo tài khoản'}</button>
+              )}
+            </div>
+          </>
+        ) : null}
+        <ErrorText>{loi}</ErrorText>
       </div>
     </Dialog>
   );

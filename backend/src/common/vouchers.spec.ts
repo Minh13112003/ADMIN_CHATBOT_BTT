@@ -27,6 +27,27 @@ describe('tinhGiam', () => {
   });
 });
 
+describe('voucher theo hạng và lượt mỗi tháng', () => {
+  const vang = { ...base, type: 'PERCENT' as const, value: 5, tier: 'VANG', maxUsesPerCustomerMonth: 2 };
+  it('chỉ khách đúng hạng mới dùng được, không dùng cho hạng cao hơn hay thấp hơn', () => {
+    expect(tinhGiam(vang, { ...ctx, customerTier: 'VANG' })).toMatchObject({ ok: true, discount: 1_999_000 });
+    expect(tinhGiam(vang, { ...ctx, customerTier: 'BAC' })).toEqual({ ok: false, error: 'Voucher này chỉ dành cho khách hạng Vàng' });
+    expect(tinhGiam(vang, { ...ctx, customerTier: 'RUBY' })).toMatchObject({ ok: false });
+    expect(tinhGiam(vang, { ...ctx, customerTier: null })).toMatchObject({ ok: false });
+  });
+  it('mỗi khách dùng tối đa N lần một tháng', () => {
+    expect(tinhGiam(vang, { ...ctx, customerTier: 'VANG', usedByCustomerThisMonth: 1 })).toMatchObject({ ok: true });
+    expect(tinhGiam(vang, { ...ctx, customerTier: 'VANG', usedByCustomerThisMonth: 2 })).toMatchObject({ ok: false, error: expect.stringContaining('tối đa 2 lần một tháng') });
+  });
+  it('voucher không có hạng thì ai cũng dùng được', () => expect(tinhGiam(base, { ...ctx, customerTier: null })).toMatchObject({ ok: true }));
+  it('kiểm tra dữ liệu hạng và lượt tháng', () => {
+    const v = { ...base, tourKey: null, categoryId: null };
+    expect(kiemTraVoucher({ ...v, tier: 'XYZ' })).toBe('Bậc thành viên không hợp lệ');
+    expect(kiemTraVoucher({ ...v, tier: 'RUBY', maxUsesPerCustomerMonth: 0 })).toBe('Số lần mỗi khách mỗi tháng phải từ 1');
+    expect(kiemTraVoucher({ ...v, tier: 'RUBY', maxUsesPerCustomerMonth: 3 })).toBeNull();
+  });
+});
+
 describe('voucher khác', () => {
   it('chuẩn hoá mã', () => {
     expect(chuanHoaMaVoucher(' tết 2027 btt ')).toBe('TET2027BTT');

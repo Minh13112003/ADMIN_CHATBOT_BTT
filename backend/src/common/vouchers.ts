@@ -1,4 +1,5 @@
 // Hàm thuần cho voucher. Quy tắc chủ dự án chốt ngày 11/11/2026 (docs/stitch/GHIM-TOUR-VA-CHOT-TOUR.md). Có test ở vouchers.spec.ts.
+import { tenBac } from './app-booking';
 import { boDau } from './text';
 
 export type VoucherRule = {
@@ -12,6 +13,10 @@ export type VoucherRule = {
   endsAt: Date;
   maxUses: number | null;
   isActive: boolean;
+  /** Chỉ khách đúng bậc này dùng được (mã bậc ở common/app-booking.ts). null/không có = mọi khách. */
+  tier?: string | null;
+  /** Mỗi khách tối đa bấy nhiêu lần một tháng (giờ Việt Nam). */
+  maxUsesPerCustomerMonth?: number | null;
 };
 
 export type VoucherStatus = 'ACTIVE' | 'SCHEDULED' | 'EXPIRED' | 'PAUSED' | 'USED_UP';
@@ -44,13 +49,23 @@ export function moTaMucGiam(v: Pick<VoucherRule, 'type' | 'value' | 'maxDiscount
  */
 export function tinhGiam(
   v: VoucherRule,
-  ctx: { subtotal: number; tourKey: string | null; categoryIds: number[]; now: Date; used: number },
+  ctx: {
+    subtotal: number; tourKey: string | null; categoryIds: number[]; now: Date; used: number;
+    /** Bậc hiện tại của khách (mã). null = khách chưa có tài khoản app, coi như không có bậc. */
+    customerTier?: string | null;
+    /** Số lần khách này đã dùng voucher trong tháng, không kể đơn đang xác nhận. */
+    usedByCustomerThisMonth?: number;
+  },
 ): { ok: true; discount: number } | { ok: false; error: string } {
   const st = trangThaiVoucher(v, ctx.now, ctx.used);
   if (st === 'PAUSED') return { ok: false, error: 'Voucher này đang tạm khoá' };
   if (st === 'EXPIRED') return { ok: false, error: 'Voucher này đã hết hạn' };
   if (st === 'SCHEDULED') return { ok: false, error: 'Voucher này chưa đến ngày áp dụng' };
   if (st === 'USED_UP') return { ok: false, error: 'Voucher này đã dùng hết lượt' };
+  if (v.tier && ctx.customerTier !== v.tier) return { ok: false, error: `Voucher này chỉ dành cho khách hạng ${tenBac(v.tier) ?? v.tier}` };
+  if (v.maxUsesPerCustomerMonth && (ctx.usedByCustomerThisMonth ?? 0) >= v.maxUsesPerCustomerMonth) {
+    return { ok: false, error: `Voucher này mỗi khách dùng tối đa ${v.maxUsesPerCustomerMonth} lần một tháng, tháng này đã dùng đủ` };
+  }
   if (v.scope === 'TOUR' && (!ctx.tourKey || v.tourKey !== ctx.tourKey)) return { ok: false, error: 'Voucher này không áp dụng cho tour đã chọn' };
   if (v.scope === 'CATEGORY' && (v.categoryId === null || !ctx.categoryIds.includes(v.categoryId))) {
     return { ok: false, error: 'Voucher này không áp dụng cho tour đã chọn' };
@@ -61,7 +76,7 @@ export function tinhGiam(
 }
 
 /** Kiểm tra dữ liệu khi tạo hoặc sửa voucher. Trả lỗi tiếng Việt hoặc null. */
-export function kiemTraVoucher(v: Pick<VoucherRule, 'type' | 'value' | 'maxDiscount' | 'scope' | 'tourKey' | 'categoryId' | 'startsAt' | 'endsAt' | 'maxUses'>): string | null {
+export function kiemTraVoucher(v: Pick<VoucherRule, 'type' | 'value' | 'maxDiscount' | 'scope' | 'tourKey' | 'categoryId' | 'startsAt' | 'endsAt' | 'maxUses' | 'tier' | 'maxUsesPerCustomerMonth'>): string | null {
   if (!Number.isInteger(v.value) || v.value <= 0) return 'Giá trị giảm phải lớn hơn 0';
   if (v.type === 'PERCENT' && v.value > 100) return 'Phần trăm giảm tối đa là 100';
   if (v.type === 'PERCENT' && v.maxDiscount !== null && v.maxDiscount <= 0) return 'Mức giảm tối đa phải lớn hơn 0';
@@ -69,5 +84,8 @@ export function kiemTraVoucher(v: Pick<VoucherRule, 'type' | 'value' | 'maxDisco
   if (v.scope === 'CATEGORY' && v.categoryId === null) return 'Chọn địa điểm áp dụng';
   if (v.endsAt < v.startsAt) return 'Ngày kết thúc phải sau ngày bắt đầu';
   if (v.maxUses !== null && (!Number.isInteger(v.maxUses) || v.maxUses < 1)) return 'Số lần dùng tối đa phải từ 1';
+  if (v.tier && !tenBac(v.tier)) return 'Bậc thành viên không hợp lệ';
+  const thang = v.maxUsesPerCustomerMonth;
+  if (thang !== null && thang !== undefined && (!Number.isInteger(thang) || thang < 1)) return 'Số lần mỗi khách mỗi tháng phải từ 1';
   return null;
 }

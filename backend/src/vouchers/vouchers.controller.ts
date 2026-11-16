@@ -2,6 +2,7 @@ import { BadRequestException, Body, ConflictException, Controller, ForbiddenExce
 import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { AuthUser, CurrentUser, Roles } from '../auth/auth.decorators';
+import { MA_BAC } from '../common/app-booking';
 import { ngayVietNam } from '../common/tours';
 import { chuanHoaMaVoucher, kiemTraVoucher, moTaMucGiam, trangThaiVoucher } from '../common/vouchers';
 import { Prisma, Role, type Voucher } from '../generated/prisma/client';
@@ -23,6 +24,9 @@ class VoucherDto {
   @Matches(NGAY, { message: 'Ngày bắt đầu không hợp lệ' }) startsOn: string;
   @Matches(NGAY, { message: 'Ngày kết thúc không hợp lệ' }) endsOn: string;
   @Transform(rong) @IsOptional() @Type(() => Number) @IsInt() @Min(1, { message: 'Số lần dùng tối đa phải từ 1' }) @Max(1_000_000) maxUses?: number;
+  /** Chỉ khách đúng bậc này dùng được; bỏ trống = mọi khách. */
+  @Transform(rong) @IsOptional() @IsIn(MA_BAC, { message: 'Bậc thành viên không hợp lệ' }) tier?: string;
+  @Transform(rong) @IsOptional() @Type(() => Number) @IsInt() @Min(1, { message: 'Số lần mỗi khách mỗi tháng phải từ 1' }) @Max(1000) maxUsesPerCustomerMonth?: number;
   @IsOptional() @IsString() @MaxLength(500) note?: string;
 }
 
@@ -51,6 +55,7 @@ export class VouchersController {
       id: v.id, code: v.code, type: v.type, value: v.value, maxDiscount: v.maxDiscount === null ? null : Number(v.maxDiscount),
       scope: v.scope, tourKey: v.tourKey, tourName: v.tourName, categoryId: v.categoryId, categoryName: v.categoryName,
       startsAt: v.startsAt, endsAt: v.endsAt, maxUses: v.maxUses, used, note: v.note, isActive: v.isActive,
+      tier: v.tier, maxUsesPerCustomerMonth: v.maxUsesPerCustomerMonth,
       label: moTaMucGiam(voucherRule(v)), status: trangThaiVoucher(voucherRule(v), now, used),
     };
   }
@@ -88,6 +93,7 @@ export class VouchersController {
       code, type: dto.type, value: dto.value, maxDiscount: dto.type === 'PERCENT' && dto.maxDiscount ? BigInt(dto.maxDiscount) : null,
       scope: dto.scope, tourKey: null as string | null, tourName: null as string | null, categoryId: null as number | null, categoryName: null as string | null,
       startsAt, endsAt, maxUses: dto.maxUses ?? null, note: dto.note?.trim() || null,
+      tier: dto.tier ?? null, maxUsesPerCustomerMonth: dto.maxUsesPerCustomerMonth ?? null,
     };
     if (dto.scope === 'TOUR' && dto.tourKey) {
       const t = await this.catalog.chiTietTour(dto.tourKey);

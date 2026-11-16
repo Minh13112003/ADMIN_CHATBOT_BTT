@@ -12,6 +12,9 @@ const TRANG_THAI: Record<VoucherStatus, { label: string; className: string }> = 
   USED_UP: { label: 'Hết lượt', className: 'bg-fill text-muted' },
 };
 const PHAM_VI: Record<Voucher['scope'], string> = { TOUR: 'Một tour cụ thể', CATEGORY: 'Một địa điểm', ALL: 'Toàn bộ danh mục' };
+/** Bậc thành viên app (khớp backend common/app-booking.ts). */
+const BAC: [string, string][] = [['DONG', 'Đồng'], ['BAC', 'Bạc'], ['VANG', 'Vàng'], ['BACH_KIM', 'Bạch Kim'], ['KIM_CUONG', 'Kim Cương'], ['RUBY', 'Ruby']];
+const tenBac = (ma: string | null) => BAC.find(([k]) => k === ma)?.[1] ?? null;
 
 const ngay = (iso: string) => new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' });
 /** ISO -> YYYY-MM-DD theo giờ Việt Nam, cho ô chọn ngày. */
@@ -124,6 +127,11 @@ export default function VouchersPage() {
                     <td className="px-4 py-3">
                       <span className="block max-w-64 truncate font-semibold" title={v.tourName ?? v.categoryName ?? undefined}>{v.scope === 'ALL' ? 'Mọi tour' : v.scope === 'CATEGORY' ? `Mọi tour ${v.categoryName}` : v.tourName}</span>
                       <span className="text-xs text-muted">{PHAM_VI[v.scope]}</span>
+                      {(v.tier || v.maxUsesPerCustomerMonth) && (
+                        <span className="mt-1 block text-xs font-semibold text-amber-ink">
+                          {[v.tier && `Chỉ hạng ${tenBac(v.tier)}`, v.maxUsesPerCustomerMonth && `${v.maxUsesPerCustomerMonth} lần/khách/tháng`].filter(Boolean).join(' · ')}
+                        </span>
+                      )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-body">{ngay(v.startsAt)}<br />{ngay(v.endsAt)}</td>
                     <td className="px-4 py-3">
@@ -161,6 +169,8 @@ function VoucherDrawer({ voucher, onClose, onDone }: { voucher: Voucher | null; 
     startsOn: voucher ? oNgay(voucher.startsAt) : homNay,
     endsOn: voucher ? oNgay(voucher.endsAt) : '',
     maxUses: voucher?.maxUses ? String(voucher.maxUses) : '',
+    tier: voucher?.tier ?? '',
+    maxUsesPerCustomerMonth: voucher?.maxUsesPerCustomerMonth ? String(voucher.maxUsesPerCustomerMonth) : '',
     note: voucher?.note ?? '',
   });
   const [timTour, setTimTour] = useState('');
@@ -187,6 +197,8 @@ function VoucherDrawer({ voucher, onClose, onDone }: { voucher: Voucher | null; 
       startsOn: f.startsOn,
       endsOn: f.endsOn,
       ...(Number(f.maxUses) ? { maxUses: Number(f.maxUses) } : {}),
+      ...(f.tier ? { tier: f.tier } : {}),
+      ...(Number(f.maxUsesPerCustomerMonth) ? { maxUsesPerCustomerMonth: Number(f.maxUsesPerCustomerMonth) } : {}),
       ...(f.note.trim() ? { note: f.note.trim() } : {}),
     };
     try {
@@ -333,6 +345,24 @@ function VoucherDrawer({ voucher, onClose, onDone }: { voucher: Voucher | null; 
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">lượt</span>
           </div>
         </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="v-bac" className={nhan}>Hạng thành viên</label>
+            <select id="v-bac" value={f.tier} onChange={(e) => doi('tier', e.target.value)} className={inputClass}>
+              <option value="">Mọi khách</option>
+              {BAC.map(([k, ten]) => <option key={k} value={k}>Chỉ hạng {ten}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="v-thang" className={nhan}>Mỗi khách tối đa</label>
+            <div className="relative">
+              <input id="v-thang" inputMode="numeric" value={f.maxUsesPerCustomerMonth} onChange={(e) => doi('maxUsesPerCustomerMonth', e.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="Không giới hạn" className={`${inputClass} pr-20`} />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted">lần/tháng</span>
+            </div>
+          </div>
+        </div>
+        {f.tier && <p className="-mt-3 text-xs text-muted">Chỉ khách có tài khoản app đang đúng hạng {tenBac(f.tier)} mới thấy và dùng được mã này (không dùng cho hạng thấp hơn hay cao hơn).</p>}
 
         <div>
           <label htmlFor="v-ghi-chu" className={nhan}>Ghi chú nội bộ</label>

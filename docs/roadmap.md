@@ -7,6 +7,10 @@
 - Chọn nơi triển khai và tên miền, đặt `COOKIE_DOMAIN`.
 - Xác nhận với công ty: giờ làm việc (`WORK_HOUR_*`), tỷ giá, nội dung quy tắc mặc định.
 
+## Việc còn nợ: thanh toán (chủ dự án ghi 2026-11-16)
+- Tích hợp API thanh toán: khách chốt tour xong chuyển khoản cọc 50%. Hiện sale tự bấm "Đã cọc" / "Đã thanh toán" ở đơn đặt từ app (cột Đơn tour). Khi có API thì đơn tự chuyển Đã cọc khi nhận tiền cọc, Đã thanh toán khi đủ tiền.
+- Thông báo đẩy Firebase cho app (chủ dự án để sau): backend đã lưu `app_accounts.fcmToken`, chưa gửi.
+
 ## Chờ chủ dự án quyết định
 - Cùng SĐT, tên khác hẳn: đang yêu cầu nhập lại.
 - Doanh thu Zalo, Facebook: đang để sale nhập khi chốt.

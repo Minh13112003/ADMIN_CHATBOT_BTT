@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { fetcher, loiCua, patch, post } from '@/lib/api';
 import { BOOKING_STATUS, CHANNEL, DEAL_STATUS, dinhDangSo, gioTin, STATUS, STATUS_LIST, TAGS, vnd } from '@/lib/labels';
 import type { Conversation, Deal, Me, Status } from '@/lib/types';
@@ -117,10 +117,14 @@ export function InfoPanel({
                   {d.tourCode ?? 'Chưa có mã tour'} · {d.guests} khách · {vnd(d.amount)}
                 </div>
                 <div className="text-muted">
-                  {CHANNEL[d.channel].label} · {d.source === 'CHATBOT' ? 'Khách tự đặt' : 'Sale nhập'} · {gioTin(d.createdAt)}
+                  {CHANNEL[d.channel].label} · {d.source === 'APP' ? 'Khách đặt trong app' : d.source === 'CHATBOT' ? 'Khách tự đặt' : 'Sale nhập'} · {gioTin(d.createdAt)}
                   {d.closedBy && d.status === 'CONFIRMED' ? ` · ${d.closedBy.fullName} chốt` : ''}
                 </div>
-                {d.bookingStatus && <div className="text-muted">{BOOKING_STATUS[d.bookingStatus] ?? d.bookingStatus}</div>}
+                {d.source === 'APP' ? (
+                  <TrangThaiDonApp deal={d} conv={conv} />
+                ) : (
+                  d.bookingStatus && <div className="text-muted">{BOOKING_STATUS[d.bookingStatus] ?? d.bookingStatus}</div>
+                )}
                 {d.status === 'PENDING' && d.conversationId === conv.id && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     <button type="button" className={`${chipClass} border-brand font-semibold text-brand-text`} onClick={() => setChot({ deal: d })}>
@@ -361,6 +365,60 @@ function PanelFrame({ onClose, children }: { onClose: () => void; children: Reac
         </button>
       </div>
       {children}
+    </div>
+  );
+}
+
+/** Trạng thái khách thấy trong app (common/app-booking.ts bên backend). */
+const TRANG_THAI_APP: Record<string, string> = {
+  PENDING: 'Chờ xác nhận', CONFIRMED: 'Đã xác nhận', DEPOSITED: 'Đã cọc', PAID: 'Đã thanh toán',
+  ONGOING: 'Đang đi tour', COMPLETED: 'Hoàn thành', CANCELLED: 'Đã huỷ', REFUNDED: 'Đã hoàn tiền',
+};
+/** Nút sale được bấm theo trạng thái hiện tại; Đang đi tour, Hoàn thành do máy tự đổi theo ngày. */
+const NUT_APP: Record<string, ('DEPOSITED' | 'PAID' | 'REFUNDED')[]> = {
+  CONFIRMED: ['DEPOSITED', 'PAID'], DEPOSITED: ['PAID', 'REFUNDED'], PAID: ['REFUNDED'], CANCELLED: ['REFUNDED'],
+};
+
+/** Đơn khách đặt trong app: hiện trạng thái khách đang thấy và nút Đã cọc / Đã thanh toán / Đã hoàn tiền. */
+function TrangThaiDonApp({ deal, conv }: { deal: Deal; conv: Conversation }) {
+  const [hoiHoan, setHoiHoan] = useState(false);
+  const [dang, setDang] = useState(false);
+  const [loi, setLoi] = useState('');
+  const st = deal.bookingStatus ?? 'PENDING';
+  const doi = async (status: 'DEPOSITED' | 'PAID' | 'REFUNDED') => {
+    setDang(true);
+    setLoi('');
+    try {
+      await post(`/conversations/${deal.conversationId}/deals/${deal.id}/booking-status`, { status });
+      await mutate(`/customers/${conv.customer.id}/deals`);
+      setHoiHoan(false);
+    } catch (err) {
+      setLoi(loiCua(err));
+    } finally {
+      setDang(false);
+    }
+  };
+  const nut = NUT_APP[st] ?? [];
+  return (
+    <div className="mt-1">
+      <span className="text-muted">Khách thấy trong app: </span>
+      <strong>{TRANG_THAI_APP[st] ?? st}</strong>
+      {st === 'COMPLETED' && deal.pointsAwarded ? <span className="text-muted"> · đã cộng {deal.pointsAwarded.toLocaleString('vi-VN')} điểm</span> : null}
+      {nut.length > 0 && deal.conversationId === conv.id && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {nut.map((s) =>
+            s === 'REFUNDED' && !hoiHoan ? (
+              <button key={s} type="button" className={chipClass} disabled={dang} onClick={() => setHoiHoan(true)}>Đã hoàn tiền</button>
+            ) : (
+              <button key={s} type="button" className={`${chipClass} ${s === 'REFUNDED' ? 'border-brand text-brand-text' : ''}`} disabled={dang} onClick={() => void doi(s)}>
+                {s === 'REFUNDED' ? 'Xác nhận đã hoàn tiền' : TRANG_THAI_APP[s]}
+              </button>
+            ),
+          )}
+        </div>
+      )}
+      {hoiHoan && <p className="mt-1 text-xs text-muted">Hoàn tiền thì đơn thôi tính doanh thu. Bấm lần nữa để xác nhận.</p>}
+      {loi && <p role="alert" className="mt-1 text-xs text-brand-text">{loi}</p>}
     </div>
   );
 }
