@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import useSWR, { mutate as globalMutate } from 'swr';
 import { ApiError, del, fetcher, loiCua, patch, post, postForm } from '@/lib/api';
 import { CHANNEL, dinhDangSo, STATUS, trieu } from '@/lib/labels';
 import { useRealtime } from '@/lib/realtime';
-import type { Conversation, Deal, Me, Message, MessageHit, Person, Template, TourTag } from '@/lib/types';
+import type { Channel, Conversation, Deal, Me, Message, MessageHit, Person, Template, TourTag } from '@/lib/types';
 import { TagTourDialog, xemTinTrongChat } from './TourTags';
 import { insertAtCursor, prepareQuickReply } from '@/lib/quick-reply';
 import { AnhKhach, chipClass, Dialog, ErrorText, Field, inputClass, primaryClass, secondaryClass, Switch } from '../ui';
@@ -119,7 +119,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
         {(choNhanVien || donCho) && <div className="flex min-h-12 items-center gap-2 border-b border-amber-line bg-auto-soft px-3 py-1.5 text-sm text-amber-ink"><strong className="shrink-0">Cần làm:</strong><span className="min-w-0 flex-1 truncate">{donCho ? `Gọi khách xác nhận đơn ${donCho.tourName} (${trieu(donCho.amount)})` : conv.assignee ? `Khách chờ nhân viên ${conv.assignee.fullName}` : 'Khách đang chờ nhân viên'}</span>{conv.customer.phone && <a className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" href={`tel:${conv.customer.phone}`}>Gọi khách</a>}{donCho && <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => setXacNhan(donCho)}>Xác nhận đơn</button>}</div>}
 
         {timTin && <TimTinTrongChat id={id} onClose={() => setTimTin(false)} />}
-        <MessageList id={id} seenAt={conv.customerSeenAt} onReply={setReplyTo} onPin={chiXem ? undefined : setGhimTin} focusId={focusId} />
+        <MessageList id={id} kenh={conv.channel} seenAt={conv.customerSeenAt} onReply={setReplyTo} onPin={chiXem ? undefined : setGhimTin} focusId={focusId} />
         {chiXem ? <p className="border-t border-line bg-fill px-4 py-3 text-center text-sm text-muted">Bạn chỉ được xem hội thoại này.</p> : <Composer conv={conv} onChange={refresh} replyTo={replyTo} clearReply={() => setReplyTo(null)} />}
       </section>
       {panelOpen && <InfoPanel conv={conv} deals={deals} onChange={refresh} onClose={() => setPanelOpen(false)} />}
@@ -222,7 +222,26 @@ function TimTinTrongChat({ id, onClose }: { id: string; onClose: () => void }) {
   );
 }
 
-function MessageList({ id, seenAt, onReply, onPin, focusId }: { id: string; seenAt: string | null; onReply: (m: Message) => void; onPin?: (m: Message) => void; focusId?: string | null }) {
+/** Ngày theo giờ Việt Nam (YYYY-MM-DD), để chia mốc ngày giữa các tin. */
+const ngayVN = (iso: string) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(new Date(iso));
+
+/** Mốc ngày như Zalo: "16:27 Thứ sáu, 13 tháng 11 năm 2026" (giờ của tin đầu tiên trong ngày). */
+function MocNgay({ iso }: { iso: string }) {
+  const d = new Date(iso);
+  const tz = { timeZone: 'Asia/Ho_Chi_Minh' } as const;
+  const gio = d.toLocaleTimeString('vi-VN', { ...tz, hour: '2-digit', minute: '2-digit' });
+  const thu = d.toLocaleDateString('vi-VN', { ...tz, weekday: 'long' });
+  const [ngay, thang, nam] = d.toLocaleDateString('en-GB', { ...tz, day: 'numeric', month: 'numeric', year: 'numeric' }).split('/');
+  return (
+    <div role="separator" className="my-2 flex items-center gap-3 text-xs text-muted">
+      <span className="h-px flex-1 bg-line" />
+      <span className="rounded-full bg-fill px-3 py-1 font-semibold text-body">{gio} {thu.charAt(0).toUpperCase() + thu.slice(1)}, {ngay} tháng {thang} năm {nam}</span>
+      <span className="h-px flex-1 bg-line" />
+    </div>
+  );
+}
+
+function MessageList({ id, kenh, seenAt, onReply, onPin, focusId }: { id: string; kenh: Channel; seenAt: string | null; onReply: (m: Message) => void; onPin?: (m: Message) => void; focusId?: string | null }) {
   // Mở từ báo cáo nhu cầu tour: tải quanh đúng tin được trỏ tới, rồi cuộn tới và làm nổi bật.
   const { data, error } = useSWR<{ items: Message[]; hasMore: boolean }>(focusId ? `/conversations/${id}/messages?around=${focusId}` : `/conversations/${id}/messages`, fetcher, { refreshInterval: 20_000 });
   const daCuon = useRef<string | null>(null);
@@ -301,9 +320,11 @@ function MessageList({ id, seenAt, onReply, onPin, focusId }: { id: string; seen
             {dangTai ? 'Đang tải...' : 'Xem tin cũ hơn'}
           </button>
         )}
-        {tatCa.map((m) => (
-          <div key={m.id} id={`msg-${m.id}`} className={`flex min-w-0 flex-col transition-colors duration-500 ${focusId === m.id || noiBat === m.id ? 'rounded-xl bg-amber-soft/60 p-1.5 ring-2 ring-amber-line' : ''}`}>
-            <MessageBubble message={m} onReply={onReply} onPin={onPin} pinned={ghim.has(m.id)} tuKhoa={danhDau?.id === m.id ? danhDau.q : undefined} seen={daXem && m.id === tinNhanVienCuoi?.id} />
+        {tatCa.map((m, i) => (
+          <Fragment key={m.id}>
+          {(i === 0 || ngayVN(tatCa[i - 1].createdAt) !== ngayVN(m.createdAt)) && <MocNgay iso={m.createdAt} />}
+          <div id={`msg-${m.id}`} className={`flex min-w-0 flex-col transition-colors duration-500 ${focusId === m.id || noiBat === m.id ? 'rounded-xl bg-amber-soft/60 p-1.5 ring-2 ring-amber-line' : ''}`}>
+            <MessageBubble message={m} kenh={kenh} onReply={onReply} onPin={onPin} pinned={ghim.has(m.id)} tuKhoa={danhDau?.id === m.id ? danhDau.q : undefined} seen={daXem && m.id === tinNhanVienCuoi?.id} />
             {ghim.get(m.id)?.map((ten, i) => (
               <span key={i} className={`mt-1 inline-flex max-w-full items-center gap-1.5 self-start rounded-lg border border-alert-line bg-brand-faint px-2 py-1 text-xs font-semibold text-brand-text ${m.senderType === 'CUSTOMER' ? '' : 'self-end'}`}>
                 <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="shrink-0"><path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3-1-6Z" /></svg>
@@ -311,6 +332,7 @@ function MessageList({ id, seenAt, onReply, onPin, focusId }: { id: string; seen
               </span>
             ))}
           </div>
+          </Fragment>
         ))}
         {!data && !error && <p className="text-center text-sm text-muted">Đang tải tin nhắn...</p>}
         {error && <p className="text-center text-sm text-brand-text">Không tải được tin nhắn.</p>}

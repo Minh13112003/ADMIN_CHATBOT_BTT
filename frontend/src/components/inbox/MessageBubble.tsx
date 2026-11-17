@@ -1,7 +1,7 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { linkTep } from '@/lib/api';
-import { CHANNEL, gioTin } from '@/lib/labels';
-import type { Attachment, Message, TourCard } from '@/lib/types';
+import { CHANNEL } from '@/lib/labels';
+import type { Attachment, Channel, Message, TourCard } from '@/lib/types';
 
 // Thẻ tour do chatbot gửi, tên trường theo chuan_hoa_the_tour trong D:\ChatBot\main.py.
 function thongTinThe(t: TourCard) {
@@ -44,12 +44,12 @@ function Trich({ m, light }: { m: NonNullable<Message['replyTo']>; light?: boole
 export const dungLuong = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 /** Ảnh hiện ngay trong khung chat (bấm để mở bản đầy đủ ở tab mới); PDF hiện thành thẻ mở file. */
-function DinhKem({ a, tren }: { a: Attachment; tren?: boolean }) {
+function DinhKem({ a, tren, tron }: { a: Attachment; tren?: boolean; tron?: boolean }) {
   const href = linkTep(a.url);
   if (a.type.startsWith('image/')) {
     return (
       <a href={href} target="_blank" rel="noreferrer" aria-label={`Mở ảnh ${a.name}`} className={`block ${tren ? 'mb-1.5' : ''}`}>
-        <img src={href} alt={a.name} loading="lazy" className="max-h-72 max-w-full rounded-lg bg-surface object-contain" />
+        <img src={href} alt={a.name} loading="lazy" className={`max-h-72 max-w-full rounded-lg object-contain ${tron ? '' : 'bg-surface'}`} />
       </a>
     );
   }
@@ -83,14 +83,14 @@ function DinhKem({ a, tren }: { a: Attachment; tren?: boolean }) {
   );
 }
 
-function NutTraLoi({ onClick, align }: { onClick: () => void; align: 'left' | 'right' }) {
+/** Nút trả lời (trích dẫn tin này), hiện khi rê chuột như Zalo. */
+function NutTraLoi({ onClick }: { onClick: () => void }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`min-h-9 px-2 text-[0.6875rem] font-medium text-body underline-offset-2 hover:underline ${align === 'right' ? 'ml-1' : 'mr-1'}`}
-    >
-      Trả lời
+    <button type="button" onClick={onClick} title="Trả lời" aria-label="Trả lời tin này" className="grid size-8 place-items-center rounded-md text-muted hover:bg-fill hover:text-ink">
+      <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 14 4 9l5-5" />
+        <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />
+      </svg>
     </button>
   );
 }
@@ -146,8 +146,74 @@ function VanBan({ text, tuKhoa }: { text: string; tuKhoa?: string }) {
   return <>{ra}</>;
 }
 
-export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen, tuKhoa }: { message: Message; onReply?: (m: Message) => void; onPin?: (m: Message) => void; pinned?: boolean; seen?: boolean; tuKhoa?: string }) {
+/** Ngày giờ đầy đủ khi bấm vào tin: "16:36 · 13/11/2026". */
+const ngayGioDayDu = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · ${d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+};
+
+/**
+ * Khung một tin (như Zalo): bình thường chỉ có bong bóng. Rê chuột thì hiện ngay nút ghim, trả lời ở cạnh tin
+ * (tin mình gửi: bên trái; tin khách: bên phải; rê ở bất kỳ đâu trên cùng hàng cũng được), sau 1 giây hiện dòng gợi ý. Bấm vào tin thì hiện người gửi, nền tảng, ngày giờ.
+ * Màn hình cảm ứng không rê chuột được: bấm vào tin là hiện cả nút lẫn chi tiết.
+ */
+function KhungTin({ ben, children, nut, chiTiet, duoi, tren }: { ben: 'trai' | 'phai'; children: ReactNode; nut: ReactNode; chiTiet: string; duoi?: ReactNode; tren?: ReactNode }) {
+  const [mo, setMo] = useState(false);
+  const [goiY, setGoiY] = useState(false);
+  const hen = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (hen.current) clearTimeout(hen.current); }, []);
+  const vao = () => {
+    if (hen.current) clearTimeout(hen.current);
+    hen.current = setTimeout(() => setGoiY(true), 1000);
+  };
+  const ra = () => {
+    if (hen.current) clearTimeout(hen.current);
+    setGoiY(false);
+  };
+  const bam = (e: React.MouseEvent) => {
+    // Bấm vào link, ảnh, nút bên trong thì để chúng tự xử lý.
+    if ((e.target as HTMLElement).closest('a,button')) return;
+    setMo((x) => !x);
+  };
+  return (
+    // Vùng rê chuột là cả hàng ngang của tin: chuột rời bong bóng nhưng vẫn cùng hàng thì nút vẫn hiện và bấm được.
+    <div className="group flex w-full min-w-0 flex-col" onMouseEnter={vao} onMouseLeave={ra}>
+    <div className={`min-w-0 max-w-[88%] sm:max-w-[72%] ${ben === 'phai' ? 'self-end' : 'self-start'}`}>
+      {tren}
+      <div className={`flex min-w-0 items-center gap-1 ${ben === 'phai' ? 'flex-row-reverse' : ''}`}>
+        <div
+          role="button"
+          tabIndex={0}
+          aria-expanded={mo}
+          aria-label="Bấm để xem ngày giờ chi tiết"
+          onClick={bam}
+          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget && (e.preventDefault(), setMo((x) => !x))}
+          className="min-w-0 cursor-pointer rounded-[14px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        >
+          {children}
+        </div>
+        {nut && (
+          <div className={`flex shrink-0 items-center transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 ${mo ? 'opacity-100' : 'opacity-0'}`}>{nut}</div>
+        )}
+      </div>
+      {mo ? (
+        <div className={`mt-0.5 text-[0.6875rem] text-muted ${ben === 'phai' ? 'text-right' : ''}`}>{chiTiet}</div>
+      ) : (
+        goiY && <div className={`mt-0.5 text-[0.6875rem] italic text-muted ${ben === 'phai' ? 'text-right' : ''}`}>Click vào để xem ngày chi tiết</div>
+      )}
+      {duoi}
+    </div>
+    </div>
+  );
+}
+
+export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen, tuKhoa, kenh }: { message: Message; onReply?: (m: Message) => void; onPin?: (m: Message) => void; pinned?: boolean; seen?: boolean; tuKhoa?: string; kenh?: Channel }) {
   const ghim = onPin && !m.internal ? <NutGhim daGhim={pinned} onClick={() => onPin(m)} /> : null;
+  const traLoi = onReply && !m.internal ? <NutTraLoi onClick={() => onReply(m)} /> : null;
+  const nut = ghim || traLoi ? <>{ghim}{traLoi}</> : null;
+  const nenTang = kenh ? CHANNEL[kenh].label : null;
+  // Ảnh, sticker gửi riêng (không chữ, không trích dẫn): hiện trơn như Zalo, không khung màu, không nền.
+  const tron = !!m.attachment?.type.startsWith('image/') && !m.text?.trim() && !m.replyTo && !m.tours?.length;
   if (m.senderType === 'SYSTEM') {
     return (
       <div
@@ -159,21 +225,24 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
   }
   if (m.senderType === 'CUSTOMER') {
     return (
-      <div className="min-w-0 max-w-[88%] self-start sm:max-w-[72%]">
-        {m.isTrigger && <div className="mb-[3px] text-xs font-semibold text-brand-text">Yêu cầu gặp nhân viên</div>}
+      <KhungTin
+        ben="trai"
+        nut={nut}
+        chiTiet={['Khách', nenTang, ngayGioDayDu(m.createdAt)].filter(Boolean).join(' · ')}
+        tren={m.isTrigger && <div className="mb-[3px] text-xs font-semibold text-brand-text">Yêu cầu gặp nhân viên</div>}
+      >
         <div
-          className={`whitespace-pre-line break-words rounded-[14px_14px_14px_4px] bg-surface px-3 py-2 text-sm leading-normal ${m.isTrigger ? 'border-2 border-brand' : 'border border-line'}`}
+          className={
+            tron
+              ? `rounded-lg ${m.isTrigger ? 'ring-2 ring-brand' : ''}`
+              : `whitespace-pre-line break-words rounded-[14px_14px_14px_4px] bg-surface px-3 py-2 text-sm leading-normal ${m.isTrigger ? 'border-2 border-brand' : 'border border-line'}`
+          }
         >
           {m.replyTo && <Trich m={m.replyTo} />}
-          {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} />}
+          {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} tron={tron} />}
           <VanBan text={m.text} tuKhoa={tuKhoa} />
         </div>
-        <div className="mt-0.5 flex items-center text-[0.6875rem] text-muted">
-          Khách · {gioTin(m.createdAt)}
-          {onReply && <NutTraLoi align="right" onClick={() => onReply(m)} />}
-          {ghim}
-        </div>
-      </div>
+      </KhungTin>
     );
   }
   const mau = m.senderType === 'STAFF' ? 'bg-brand-button text-white' : m.senderType === 'AUTO' ? 'bg-auto text-auto-ink' : 'bg-neutral-soft text-ink';
@@ -201,10 +270,15 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
     );
   }
   return (
-    <div className="min-w-0 max-w-[88%] self-end sm:max-w-[72%]">
-      <div className={`whitespace-pre-line break-words rounded-[14px_14px_4px_14px] px-3 py-2 text-sm leading-normal ${mau}`}>
+    <KhungTin
+      ben="phai"
+      nut={nut}
+      chiTiet={[ai, nenTang, ngayGioDayDu(m.createdAt)].filter(Boolean).join(' · ')}
+      duoi={seen && <div className="mt-0.5 text-right text-[0.6875rem] font-medium text-green-ink">Khách đã xem</div>}
+    >
+      <div className={tron ? 'rounded-lg' : `whitespace-pre-line break-words rounded-[14px_14px_4px_14px] px-3 py-2 text-sm leading-normal ${mau}`}>
         {m.replyTo && <Trich m={m.replyTo} light={m.senderType === 'STAFF'} />}
-        {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} />}
+        {m.attachment && <DinhKem a={m.attachment} tren={!!m.text} tron={tron} />}
         <VanBan text={m.text} tuKhoa={tuKhoa} />
         {m.tours?.map((t, i) => {
           const the = thongTinThe(t);
@@ -216,13 +290,6 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
           );
         })}
       </div>
-      <div className="mt-0.5 flex items-center justify-end text-[0.6875rem] text-muted">
-        {ghim}
-        <span>
-          {ai} · {gioTin(m.createdAt)}
-          {seen && <span className="ml-1 font-medium text-green-ink">· Khách đã xem</span>}
-        </span>
-      </div>
-    </div>
+    </KhungTin>
   );
 }

@@ -62,6 +62,7 @@
 | Xoá hội thoại (admin) | Chỉ test giả | |
 | Hộp thư theo bản Stitch: bộ lọc trạng thái vào nút Bộ lọc, cột danh sách 380px | Chỉ test giả | |
 | Giao diện tối mới (than ấm, bỏ tông xanh tím) | Chỉ test giả | |
+| Tin nhắn kiểu Zalo: ẩn giờ/icon, rê chuột (cả hàng ngang) hiện ghim + trả lời, bấm tin xem nền tảng và ngày giờ, mốc ngày giữa các ngày, ảnh/sticker gửi riêng không viền | Chỉ test giả | 2026-11-17, chưa mở trình duyệt kiểm tra |
 
 ## Nhật ký
 
@@ -80,6 +81,7 @@ Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration khôn
 - 2026-11-16: App Mobile đợt 1 (tài khoản app, đăng nhập SĐT, hồ sơ, PIN; sale tạo tài khoản trong menu ⋯; lệnh create-app-account). **Có migration** `20261116090000_app_accounts`. Sticker WebP động, nhận GIF từ Zalo (không migration).
 - 2026-11-13: danh sách hội thoại ghi người gửi tin cuối ("Bạn:", "Khách:", tên đồng nghiệp, "Zalo OA:"), đọc 1 dòng/hội thoại qua chỉ mục. Không có migration.
 - 2026-11-13: hộp thống kê địa điểm thêm biểu đồ 7 ngày, tin nhắn dạng bảng 10 dòng/trang có nút số trang, bộ lọc kênh chỉ hiện kênh có tin. Chỉ frontend, không có migration.
+- 2026-11-17: tin nhắn kiểu Zalo (rê chuột, bấm xem chi tiết, mốc ngày). Chỉ frontend, không có migration.
 
 Lệnh cập nhật VPS chuẩn (migrate an toàn kể cả khi không có gì mới):
 
