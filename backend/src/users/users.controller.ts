@@ -17,7 +17,7 @@ class CreateUserDto {
   @IsString() @MinLength(8, { message: 'Mật khẩu cần ít nhất 8 ký tự' }) @MaxLength(200) password: string;
   @Transform(rong) @IsOptional() @IsString() @MaxLength(40) employeeCode?: string;
   @Transform(rong) @IsOptional() @IsString() @MaxLength(80) position?: string;
-  @IsOptional() @IsIn([Role.SALE, Role.DEPT_ADMIN, Role.DIGITAL], { message: 'Vai trò không hợp lệ' }) role?: Role;
+  @IsOptional() @IsIn([Role.SALE, Role.DEPT_ADMIN, Role.DIGITAL, Role.ADMIN], { message: 'Vai trò không hợp lệ' }) role?: Role;
   @Transform(rong) @IsOptional() @IsString() @MaxLength(60) departmentId?: string;
   /** Digital: các phòng được xem (id phòng hoặc CHUA_PHAN). */
   @IsOptional() @IsArray() @ArrayMaxSize(30) @IsString({ each: true }) scopeIds?: string[];
@@ -45,12 +45,12 @@ export class UsersController {
     return users.map((x) => ({ ...x, holding: giu.find((g) => g.assigneeId === x.id)?._count._all ?? 0 }));
   }
 
-  /** Không có đăng ký công khai. Admin tạo mọi tài khoản; admin phòng chỉ tạo sale trong phòng mình. */
+  /** Không có đăng ký công khai. Admin toàn quyền tạo mọi tài khoản (kể cả admin toàn quyền khác, không thuộc phòng); admin phòng chỉ tạo sale trong phòng mình. */
   @Roles(Role.ADMIN, Role.DEPT_ADMIN)
   @Post()
   async create(@CurrentUser() me: AuthUser, @Body() dto: CreateUserDto) {
     const role = dto.role ?? Role.SALE;
-    const departmentId = role === Role.DIGITAL ? null : (dto.departmentId ?? (me.role === Role.DEPT_ADMIN ? me.departmentId : null));
+    const departmentId = role === Role.DIGITAL || role === Role.ADMIN ? null : (dto.departmentId ?? (me.role === Role.DEPT_ADMIN ? me.departmentId : null));
     const loi = kiemTraTaoTaiKhoan(me, role, departmentId);
     if (loi) throw new BadRequestException(loi);
     if (departmentId && !(await this.prisma.department.findUnique({ where: { id: departmentId } }))) throw new BadRequestException('Phòng ban không tồn tại');

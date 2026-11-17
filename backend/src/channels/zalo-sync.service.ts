@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Controller, Get, HttpCode, Injectable, Logger, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { AuthUser, CurrentUser, Roles } from '../auth/auth.decorators';
 import { tomTat } from '../common/text';
+import { mocNgayGanDay } from '../common/zalo';
 import { Role } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
@@ -11,8 +12,11 @@ import { THE_XIN_SDT, ZaloService } from './zalo.service';
  * Kéo tin cũ của một khách Zalo về hội thoại. Chỉ GHI LẠI lịch sử: không trả lời tự động, không đổi trạng thái hội thoại,
  * không báo nhân viên, không đụng tin xem trước của danh sách. Tin đã có thì bỏ qua (theo mã tin, hoặc cùng nội dung và gần giờ).
  */
-export type TienDoNhap = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; batDau: string | null; ketThuc: string | null };
-const TIEN_DO_RONG: TienDoNhap = { dang: false, tong: 0, xong: 0, khachMoi: 0, tinThem: 0, loi: 0, lyDo: null, batDau: null, ketThuc: null };
+export type TienDoNhap = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; batDau: string | null; ketThuc: string | null; soNgay: number | null; tuNgay: string | null };
+const TIEN_DO_RONG: TienDoNhap = { dang: false, tong: 0, xong: 0, khachMoi: 0, tinThem: 0, loi: 0, lyDo: null, batDau: null, ketThuc: null, soNgay: null, tuNgay: null };
+/** Mặc định lấy tin cũ trong 30 ngày gần đây (chủ dự án yêu cầu 2026-11-17); mỗi khách tối đa 1.000 tin cho an toàn. */
+export const SO_NGAY_TIN_CU = 30;
+const TOI_DA_TIN_MOI_KHACH = 1000;
 const nghi = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 @Injectable()
@@ -34,11 +38,15 @@ export class ZaloSyncService {
     return this.tienDo;
   }
 
-  /** Admin bấm "Nhập khách cũ từ Zalo": chạy nền, trả về ngay; xem tiến độ qua layTienDo. Không chạy hai lần cùng lúc. */
-  batDauNhapKhachCu(toiDaKhach = 300, nghiMs = 400): TienDoNhap {
-    if (this.tienDo.dang) throw new ConflictException('Đang nhập khách cũ, đợi chạy xong nhé');
-    this.tienDo = { ...TIEN_DO_RONG, dang: true, batDau: new Date().toISOString() };
-    void this.chayNhap(toiDaKhach, nghiMs).catch((e: Error) => {
+  /**
+   * Admin bấm "Lấy tin cũ từ Zalo": chạy nền, trả về ngay; xem tiến độ qua layTienDo. Không chạy hai lần cùng lúc.
+   * Lấy mọi khách nhắn OA trong soNgay ngày gần đây và toàn bộ tin của họ trong khoảng đó (tin đã có thì bỏ qua), rồi nhận diện địa điểm quan tâm.
+   */
+  batDauNhapKhachCu(soNgay = SO_NGAY_TIN_CU, toiDaKhach = 3000, nghiMs = 400): TienDoNhap {
+    if (this.tienDo.dang) throw new ConflictException('Đang lấy tin cũ, đợi chạy xong nhé');
+    const tuNgay = mocNgayGanDay(soNgay);
+    this.tienDo = { ...TIEN_DO_RONG, dang: true, batDau: new Date().toISOString(), soNgay, tuNgay: tuNgay.toISOString() };
+    void this.chayNhap(toiDaKhach, nghiMs, tuNgay).catch((e: Error) => {
       this.log.error(`Nhập khách cũ lỗi: ${e.message}`);
       this.tienDo = { ...this.tienDo, dang: false, lyDo: e.message, ketThuc: new Date().toISOString() };
     });
@@ -49,13 +57,13 @@ export class ZaloSyncService {
    * Nhập các khách đã nhắn OA từ trước khi nối (webhook chỉ báo tin mới). Mỗi khách: tạo khách và hội thoại nếu chưa có
    * (trạng thái Đã xem, chưa phân công, không báo nhân viên), rồi kéo lịch sử tin. Nghỉ giữa các khách để không vượt giới hạn gọi của Zalo.
    */
-  private async chayNhap(toiDaKhach: number, nghiMs: number) {
-    const ds = await this.zalo.chatGanDay(toiDaKhach);
+  private async chayNhap(toiDaKhach: number, nghiMs: number, tuNgay: Date) {
+    const ds = await this.zalo.chatGanDay(toiDaKhach, tuNgay);
     this.tienDo = { ...this.tienDo, tong: ds.length };
     for (const k of ds) {
       try {
         const { conversationId, moi } = await this.taoNeuChua(k);
-        const r = await this.dongBo(conversationId, 50);
+        const r = await this.dongBo(conversationId, TOI_DA_TIN_MOI_KHACH, tuNgay);
         await this.capNhatTomTat(conversationId);
         this.tienDo = { ...this.tienDo, xong: this.tienDo.xong + 1, khachMoi: this.tienDo.khachMoi + (moi ? 1 : 0), tinThem: this.tienDo.tinThem + r.them };
       } catch (e) {
@@ -121,13 +129,14 @@ export class ZaloSyncService {
     return { ok: true };
   }
 
-  async dongBo(conversationId: string, toiDa = 50): Promise<{ them: number; tong: number }> {
+  /** Kéo tin cũ của một khách Zalo trong khoảng từ tuNgay (mặc định 30 ngày gần đây) tới nay. */
+  async dongBo(conversationId: string, toiDa = TOI_DA_TIN_MOI_KHACH, tuNgay: Date = mocNgayGanDay(SO_NGAY_TIN_CU)): Promise<{ them: number; tong: number }> {
     const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { channel: true, customerId: true } });
     if (!c || c.channel !== 'ZALO') throw new BadRequestException('Chỉ dùng được cho hội thoại Zalo');
     const danhTinh = await this.prisma.customerIdentity.findFirst({ where: { customerId: c.customerId, channel: 'ZALO' }, select: { externalId: true } });
     if (!danhTinh) throw new BadRequestException('Không tìm thấy tài khoản Zalo của khách này');
 
-    const tin = await this.zalo.layLichSu(danhTinh.externalId, toiDa);
+    const tin = await this.zalo.layLichSu(danhTinh.externalId, toiDa, tuNgay);
     if (!tin.length) return { them: 0, tong: 0 };
 
     const daCoMa = await this.prisma.message.findMany({ where: { externalMessageId: { in: tin.map((t) => `zalo:${t.msgId}`) } }, select: { id: true, externalMessageId: true, text: true, attachmentPath: true } });
@@ -215,7 +224,7 @@ export class ZaloImportController {
   @Post('import-old')
   @HttpCode(200)
   batDau() {
-    return this.sync.batDauNhapKhachCu();
+    return this.sync.batDauNhapKhachCu(SO_NGAY_TIN_CU);
   }
 
   @Roles(Role.ADMIN)

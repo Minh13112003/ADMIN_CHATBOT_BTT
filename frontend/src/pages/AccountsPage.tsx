@@ -94,7 +94,7 @@ export default function AccountsPage() {
     setLoi('');
     setBaoXong('');
     try {
-      const u = await post<Account>('/users', { ...form, role: laChu ? form.role : 'SALE', departmentId: form.role === 'DIGITAL' ? undefined : (laChu ? form.departmentId : me?.departmentId) || undefined, scopeIds: form.role === 'DIGITAL' ? scope : undefined });
+      const u = await post<Account>('/users', { ...form, role: laChu ? form.role : 'SALE', departmentId: form.role === 'DIGITAL' || form.role === 'ADMIN' ? undefined : (laChu ? form.departmentId : me?.departmentId) || undefined, scopeIds: form.role === 'DIGITAL' ? scope : undefined });
       setBaoXong(`Đã tạo tài khoản ${u.email}. Bạn gửi mật khẩu cho nhân viên qua kênh riêng.`);
       setForm(TRONG);
       setScope([]);
@@ -190,8 +190,8 @@ export default function AccountsPage() {
               {laChu && (
                 <fieldset className="sm:col-span-2">
                   <legend className="mb-1.5 text-sm font-medium">Vai trò phân quyền</legend>
-                  <div className="grid gap-2 sm:grid-cols-3">
-                    {([['SALE', 'Tư vấn viên (Sale)', 'Trực chat và nhận khách'], ['DEPT_ADMIN', 'Admin phòng ban', 'Quản lý sale, thống kê của phòng'], ['DIGITAL', 'Admin Digital', 'Chỉ xem nhu cầu tour']] as const).map(([v, ten, mota]) => (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {([['SALE', 'Tư vấn viên (Sale)', 'Trực chat và nhận khách'], ['DEPT_ADMIN', 'Admin phòng ban', 'Quản lý sale, thống kê của phòng'], ['DIGITAL', 'Admin Digital', 'Chỉ xem nhu cầu tour'], ['ADMIN', 'Admin toàn quyền', 'Toàn công ty: mọi phòng, thống kê, tài khoản, kênh']] as const).map(([v, ten, mota]) => (
                       <label key={v} className={`flex min-h-16 cursor-pointer flex-col justify-center rounded-xl border-2 px-3 py-2 ${form.role === v ? 'border-brand bg-brand-faint' : 'border-line'}`}>
                         <span className="flex items-center gap-2 text-sm font-semibold"><input type="radio" name="vai-tro" checked={form.role === v} onChange={() => setForm((f) => ({ ...f, role: v }))} />{ten}</span>
                         <span className="mt-0.5 text-xs text-muted">{mota}</span>
@@ -200,7 +200,12 @@ export default function AccountsPage() {
                   </div>
                 </fieldset>
               )}
-              {laChu && form.role !== 'DIGITAL' && (
+              {laChu && form.role === 'ADMIN' && (
+                <p role="note" className="rounded-xl border border-amber-line bg-amber-soft px-3 py-2 text-sm text-amber-ink sm:col-span-2">
+                  Admin toàn quyền xem và sửa được mọi thứ, kể cả tạo, khoá tài khoản khác. Không thuộc phòng ban nào. Chỉ cấp cho người thật sự cần.
+                </p>
+              )}
+              {laChu && form.role !== 'DIGITAL' && form.role !== 'ADMIN' && (
                 <Field label="Phòng ban">
                   <select required value={form.departmentId} onChange={doi('departmentId')} className={inputClass}>
                     <option value="">Chọn phòng ban</option>

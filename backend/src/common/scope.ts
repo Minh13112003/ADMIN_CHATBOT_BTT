@@ -13,6 +13,7 @@ export function phamViPhong(u: ScopeUser): string[] | null {
 /** Admin phòng chỉ được tạo sale trong phòng mình; admin toàn quyền tạo mọi vai trò. Trả về lỗi tiếng Việt hoặc null. */
 export function kiemTraTaoTaiKhoan(actor: ScopeUser, role: Role, departmentId: string | null): string | null {
   if (actor.role === Role.ADMIN) {
+    if (role === Role.ADMIN && departmentId) return 'Admin toàn quyền không thuộc phòng ban nào';
     if ((role === Role.SALE || role === Role.DEPT_ADMIN) && !departmentId) return 'Chọn phòng ban cho tài khoản này';
     return null;
   }

@@ -21,6 +21,10 @@ describe('kiemTraTaoTaiKhoan', () => {
     expect(kiemTraTaoTaiKhoan(admin, Role.SALE, 'fit')).toBeNull();
     expect(kiemTraTaoTaiKhoan(admin, Role.DIGITAL, null)).toBeNull();
   });
+  it('chỉ admin toàn quyền tạo được admin toàn quyền, không gắn phòng', () => {
+    expect(kiemTraTaoTaiKhoan(admin, Role.ADMIN, null)).toBeNull();
+    expect(kiemTraTaoTaiKhoan(admin, Role.ADMIN, 'fit')).toMatch(/không thuộc phòng/);
+  });
   it('admin phòng chỉ tạo sale trong phòng mình', () => {
     expect(kiemTraTaoTaiKhoan(dept, Role.SALE, 'fit')).toBeNull();
     expect(kiemTraTaoTaiKhoan(dept, Role.SALE, 'inbound')).toMatch(/phòng của bạn/);

@@ -95,7 +95,7 @@ describe('ZaloSyncService', () => {
       return { svc: new ZaloSyncService(prisma as never, zalo as never, realtime as never, { quetHoiThoai: jest.fn().mockResolvedValue(0) } as never), prisma, tx, zalo, realtime };
     };
     const chay = async (svc: ZaloSyncService) => {
-      svc.batDauNhapKhachCu(300, 0);
+      svc.batDauNhapKhachCu(30, 300, 0);
       for (let i = 0; i < 50 && svc.layTienDo().dang; i++) await new Promise((r) => setTimeout(r, 5));
       return svc.layTienDo();
     };
@@ -118,8 +118,8 @@ describe('ZaloSyncService', () => {
     it('một khách lỗi không làm dừng cả đợt; không chạy hai lần cùng lúc', async () => {
       const { svc, zalo } = taoNhap();
       zalo.layLichSu.mockRejectedValueOnce(new Error('Zalo từ chối')).mockResolvedValue([]);
-      const dau = svc.batDauNhapKhachCu(300, 20);
-      expect(() => svc.batDauNhapKhachCu(300, 20)).toThrow();
+      const dau = svc.batDauNhapKhachCu(30, 300, 20);
+      expect(() => svc.batDauNhapKhachCu(30, 300, 20)).toThrow();
       expect(dau.dang).toBe(true);
       for (let i = 0; i < 100 && svc.layTienDo().dang; i++) await new Promise((r) => setTimeout(r, 5));
       expect(svc.layTienDo()).toMatchObject({ xong: 2, loi: 1, khachMoi: 1 });

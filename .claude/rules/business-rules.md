@@ -6,6 +6,7 @@
 - `SALE` nhắn với khách, **không** xem được thống kê (backend trả 403, frontend ẩn mục). Mặc định route cho cả `SALE` và `ADMIN`; route chỉ admin phải ghi `@Roles(Role.ADMIN)`.
 - Admin có thể khoá/mở khoá tài khoản và đặt lại mật khẩu. Khoá tài khoản ngắt socket, tắt đang trực và trả khách `CONTACT`/`PENDING` về hàng chờ chia lại. Admin không tự khoá, không khoá admin cuối cùng, không đặt mật khẩu cho admin khác.
 - Admin đầu tiên tạo bằng `pnpm --filter backend create-admin <email> '<mật khẩu>'`. Mật khẩu không lưu trong `.env`.
+- Từ 2026-11-17 admin toàn quyền tạo được admin toàn quyền khác ở trang Quản trị tài khoản (không gắn phòng ban). Admin phòng không tạo được.
 
 ## Trạng thái hội thoại
 `CONTACT` Liên hệ (đỏ, gấp nhất, luôn ghim đầu), `UNREAD` Chưa xem, `READ` Đã xem, `PENDING` Chờ xử lý, `CLOSED` Đã chốt.

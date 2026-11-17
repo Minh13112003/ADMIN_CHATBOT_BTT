@@ -753,7 +753,7 @@ function DongBoZaloDialog({ id, onClose }: { id: string; onClose: () => void }) 
   return (
     <Dialog title="Đồng bộ tin cũ từ Zalo" onClose={onClose}>
       <div className="flex flex-col gap-4">
-        <p className="text-sm">Lấy lại các tin gần đây giữa OA và khách này từ Zalo (tối đa 50 tin). Tin đã có trong hệ thống được bỏ qua. Việc này chỉ ghi lại lịch sử, không gửi gì cho khách và không báo nhân viên.</p>
+        <p className="text-sm">Lấy lại toàn bộ tin giữa OA và khách này trong 30 ngày gần đây từ Zalo. Tin đã có trong hệ thống được bỏ qua, địa điểm khách hỏi được tự nhận diện theo ngày của từng tin. Việc này chỉ ghi lại lịch sử, không gửi gì cho khách và không báo nhân viên.</p>
         {kq && <p role="status" className="rounded-lg border border-green-soft bg-green-soft/40 px-3 py-2 text-sm text-green-ink">{kq.tong === 0 ? 'Zalo không trả tin nào.' : `Đã thêm ${kq.them} tin cũ (Zalo trả ${kq.tong} tin).`}</p>}
         <ErrorText>{loi}</ErrorText>
         <div className="flex justify-end gap-2">

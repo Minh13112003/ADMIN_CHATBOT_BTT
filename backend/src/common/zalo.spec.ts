@@ -1,4 +1,4 @@
-import { phanTichChiaSe, layDinhKem, layTrich, phanTichOa, phanTichPhanUng, chuanHoaChatGanDay, chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc } from './zalo';
+import { phanTichChiaSe, layDinhKem, layTrich, phanTichOa, phanTichPhanUng, chuanHoaChatGanDay, chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc, daQuaMoc, mocNgayGanDay } from './zalo';
 import { createHash } from 'crypto';
 
 describe('zalo', () => {
@@ -135,5 +135,14 @@ describe('zalo', () => {
     expect(phanTichChiaSe({ event_name: 'user_submit_info', sender: { id: 'u1' }, info: { phone: ' 84912345678 ', name: 'An' } })).toEqual({ userId: 'u1', phone: '84912345678', name: 'An' });
     expect(phanTichChiaSe({ event_name: 'user_submit_info', sender: { id: 'u1' }, info: {} })).toEqual({ userId: 'u1', phone: null, name: null });
     expect(phanTichChiaSe({ event_name: 'follow', sender: { id: 'u1' } })).toBeNull();
+  });
+  it('mốc 30 ngày gần đây tính từ 00:00 giờ VN, trang có tin cũ hơn mốc thì dừng lùi', () => {
+    const now = new Date('2026-11-17T03:00:00Z');
+    expect(mocNgayGanDay(30, now).toISOString()).toBe('2026-10-18T17:00:00.000Z'); // 00:00 ngày 19/10 giờ VN
+    expect(mocNgayGanDay(1, now).toISOString()).toBe('2026-11-16T17:00:00.000Z');
+    const moc = new Date('2026-10-18T17:00:00Z');
+    expect(daQuaMoc([new Date('2026-11-01T00:00:00Z')], moc)).toBe(false);
+    expect(daQuaMoc([new Date('2026-11-01T00:00:00Z'), new Date('2026-10-10T00:00:00Z')], moc)).toBe(true);
+    expect(daQuaMoc([new Date('2020-01-01T00:00:00Z')], undefined)).toBe(false);
   });
 });

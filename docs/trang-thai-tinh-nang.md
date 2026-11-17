@@ -87,6 +87,8 @@ Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration khôn
 - 2026-11-17: trang cá nhân (ảnh, họ tên, mật khẩu), form tạo tài khoản rộng hơn, bỏ Phiên đăng nhập trong Cài đặt, đổi tên "Khách nhắn hôm nay". **Có migration** `20261117090000_user_avatar`.
 - 2026-11-17: tin nhắn kiểu Zalo (rê chuột, bấm xem chi tiết, mốc ngày). Chỉ frontend, không có migration.
 - 2026-11-17: trang Thống kê làm lại theo thiết kế Stitch, API mới `GET /stats/board?range=7d|30d|quarter` (một lần gọi đủ 5 mảng, lưu tạm 5 phút); `/stats/orders` nhận thêm `range`. Không có migration.
+- 2026-11-17: lấy tin cũ Zalo theo **30 ngày gần đây** (trước: tối đa 300 khách, 50 tin mỗi khách nên thiếu tin cũ): nút ở hộp kết nối Zalo đổi thành "Lấy tin 30 ngày từ Zalo", "Đồng bộ tin cũ" từng hội thoại cũng lấy 30 ngày (tối đa 1.000 tin/khách), xong tự nhận diện địa điểm quan tâm. Không có migration.
+- 2026-11-17: form tạo tài khoản có thêm vai trò **Admin toàn quyền** (chỉ admin toàn quyền tạo, không gắn phòng ban). Không có migration.
 
 Lệnh cập nhật VPS chuẩn (migrate an toàn kể cả khi không có gì mới):
 

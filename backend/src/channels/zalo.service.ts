@@ -5,7 +5,7 @@ import { randomBytes } from 'crypto';
 import { GIOI_HAN_TEP_TOI_DA } from '../common/attachments';
 import { giaiMa, maHoa } from '../common/secret-box';
 import { AttachmentsService, type TepDaLuu } from '../storage/attachments.service';
-import { chuanHoaChatGanDay, chuanHoaLichSu, taoPkce, type ChatGanDay, type TinLichSu } from '../common/zalo';
+import { chuanHoaChatGanDay, chuanHoaLichSu, daQuaMoc, taoPkce, type ChatGanDay, type TinLichSu } from '../common/zalo';
 import { PrismaService } from '../prisma/prisma.service';
 
 const OAUTH = 'https://oauth.zaloapp.com/v4/oa';
@@ -307,8 +307,11 @@ export class ZaloService {
     return { ten: null, anh: null };
   }
 
-  /** Kéo lịch sử tin với một khách (mỗi lần tối đa 10 tin, lùi dần), cũ nhất trước. Lỗi thì ném ra để người dùng thấy lý do. */
-  async layLichSu(zaloUserId: string, toiDa = 50): Promise<TinLichSu[]> {
+  /**
+   * Kéo lịch sử tin với một khách (mỗi lần tối đa 10 tin, lùi dần), cũ nhất trước. Lỗi thì ném ra để người dùng thấy lý do.
+   * Có tuNgay: lùi tới khi gặp tin cũ hơn mốc (tối đa toiDa tin) rồi bỏ các tin cũ hơn mốc.
+   */
+  async layLichSu(zaloUserId: string, toiDa = 50, tuNgay?: Date): Promise<TinLichSu[]> {
     const tat: TinLichSu[] = [];
     for (let offset = 0; offset < toiDa; offset += 10) {
       const data = encodeURIComponent(JSON.stringify({ user_id: zaloUserId, offset, count: 10 }));
@@ -328,13 +331,15 @@ export class ZaloService {
       }
       tat.push(...mang);
       if (!Array.isArray(j?.data) || j.data.length < 10) break;
+      if (daQuaMoc(mang.map((t) => t.thoiGian), tuNgay)) break;
+      if (tuNgay) await new Promise((r) => setTimeout(r, 150)); // lấy nhiều trang: nghỉ ngắn để không vượt giới hạn gọi của Zalo
     }
-    const gap = new Map(tat.map((t) => [t.msgId, t]));
+    const gap = new Map(tat.filter((t) => !tuNgay || t.thoiGian >= tuNgay).map((t) => [t.msgId, t]));
     return [...gap.values()].sort((a, b) => a.thoiGian.getTime() - b.thoiGian.getTime());
   }
 
   /** Các cuộc trò chuyện gần đây của OA (mỗi lần 10, lùi dần), mới nhất trước. Dùng để nhập khách đã nhắn từ trước khi nối. */
-  async chatGanDay(toiDa = 200): Promise<ChatGanDay[]> {
+  async chatGanDay(toiDa = 200, tuNgay?: Date): Promise<ChatGanDay[]> {
     const c = await this.doc();
     const tat: ChatGanDay[] = [];
     for (let offset = 0; offset < toiDa; offset += 10) {
@@ -343,11 +348,13 @@ export class ZaloService {
       const dau = Array.isArray(j?.data) ? j.data[0] : undefined;
       this.log.log(`Chat gần đây Zalo offset ${offset}: ${Array.isArray(j?.data) ? j.data.length : 'không phải mảng'} mục; trường mục đầu: ${dau && typeof dau === 'object' ? Object.keys(dau).join(',') : '-'}; khoá cấp ngoài: ${j && typeof j === 'object' ? Object.keys(j).join(',') : '-'}`);
       if (!Array.isArray(j?.data) || !j.data.length) break;
-      tat.push(...chuanHoaChatGanDay(j.data, c.oaId));
+      const trang = chuanHoaChatGanDay(j.data, c.oaId);
+      tat.push(...trang);
       if (j.data.length < 10) break;
+      if (daQuaMoc(trang.map((k) => k.gio), tuNgay)) break;
     }
     const gap = new Map<string, ChatGanDay>();
     for (const k of tat) if (!gap.has(k.userId) || gap.get(k.userId)!.gio < k.gio) gap.set(k.userId, k);
-    return [...gap.values()].sort((a, b) => b.gio.getTime() - a.gio.getTime());
+    return [...gap.values()].filter((k) => !tuNgay || k.gio >= tuNgay).sort((a, b) => b.gio.getTime() - a.gio.getTime());
   }
 }

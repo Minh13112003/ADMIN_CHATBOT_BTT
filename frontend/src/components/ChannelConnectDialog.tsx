@@ -20,7 +20,7 @@ function DiaChi({ nhan, gia }: { nhan: string; gia: string }) {
 }
 
 /** Hộp nhập thông tin kết nối Zalo OA / Facebook. Giá trị bí mật chỉ gửi lên, không bao giờ hiện lại (chỉ thấy đuôi 4 ký tự). */
-type TienDo = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; ketThuc: string | null };
+type TienDo = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; ketThuc: string | null; soNgay: number | null };
 
 /** Nhập các khách đã nhắn OA từ trước khi nối (webhook chỉ báo tin mới). Chạy nền ở server, đây chỉ bấm và xem tiến độ. */
 function NhapKhachCu() {
@@ -38,9 +38,9 @@ function NhapKhachCu() {
   const xongRoi = data && !data.dang && data.ketThuc;
   return (
     <div className="flex flex-col gap-1.5 rounded-xl border border-line bg-page p-3">
-      <p className="text-xs text-body">Lấy các khách đã nhắn OA trước khi kết nối (tối đa 300 khách gần nhất) cùng tin cũ của họ. Khách hiện trong Hộp thư với trạng thái <strong>Đã xem</strong>, không báo nhân viên. Cần kết nối Zalo xong trước. Có thể mất vài phút, bạn đóng hộp này cũng được.</p>
+      <p className="text-xs text-body">Lấy mọi khách đã nhắn OA trong <strong>30 ngày gần đây</strong> cùng toàn bộ tin của họ trong khoảng đó (tin đã có thì bỏ qua), rồi tự nhận diện địa điểm khách quan tâm theo ngày của từng tin. Khách mới hiện trong Hộp thư với trạng thái <strong>Đã xem</strong>, không báo nhân viên. Cần kết nối Zalo xong trước. Có thể mất vài phút, bạn đóng hộp này cũng được.</p>
       {data?.dang && (
-        <p role="status" className="text-sm font-medium">Đang nhập: {data.xong}/{data.tong || '?'} khách, đã thêm {data.khachMoi} khách mới và {data.tinThem} tin{data.loi ? `, ${data.loi} lỗi` : ''}...</p>
+        <p role="status" className="text-sm font-medium">Đang lấy: {data.xong}/{data.tong || '?'} khách, đã thêm {data.khachMoi} khách mới và {data.tinThem} tin{data.loi ? `, ${data.loi} lỗi` : ''}...</p>
       )}
       {xongRoi && !data.lyDo && (
         <p role="status" className="rounded-lg border border-green-soft bg-green-soft/40 px-3 py-2 text-sm text-green-ink">
@@ -49,7 +49,7 @@ function NhapKhachCu() {
       )}
       {xongRoi && data.lyDo && <ErrorText>{data.lyDo}</ErrorText>}
       <ErrorText>{loi}</ErrorText>
-      <button type="button" disabled={data?.dang} onClick={() => void bat()} className={`${secondaryClass} self-start`}>{data?.dang ? 'Đang nhập...' : xongRoi ? 'Nhập lại' : 'Nhập khách cũ từ Zalo'}</button>
+      <button type="button" disabled={data?.dang} onClick={() => void bat()} className={`${secondaryClass} self-start`}>{data?.dang ? 'Đang lấy...' : xongRoi ? 'Lấy lại' : 'Lấy tin 30 ngày từ Zalo'}</button>
     </div>
   );
 }

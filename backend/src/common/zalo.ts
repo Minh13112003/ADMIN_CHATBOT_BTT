@@ -274,3 +274,15 @@ export function chuanHoaChatGanDay(raw: unknown, oaId?: string): ChatGanDay[] {
   }
   return [...theoKhach.values()].sort((a, b) => b.gio.getTime() - a.gio.getTime());
 }
+
+/** Mốc "N ngày gần đây" tính từ 00:00 giờ Việt Nam của (N-1) ngày trước, để lấy tin cũ từ Zalo theo số ngày. */
+export function mocNgayGanDay(soNgay: number, now = new Date()): Date {
+  const VN = 7 * 3600_000;
+  const vn = new Date(now.getTime() + VN);
+  return new Date(Date.UTC(vn.getUTCFullYear(), vn.getUTCMonth(), vn.getUTCDate() - (soNgay - 1)) - VN);
+}
+
+/** Một trang kết quả Zalo (lịch sử hoặc chat gần đây) đã có mục cũ hơn mốc thì không cần lùi thêm trang. */
+export function daQuaMoc(thoiGian: Date[], tuNgay: Date | undefined): boolean {
+  return !!tuNgay && thoiGian.some((t) => t < tuNgay);
+}
