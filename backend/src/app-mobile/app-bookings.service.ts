@@ -1,3 +1,4 @@
+import { thongKeDoi } from '../common/stats-cache';
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomUUID } from 'crypto';
@@ -161,6 +162,7 @@ export class AppBookingsService {
       });
       return { don, conv: sau, log };
     });
+    thongKeDoi();
     this.realtime.emit('message:new', { conversationId: ketQua.conv.id, message: ketQua.log });
     this.realtime.emit('conversation:update', { id: ketQua.conv.id });
     this.realtime.emit('contact:new', { id: ketQua.conv.id, name: kh.name, channel: 'APP', assignee: ketQua.conv.assignee?.fullName ?? null, kind: 'BOOKING' });
@@ -263,6 +265,7 @@ export class AppBookingsService {
       await this.notifications.baoDon(tx, { customerId: d.customerId, dealId, tourName: d.tourName, status: den });
       return tx.message.create({ data: { conversationId, senderType: 'SYSTEM', internal: true, text: `${user.fullName} chuyển đơn ${d.tourName} sang "${TRANG_THAI_DON[den]}"` } });
     });
+    thongKeDoi();
     this.realtime.emit('message:new', { conversationId, message: log });
     this.realtime.emit('conversation:update', { id: conversationId });
     return { ok: true, status: den, statusLabel: TRANG_THAI_DON[den] };

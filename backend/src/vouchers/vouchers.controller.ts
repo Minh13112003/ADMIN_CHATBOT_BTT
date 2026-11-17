@@ -1,4 +1,4 @@
-import { BadRequestException, Body, ConflictException, Controller, ForbiddenException, Get, NotFoundException, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Delete, ForbiddenException, Get, Logger, NotFoundException, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { Transform, Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { AuthUser, CurrentUser, Roles } from '../auth/auth.decorators';
@@ -141,11 +141,24 @@ export class VouchersController {
     }
   }
 
-  /** Tạm khoá hoặc mở lại. Không xoá voucher để đơn cũ vẫn biết đã dùng mã nào. */
+  /** Tạm khoá hoặc mở lại. */
   @Patch(':id/active')
   async active(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: ActiveDto) {
     await this.cuaToi(me, id);
     const v = await this.prisma.voucher.update({ where: { id }, data: { isActive: dto.isActive } });
     return this.ra(v, (await this.dung([id])).get(id) ?? 0);
+  }
+
+  /**
+   * Xoá voucher (chủ dự án cho phép 2026-11-17, đang trong giai đoạn thử): admin toàn quyền xoá mọi voucher, admin phòng xoá voucher của phòng mình.
+   * Đơn đã dùng mã vẫn giữ `voucherCode` và số tiền giảm (cột voucherId về trống), nên doanh thu cũ không đổi.
+   * Trước khi bàn giao: chỉ người tạo voucher được xoá (xem docs/trang-thai-tinh-nang.md, mục "Lưu ý trước khi bàn giao").
+   */
+  @Delete(':id')
+  async remove(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    const v = await this.cuaToi(me, id);
+    await this.prisma.voucher.delete({ where: { id } });
+    new Logger('Vouchers').warn(`${me.fullName} (${me.id}) xoá voucher ${v.code}`);
+    return { ok: true, deleted: id };
   }
 }

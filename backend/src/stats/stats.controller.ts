@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { Roles } from '../auth/auth.decorators';
 import { Role } from '../generated/prisma/client';
-import { IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsIn, IsInt, IsISO8601, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AuthUser, CurrentUser } from '../auth/auth.decorators';
 import { phamViThongKe } from '../common/scope';
@@ -23,6 +23,10 @@ class OrdersQuery extends StatsQuery {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
   /** Kỳ của trang Thống kê mới; có thì thay cho period. */
   @IsOptional() @IsIn(['7d', '30d', 'quarter']) range?: BoardRange;
+  @IsOptional() @IsIn(['WEB', 'APP', 'ZALO', 'FACEBOOK']) channel?: 'WEB' | 'APP' | 'ZALO' | 'FACEBOOK';
+  /** Chi tiết một mốc của biểu đồ (bấm cột / điểm): ISO, kèm `to`. */
+  @IsOptional() @IsISO8601() from?: string;
+  @IsOptional() @IsISO8601() to?: string;
 }
 
 class SeriesQuery {
@@ -37,11 +41,27 @@ class BoardQuery {
   @IsOptional() @IsString() @MaxLength(60) departmentId?: string;
 }
 
+class DetailQuery {
+  @IsIn(['customers', 'newCustomers', 'conversations', 'contacts']) kind: 'customers' | 'newCustomers' | 'conversations' | 'contacts';
+  @IsISO8601() from: string;
+  @IsISO8601() to: string;
+  @IsOptional() @IsIn(['WEB', 'APP', 'ZALO', 'FACEBOOK']) channel?: 'WEB' | 'APP' | 'ZALO' | 'FACEBOOK';
+  @IsOptional() @IsString() @MaxLength(60) departmentId?: string;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
+}
+
 const DEFAULT_PERIODS: Record<Granularity, number> = { day: 14, week: 12, month: 12, quarter: 8 };
 
 @Controller('stats')
 export class StatsController {
   constructor(private svc: StatsService, private board: StatsBoardService) {}
+
+  /** Bấm một mốc trên biểu đồ: danh sách hội thoại của mốc đó (10 dòng một trang). */
+  @Roles(Role.ADMIN, Role.DEPT_ADMIN)
+  @Get('detail')
+  detail(@CurrentUser() me: AuthUser, @Query() q: DetailQuery) {
+    return this.board.chiTiet(q.kind, new Date(q.from), new Date(q.to), phamViThongKe(me, q.departmentId), q.channel, q.page ?? 1);
+  }
 
   /** Trang Thống kê mới: số cho cả 5 tab trong một lần gọi. */
   @Roles(Role.ADMIN, Role.DEPT_ADMIN)
@@ -60,7 +80,7 @@ export class StatsController {
   @Roles(Role.ADMIN, Role.DEPT_ADMIN)
   @Get('orders')
   orders(@CurrentUser() me: AuthUser, @Query() q: OrdersQuery) {
-    return this.svc.getOrders(q.period ?? 'month', phamViThongKe(me, q.departmentId), { ...q, from: q.range ? khoangBoard(q.range).from : undefined });
+    return this.svc.getOrders(q.period ?? 'month', phamViThongKe(me, q.departmentId), { ...q, from: q.from ? new Date(q.from) : q.range ? khoangBoard(q.range).from : undefined, to: q.to ? new Date(q.to) : undefined });
   }
 
 

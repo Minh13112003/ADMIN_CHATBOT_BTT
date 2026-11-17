@@ -31,6 +31,7 @@ export function SalesTable({ sales, onSelect }: { sales: Sale[]; onSelect: (sale
 }
 
 type Order = { id: string; orderCode: string | null; tourName: string; tourCode: string | null; guests: number; amount: number; status: string; voidedAt: string | null; closedAt: string; createdAt: string; channel: Channel; conversationId: string; customer: { name: string; phone: string | null }; closedBy: { fullName: string } | null; departmentName: string };
+/** @deprecated KHÔNG CÒN DÙNG (2026-11-17): bảng đơn cũ, thay bằng OrdersTable trong StatsDetails.tsx. Giữ lại theo yêu cầu chủ dự án, chưa xoá. */
 export function OrdersPanel({ query, compact = false }: { query: string; compact?: boolean }) {
   const [status, setStatus] = useState('CONFIRMED');
   const [filter, setFilter] = useState({ search: '', page: 1 });

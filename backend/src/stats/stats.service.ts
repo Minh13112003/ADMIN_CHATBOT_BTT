@@ -1,3 +1,4 @@
+import { phienThongKe } from '../common/stats-cache';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { tomTatPhanHoi } from '../common/response-time';
@@ -25,8 +26,8 @@ export function dauKy(period: Period, now = new Date()): Date {
 /** Thống kê lưu tạm 5 phút theo yêu cầu: không cần thời gian thực. */
 @Injectable()
 export class StatsService {
-  private cache = new Map<string, { at: number; data: unknown }>();
-  private seriesCache = new Map<string, { at: number; data: unknown }>();
+  private cache = new Map<string, { at: number; v: number; data: unknown }>();
+  private seriesCache = new Map<string, { at: number; v: number; data: unknown }>();
 
   constructor(private prisma: PrismaService, private config: ConfigService) {}
 
@@ -34,9 +35,9 @@ export class StatsService {
   async get(period: Period, scope: string[] | null = null) {
     const key = `${period}:${scope === null ? '*' : [...scope].sort().join(',')}`;
     const c = this.cache.get(key);
-    if (c && Date.now() - c.at < CACHE_MS) return c.data;
+    if (c && c.v === phienThongKe() && Date.now() - c.at < CACHE_MS) return c.data;
     const data = await this.tinh(period, scope);
-    this.cache.set(key, { at: Date.now(), data });
+    this.cache.set(key, { at: Date.now(), v: phienThongKe(), data });
     return data;
   }
 
@@ -49,31 +50,40 @@ export class StatsService {
   }
 
   /** Chi tiết báo cáo dùng cùng phạm vi với KPI, không gọi danh sách đơn toàn hệ thống. */
-  async getOrders(period: Period, scope: string[] | null, query: { status?: 'CONFIRMED' | 'PENDING' | 'CANCELLED'; search?: string; staffId?: string; page?: number; from?: Date }) {
+  async getOrders(period: Period, scope: string[] | null, query: { status?: 'CONFIRMED' | 'PENDING' | 'CANCELLED'; search?: string; staffId?: string; page?: number; from?: Date; to?: Date; channel?: 'WEB' | 'APP' | 'ZALO' | 'FACEBOOK' }) {
     const status = query.status ?? 'CONFIRMED';
     const from = query.from ?? dauKy(period);
     const search = query.search?.trim();
-    const where: Prisma.DealWhereInput = {
+    const den = query.to ? { lt: query.to } : {};
+    // Điều kiện chung của kỳ và trạng thái (không có bộ lọc kênh, tìm kiếm): dùng để tính tỷ trọng doanh thu của phần đang lọc.
+    const goc: Prisma.DealWhereInput = {
       conversation: locHoiThoai(scope),
       ...(query.staffId ? { closedById: query.staffId } : {}),
+      ...(status === 'CANCELLED'
+        ? { OR: [{ status: 'CANCELLED' }, { voidedAt: { not: null } }], createdAt: { gte: from, ...den } }
+        : { status, voidedAt: null, ...(status === 'CONFIRMED' ? { closedAt: { gte: from, ...den } } : { createdAt: { gte: from, ...den } }) }),
+    };
+    const where: Prisma.DealWhereInput = {
       AND: [
-        status === 'CANCELLED'
-          ? { OR: [{ status: 'CANCELLED' }, { voidedAt: { not: null } }], createdAt: { gte: from } }
-          : { status, voidedAt: null, ...(status === 'CONFIRMED' ? { closedAt: { gte: from } } : { createdAt: { gte: from } }) },
+        goc,
+        ...(query.channel ? [{ channel: query.channel }] : []),
         ...(search ? [{ OR: [{ tourName: { contains: search, mode: 'insensitive' as const } }, { orderCode: { contains: search, mode: 'insensitive' as const } }, { customer: { name: { contains: search, mode: 'insensitive' as const } } }, { customer: { phone: { contains: search } } }] }] : []),
       ],
     };
     const page = query.page ?? 1;
-    const [total, rows] = await Promise.all([
+    const SIZE = 10;
+    const [total, rows, tong, tatCa] = await Promise.all([
       this.prisma.deal.count({ where }),
-      this.prisma.deal.findMany({ where, orderBy: [{ closedAt: 'desc' }, { id: 'desc' }], skip: (page - 1) * 20, take: 20,
+      this.prisma.deal.findMany({ where, orderBy: [{ closedAt: 'desc' }, { id: 'desc' }], skip: (page - 1) * SIZE, take: SIZE,
         select: { id: true, orderCode: true, tourName: true, tourCode: true, guests: true, amount: true, status: true, voidedAt: true, closedAt: true, createdAt: true, channel: true, conversationId: true,
           customer: { select: { name: true, phone: true } }, closedBy: { select: { fullName: true } },
           conversation: { select: { assignee: { select: { department: { select: { name: true } } } } } },
         },
       }),
+      this.prisma.deal.aggregate({ where, _sum: { amount: true, guests: true } }),
+      this.prisma.deal.aggregate({ where: goc, _sum: { amount: true } }),
     ]);
-    return { total, page, pageSize: 20, items: rows.map((row) => ({ ...row, amount: Number(row.amount), departmentName: row.conversation.assignee?.department?.name ?? 'Chưa phân phòng', conversation: undefined })) };
+    return { total, page, pageSize: SIZE, sumAmount: Number(tong._sum.amount ?? 0), sumGuests: tong._sum.guests ?? 0, allAmount: Number(tatCa._sum.amount ?? 0), items: rows.map((row) => ({ ...row, amount: Number(row.amount), departmentName: row.conversation.assignee?.department?.name ?? 'Chưa phân phòng', conversation: undefined })) };
   }
 
   /** Mọi phép đếm diễn ra ở PostgreSQL, chỉ lấy một dòng cho mỗi mốc; không đọc bảng messages. */
@@ -83,7 +93,7 @@ export class StatsService {
     const key = `${granularity}:${periods}:${period ?? 'rolling'}:${buckets.at(-1)?.start}:${scope === null ? '*' : [...scope].sort().join(',')}`;
     const pham = sqlPhamHoiThoai(scope);
     const cached = this.seriesCache.get(key);
-    if (cached && Date.now() - cached.at < CACHE_MS) return cached.data;
+    if (cached && cached.v === phienThongKe() && Date.now() - cached.at < CACHE_MS) return cached.data;
     const from = new Date(Math.max(new Date(buckets[0].start).getTime(), periodStart?.getTime() ?? 0));
     const to = seriesEnd(granularity, buckets.at(-1)!.start);
     type CountRow = { start: Date; count: bigint };
@@ -123,14 +133,14 @@ export class StatsService {
       const costVnd = tokens ? ((Number(tokens.input) * price.input + Number(tokens.output) * price.output) / 1e6) * price.rate : 0;
       return { ...b, customers: Number(c.get(b.start)?.count ?? 0), contacts: Number(h.get(b.start)?.count ?? 0), deals: Number(d.get(b.start)?.deals ?? 0), revenue: Number(d.get(b.start)?.revenue ?? 0), costVnd };
     });
-    this.seriesCache.set(key, { at: Date.now(), data });
+    this.seriesCache.set(key, { at: Date.now(), v: phienThongKe(), data });
     return data;
   }
 
   async getCostBySource(period: Period) {
     const key = `cost:${period}`;
     const cached = this.seriesCache.get(key);
-    if (cached && Date.now() - cached.at < CACHE_MS) return cached.data;
+    if (cached && cached.v === phienThongKe() && Date.now() - cached.at < CACHE_MS) return cached.data;
     const from = dauKy(period);
     const rows = await this.prisma.$queryRaw<{ input: bigint; output: bigint }[]>`
       SELECT COALESCE(SUM(u."inputTokens"), 0) AS input, COALESCE(SUM(u."outputTokens"), 0) AS output
@@ -143,7 +153,7 @@ export class StatsService {
       { source: 'ZALO', costVnd: 0, share: 0, connected: false },
       { source: 'FACEBOOK', costVnd: 0, share: 0, connected: false },
     ];
-    this.seriesCache.set(key, { at: Date.now(), data });
+    this.seriesCache.set(key, { at: Date.now(), v: phienThongKe(), data });
     return data;
   }
 

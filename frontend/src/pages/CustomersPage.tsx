@@ -1,7 +1,7 @@
 import { Link } from 'react-router';
 import { useEffect, useState } from 'react';
 import useSWR from 'swr';
-import { inputClass } from '@/components/ui';
+import { inputClass, Pager, usePaged } from '@/components/ui';
 import { fetcher } from '@/lib/api';
 import { CHANNEL, dinhDangSo, STATUS } from '@/lib/labels';
 import type { CustomerRow } from '@/lib/types';
@@ -21,6 +21,7 @@ export default function CustomersPage() {
 
   const allRows = (data ?? []).flatMap((k) => k.conversations.map((c) => ({ k, c })));
   const dong = allRows.filter(({ c }) => (channel === 'ALL' || c.channel === channel) && (!urgent || c.status === 'CONTACT' || c.status === 'UNREAD'));
+  const trang = usePaged(dong);
   const needsHelp = allRows.filter(({ c }) => c.status === 'CONTACT' || c.status === 'UNREAD').length;
 
   return (
@@ -57,7 +58,7 @@ export default function CustomersPage() {
       <div className="relative overflow-x-auto rounded-[14px] border border-line bg-surface shadow-sm">
         {/* Màn hình nhỏ dùng thẻ để thấy đủ thông tin mà không phải vuốt ngang; từ lg (đủ chỗ cho bảng 820px) dùng bảng. */}
         <ul className="divide-y divide-line-soft xl:hidden">
-          {dong.map(({ k, c }) => (
+          {trang.rows.map(({ k, c }) => (
             <li key={c.id} className="flex flex-col gap-2.5 p-3.5">
               <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
@@ -99,7 +100,7 @@ export default function CustomersPage() {
             </tr>
           </thead>
           <tbody>
-            {dong.map(({ k, c }) => (
+            {trang.rows.map(({ k, c }) => (
               <tr key={c.id} className="hover:bg-page">
                 <td className="border-b border-line-soft px-3.5 py-2.5 font-medium">{k.name}</td>
                 <td className="border-b border-line-soft px-3.5 py-2.5">{dinhDangSo(k.phone)}</td>
@@ -124,6 +125,7 @@ export default function CustomersPage() {
         {isLoading && !data && <p className="p-6 text-center text-sm text-muted">Đang tải...</p>}
         {error && <p className="p-6 text-center text-sm text-brand-text">Không tải được danh sách khách.</p>}
         {data && dong.length === 0 && <p className="p-6 text-center text-sm text-muted">Chưa có khách nào.</p>}
+        <Pager className="px-4 pb-4" page={trang.page} total={trang.total} onChange={trang.setPage} />
       </div>
     </section>
   );

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Controller, Get, HttpCode, Injectable, Logger, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { BadRequestException, ConflictException, Controller, Get, HttpCode, Injectable, Logger, OnApplicationBootstrap, Param, ParseUUIDPipe, Post } from '@nestjs/common';
 import { AuthUser, CurrentUser, Roles } from '../auth/auth.decorators';
 import { tomTat } from '../common/text';
 import { mocNgayGanDay } from '../common/zalo';
@@ -20,10 +20,31 @@ const TOI_DA_TIN_MOI_KHACH = 1000;
 const nghi = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 @Injectable()
-export class ZaloSyncService {
+export class ZaloSyncService implements OnApplicationBootstrap {
   private log = new Logger('ZaloSync');
   private tienDo: TienDoNhap = { ...TIEN_DO_RONG };
   constructor(private prisma: PrismaService, private zalo: ZaloService, private realtime: RealtimeGateway, private nhuCau: TourInterestService) {}
+
+  /**
+   * Chủ dự án yêu cầu 2026-11-17: máy chủ khởi động (mỗi lần deploy) thì tự lấy tin Zalo 30 ngày gần đây của mọi khách,
+   * vì Zalo không gửi lại tin webhook bị lỡ. Đợi 2 phút cho máy chủ ổn định rồi mới chạy, chạy nền, tin đã có thì bỏ qua.
+   * Tắt bằng ZALO_SYNC_ON_START=0 trong .env.
+   */
+  onApplicationBootstrap() {
+    if (process.env.ZALO_SYNC_ON_START === '0' || process.env.NODE_ENV === 'test') return;
+    const hen = setTimeout(() => void this.tuDongLayTinCu(), 120_000);
+    hen.unref?.();
+  }
+
+  private async tuDongLayTinCu() {
+    try {
+      if (!(await this.zalo.trangThai()).coToken) return;
+      this.log.log(`Khởi động: tự lấy tin Zalo ${SO_NGAY_TIN_CU} ngày gần đây`);
+      this.batDauNhapKhachCu(SO_NGAY_TIN_CU);
+    } catch (e) {
+      this.log.warn(`Không tự lấy được tin Zalo cũ lúc khởi động: ${(e as Error).message}`);
+    }
+  }
 
   /** Sau khi kéo tin cũ: nhận địa điểm khách hỏi theo đúng ngày của từng tin (chủ dự án yêu cầu 2026-11-13). Lỗi chỉ ghi log. */
   private async quetDiaDiem(conversationId: string) {

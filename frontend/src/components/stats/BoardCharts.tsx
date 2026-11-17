@@ -1,4 +1,6 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Modal } from '@/components/ui';
+import { exportCsv } from './AnalyticsUI';
 
 /**
  * Bộ biểu đồ SVG tự vẽ cho trang Thống kê (không thêm thư viện). Biểu đồ theo thời gian tự giãn ngang
@@ -53,7 +55,43 @@ function niceMax(v: number) {
 
 // ---------------------------------------------------------------- Khung thẻ
 
-export function ChartCard({ title, description, legend, action, children, className = '' }: { title: string; description?: string; legend?: ReactNode; action?: ReactNode; children: ReactNode; className?: string }) {
+/** Mốc / mục người dùng bấm trên biểu đồ. */
+export type Pick = { index: number; label: string };
+type Ctx = { big: boolean; picked: Pick | null; onPick?: (p: Pick) => void };
+const ChartCtx = createContext<Ctx>({ big: false, picked: null });
+const useChart = () => useContext(ChartCtx);
+
+export type CsvRows = (string | number)[][];
+const nutVien = 'inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-xs font-semibold text-body hover:bg-fill';
+
+/**
+ * Thẻ biểu đồ (một hàng). Có nút phóng to (hộp gần toàn màn hình như "Xem thống kê" ở Nhu cầu tour) và nút Xuất file Excel (.csv).
+ * Bấm vào cột / điểm / ô / dòng của biểu đồ thì mở hộp phóng to và hiện chi tiết đúng mốc đó (`detail`).
+ */
+export function ChartCard({ title, description, legend, action, children, className = '', csv, detail, hint }: {
+  title: string;
+  description?: string;
+  legend?: ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  /** Dữ liệu của thẻ để xuất file Excel (.csv). */
+  csv?: { file: string; rows: () => CsvRows };
+  /** Chi tiết khi bấm một mốc (danh sách đơn, khách...). */
+  detail?: (p: Pick) => ReactNode;
+  /** Dòng gợi ý trong hộp phóng to khi chưa bấm mốc nào. */
+  hint?: string;
+}) {
+  const [big, setBig] = useState(false);
+  const [picked, setPicked] = useState<Pick | null>(null);
+  const xuat = csv ? () => exportCsv(csv.file, [[title], ...(description ? [[description]] : []), [], ...csv.rows()]) : undefined;
+  const nutXuat = xuat && (
+    <button type="button" onClick={xuat} className={nutVien}>
+      <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg>
+      Xuất file Excel (.csv)
+    </button>
+  );
+  const chon = (p: Pick) => { setPicked(p); setBig(true); };
   return (
     <section className={`min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-6 ${className}`}>
       <header className="mb-4 flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
@@ -61,9 +99,42 @@ export function ChartCard({ title, description, legend, action, children, classN
           <h2 className="text-base font-bold text-ink">{title}</h2>
           {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
         </div>
-        {(legend || action) && <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-body">{legend}{action}</div>}
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {nutXuat}
+          <button type="button" onClick={() => { setPicked(null); setBig(true); }} aria-label={`Phóng to biểu đồ ${title}`} title="Phóng to" className={`${nutVien} !px-2`}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+          </button>
+        </div>
       </header>
-      {children}
+      {(legend || action) && <div className="-mt-1 mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-body">{legend}{action}</div>}
+      <ChartCtx.Provider value={{ big: false, picked: null, onPick: chon }}>{children}</ChartCtx.Provider>
+      {big && (
+        <Modal
+          title={title}
+          subtitle={description}
+          width={1440}
+          onClose={() => setBig(false)}
+          footer={
+            <>
+              <span className="flex-1 text-[0.8125rem] text-muted">{picked ? `Đang xem: ${picked.label}` : (hint ?? 'Bấm vào cột, điểm, ô hoặc dòng để xem chi tiết.')}</span>
+              {nutXuat}
+              <button type="button" onClick={() => setBig(false)} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
+            </>
+          }
+        >
+          {(legend || action) && <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-body">{legend}{action}</div>}
+          <ChartCtx.Provider value={{ big: true, picked, onPick: setPicked }}>{children}</ChartCtx.Provider>
+          {picked && detail && (
+            <div className="mt-5 border-t border-line pt-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-bold text-ink">Chi tiết: {picked.label}</h3>
+                <button type="button" onClick={() => setPicked(null)} className="text-xs font-semibold text-brand-text hover:underline">Bỏ chọn</button>
+              </div>
+              {detail(picked)}
+            </div>
+          )}
+        </Modal>
+      )}
     </section>
   );
 }
@@ -132,9 +203,10 @@ export function TimeChart({
 }) {
   const [ref, box] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
+  const { big, picked, onPick } = useChart();
   const n = labels.length;
-  const W = Math.max(box, n * minPer, 280);
-  const H = height;
+  const W = Math.max(box, n * (big ? Math.round(minPer * 1.3) : minPer), 280);
+  const H = big ? Math.round(height * 1.6) : height;
   const L = 52;
   const R = overlay ? 52 : 14;
   const T = 14;
@@ -174,7 +246,7 @@ export function TimeChart({
     <div ref={ref} className="relative w-full overflow-x-auto pb-1 [scrollbar-width:thin]">
       {box > 0 && (
         <div className="relative" style={{ width: W }}>
-          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={series.map((s) => s.name).join(', ')} onMouseMove={onMove} onMouseLeave={() => setHover(null)} className="block select-none">
+          <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={series.map((s) => s.name).join(', ')} onMouseMove={onMove} onMouseLeave={() => setHover(null)} onClick={() => { if (hover != null && onPick) onPick({ index: hover, label: labels[hover] }); }} className={`block select-none ${onPick ? 'cursor-pointer' : ''}`}>
             {ticks.map((t) => (
               <g key={t}>
                 <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} className="stroke-line-soft" strokeWidth={1} />
@@ -184,6 +256,7 @@ export function TimeChart({
             {overlay && [0, 1, 2, 3, 4].map((k) => (
               <text key={k} x={W - R + 8} y={oy((oMax * k) / 4) + 4} className="fill-muted text-[10px]">{overlayFormat((oMax * k) / 4)}</text>
             ))}
+            {picked && picked.index < n && <rect x={L + band * picked.index} y={T} width={band} height={ph} className="fill-brand-soft" />}
             {hover != null && <rect x={L + band * hover} y={T} width={band} height={ph} className="fill-fill" opacity={0.7} />}
 
             {(kind === 'bar' || kind === 'stack-bar') && series.map((s, si) => labels.map((_, i) => {
@@ -253,6 +326,18 @@ export function TimeChart({
               <text key={i} x={cx(i)} y={H - 10} textAnchor="middle" className={`text-[10px] ${highlightLast && i === n - 1 ? 'fill-brand-text font-semibold' : 'fill-muted'}`}>{lb}</text>
             ) : null)}
           </svg>
+          {big && picked && picked.index < n && hover == null && (
+            <div className="pointer-events-none absolute z-10 min-w-36 rounded-lg border border-brand/40 bg-surface px-3 py-2 text-xs text-ink shadow-lg" style={{ top: 4, left: Math.min(Math.max(cx(picked.index) + 12, 0), W - 200) }}>
+              <div className="mb-1 font-semibold text-brand-text">{labels[picked.index]}</div>
+              {series.map((s) => (
+                <div key={s.name} className="flex items-center justify-between gap-4">
+                  <span className="inline-flex items-center gap-1.5"><span className="inline-block size-2 rounded-full" style={{ background: s.color }} />{s.name}</span>
+                  <span className="font-semibold tabular-nums">{s.values[picked.index] == null ? '—' : format(s.values[picked.index]!)}</span>
+                </div>
+              ))}
+              {overlay && <div className="flex justify-between gap-4"><span>{overlay.name}</span><span className="font-semibold">{overlayFormat(overlay.values[picked.index] ?? 0)}</span></div>}
+            </div>
+          )}
           {hover != null && (
             <div className="pointer-events-none absolute z-10 min-w-36 rounded-lg bg-strong px-3 py-2 text-xs text-on-strong shadow-lg" style={{ top: 4, left: Math.min(Math.max(cx(hover) + 12, 0), W - 180) }}>
               <div className="mb-1 font-semibold">{labels[hover]}</div>
@@ -280,12 +365,13 @@ export function TimeChart({
 // ---------------------------------------------------------------- Cột ngang có xếp hạng
 
 export function HBars({ rows, format = so, max }: { rows: { label: string; value: number; detail?: string; color?: string; sub?: { value: number; color: string; label: string } }[]; format?: (n: number) => string; max?: number }) {
+  const { picked, onPick } = useChart();
   if (!rows.length) return <Empty />;
   const m = max ?? Math.max(1, ...rows.map((r) => Math.max(r.value, r.sub?.value ?? 0)));
   return (
     <ol className="space-y-3">
       {rows.map((r, i) => (
-        <li key={`${r.label}-${i}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(140px,280px)_minmax(0,1fr)_auto]">
+        <li key={`${r.label}-${i}`} onClick={onPick ? () => onPick({ index: i, label: r.label }) : undefined} className={`grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 rounded-lg px-1 py-0.5 sm:grid-cols-[minmax(140px,280px)_minmax(0,1fr)_auto] ${onPick ? 'cursor-pointer hover:bg-fill' : ''} ${picked?.index === i ? 'bg-brand-soft' : ''}`}>
           <span className="min-w-0 truncate text-sm font-medium text-ink" title={r.label}><span className="mr-1.5 text-muted tabular-nums">{i + 1}.</span>{r.label}</span>
           <span className="col-span-2 row-start-2 flex flex-col gap-1 sm:col-span-1 sm:row-start-auto">
             <span className="h-2.5 overflow-hidden rounded-full bg-fill"><span className="block h-full rounded-full" style={{ width: `${(r.value / m) * 100}%`, background: r.color ?? BANG_MAU[0], opacity: 1 - Math.min(i, 8) * 0.07 }} /></span>
@@ -302,8 +388,10 @@ export function HBars({ rows, format = so, max }: { rows: { label: string; value
 
 export function Donut({ items, center, centerLabel, format = so }: { items: { label: string; value: number; color: string; detail?: string }[]; center: string; centerLabel: string; format?: (n: number) => string }) {
   const [hover, setHover] = useState<number | null>(null);
+  const { big, picked, onPick } = useChart();
   const total = items.reduce((a, b) => a + b.value, 0);
   if (!total) return <Empty />;
+  const pick = (i: number) => onPick?.({ index: i, label: items[i].label });
   const R = 70;
   const r = 48;
   let a0 = -Math.PI / 2;
@@ -319,14 +407,14 @@ export function Donut({ items, center, centerLabel, format = so }: { items: { la
   });
   return (
     <div className="flex flex-col items-center gap-6 md:flex-row md:items-center">
-      <svg width={180} height={180} viewBox="0 0 180 180" role="img" aria-label={centerLabel} className="shrink-0">
-        {arcs.map((d, i) => items[i].value > 0 && <path key={i} d={d} fill={items[i].color} stroke="var(--color-surface)" strokeWidth={2} opacity={hover == null || hover === i ? 1 : 0.4} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} />)}
+      <svg width={big ? 260 : 180} height={big ? 260 : 180} viewBox="0 0 180 180" role="img" aria-label={centerLabel} className="shrink-0">
+        {arcs.map((d, i) => items[i].value > 0 && <path key={i} d={d} fill={items[i].color} stroke="var(--color-surface)" strokeWidth={2} opacity={(hover ?? picked?.index) == null || (hover ?? picked?.index) === i ? 1 : 0.4} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} onClick={() => pick(i)} className={onPick ? 'cursor-pointer' : ''} />)}
         <text x={90} y={88} textAnchor="middle" className="fill-ink text-[18px] font-bold">{hover == null ? center : format(items[hover].value)}</text>
         <text x={90} y={106} textAnchor="middle" className="fill-muted text-[10px]">{hover == null ? centerLabel : items[hover].label}</text>
       </svg>
       <ul className="w-full min-w-0 flex-1 space-y-3">
         {items.map((it, i) => (
-          <li key={it.label} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
+          <li key={it.label} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} onClick={() => pick(i)} className={`rounded-lg px-1 py-0.5 ${onPick ? 'cursor-pointer hover:bg-fill' : ''} ${picked?.index === i ? 'bg-brand-soft' : ''}`}>
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="inline-flex min-w-0 items-center gap-2 font-medium text-ink"><span className="inline-block size-2.5 shrink-0 rounded-full" style={{ background: it.color }} /><span className="truncate">{it.label}</span></span>
               <span className="shrink-0 tabular-nums"><strong className="text-ink">{format(it.value)}</strong><span className="ml-1 text-xs text-muted">({phanTram(it.value / total)})</span></span>
@@ -344,6 +432,7 @@ export function Donut({ items, center, centerLabel, format = so }: { items: { la
 
 const THU = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 export function Heatmap({ cells }: { cells: number[][] }) {
+  const { picked, onPick } = useChart();
   const max = Math.max(0, ...cells.flat());
   if (!max) return <Empty>Chưa có lượt khách cần nhân viên trong kỳ này.</Empty>;
   const muc = (v: number) => (v === 0 ? 0 : Math.min(4, Math.ceil((v / max) * 4)));
@@ -362,7 +451,7 @@ export function Heatmap({ cells }: { cells: number[][] }) {
             <tr key={d}>
               <th scope="row" className={`whitespace-nowrap pr-2 text-left text-xs font-semibold ${d === 6 ? 'text-brand-text' : 'text-ink'}`}>{THU[d]}</th>
               {row.map((v, h) => (
-                <td key={h} title={`${THU[d]}, ${h}h–${h + 1}h: ${v} lượt`} className={`h-7 rounded text-center tabular-nums ${nen[muc(v)]} ${muc(v) >= 3 ? 'font-semibold text-white' : 'text-body'}`}>{v || ''}</td>
+                <td key={h} title={`${THU[d]}, ${h}h–${h + 1}h: ${v} lượt`} onClick={onPick ? () => onPick({ index: d * 24 + h, label: `${THU[d]}, ${h}h–${h + 1}h: ${v} lượt` }) : undefined} className={`h-7 rounded text-center tabular-nums ${nen[muc(v)]} ${muc(v) >= 3 ? 'font-semibold text-white' : 'text-body'} ${onPick ? 'cursor-pointer hover:ring-2 hover:ring-ink/40' : ''} ${picked?.index === d * 24 + h ? 'ring-2 ring-ink' : ''}`}>{v || ''}</td>
               ))}
             </tr>
           ))}
@@ -378,9 +467,10 @@ export function Heatmap({ cells }: { cells: number[][] }) {
 export function Scatter({ points, xLabel, yLabel, formatX = so, formatY = so, height = 320 }: { points: { label: string; x: number; y: number; r?: number; color?: string; detail?: string }[]; xLabel: string; yLabel: string; formatX?: (n: number) => string; formatY?: (n: number) => string; height?: number }) {
   const [ref, box] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
+  const { big, picked, onPick } = useChart();
   if (!points.length) return <Empty />;
   const W = Math.max(box, 520);
-  const H = height;
+  const H = big ? Math.round(height * 1.5) : height;
   const L = 56;
   const R = 24;
   const T = 18;
@@ -411,8 +501,8 @@ export function Scatter({ points, xLabel, yLabel, formatX = so, formatY = so, he
               const p = points[i];
               const c = p.color ?? BANG_MAU[i % BANG_MAU.length];
               return (
-                <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)}>
-                  <circle cx={sx(p.x)} cy={sy(p.y)} r={rad(p)} fill={c} fillOpacity={hover === i ? 0.45 : 0.22} stroke={c} strokeWidth={1.5} />
+                <g key={i} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} onClick={() => onPick?.({ index: i, label: p.label })} className={onPick ? 'cursor-pointer' : ''}>
+                  <circle cx={sx(p.x)} cy={sy(p.y)} r={rad(p)} fill={c} fillOpacity={hover === i || picked?.index === i ? 0.5 : 0.22} stroke={c} strokeWidth={picked?.index === i ? 3 : 1.5} />
                   <circle cx={sx(p.x)} cy={sy(p.y)} r={2.5} fill={c} />
                 </g>
               );

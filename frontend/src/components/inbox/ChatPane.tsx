@@ -88,7 +88,8 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
               <span className="truncate text-base font-semibold" title={conv.customer.name}>{conv.customer.name}</span>
-              <span className={`hidden shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold md:inline ${STATUS[conv.status].className}`}>{STATUS[conv.status].label}</span>
+              {/* Cột thông tin khách đang mở đã có ô trạng thái: ẩn nhãn ở đây để tên khách không bị che khi khung chat hẹp. */}
+              {!panelOpen && <span className={`hidden shrink-0 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold lg:inline ${STATUS[conv.status].className}`}>{STATUS[conv.status].label}</span>}
             </div>
             <div className="truncate text-[0.8125rem] text-muted">{dinhDangSo(conv.customer.phone)} · {CHANNEL[conv.channel].label}</div>
           </div>

@@ -67,6 +67,17 @@
 | Tin nhắn kiểu Zalo: ẩn giờ/icon, rê chuột (cả hàng ngang) hiện ghim + trả lời, bấm tin xem nền tảng và ngày giờ, mốc ngày giữa các ngày, ảnh/sticker gửi riêng không viền | Chỉ test giả | 2026-11-17, chưa mở trình duyệt kiểm tra |
 | Thống kê mới theo Stitch: 5 mảng (Khách & Quan tâm, Tour, Hiệu suất sale, Doanh thu đã chốt, Kênh & Chi phí AI) + Nhu cầu tour; kỳ 7 ngày / 30 ngày (theo ngày), quý (13 tuần, theo tuần); biểu đồ đường, miền, cột, cột chồng, tròn, phễu, bản đồ nhiệt, bong bóng, phân tán, thác nước, tần suất | Chỉ test giả | 2026-11-17. API `GET /stats/board`. Đã chạy thử truy vấn (chỉ đọc), chưa mở trình duyệt. Bản đồ nhiệt dùng giờ khách đòi gặp nhân viên (không quét bảng messages) |
 
+## Lưu ý trước khi bàn giao
+
+Những chỗ đang nới ra để thử, phải siết lại trước khi bàn giao cho công ty dùng thật:
+
+- **Xoá voucher** (mở 2026-11-17 để thử): hiện admin toàn quyền xoá được mọi voucher, admin phòng xoá được voucher của phòng mình. **Quy tắc thật khi bàn giao:**
+  - Chỉ **người tạo** voucher mới được xoá voucher đó.
+  - Admin toàn quyền chỉ thấy voucher giảm bao nhiêu (%, số tiền) cho tour nào, **không thấy mã voucher**.
+  - Mã voucher chỉ admin phòng ban đã tạo voucher đó mới thấy.
+  - Chỗ cần sửa: `backend/src/vouchers/vouchers.controller.ts` (`remove`, `list`/`ra` ẩn `code` theo người xem) và `frontend/src/pages/VouchersPage.tsx`.
+- **Tự lấy tin Zalo 30 ngày mỗi lần khởi động** (`ZALO_SYNC_ON_START`): nhiều khách thì tốn nhiều lần gọi API Zalo; khi đã ổn định có thể tắt (`ZALO_SYNC_ON_START=0`) và chỉ bấm tay khi cần.
+
 ## Nhật ký
 
 Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration không).
@@ -89,6 +100,7 @@ Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration khôn
 - 2026-11-17: trang Thống kê làm lại theo thiết kế Stitch, API mới `GET /stats/board?range=7d|30d|quarter` (một lần gọi đủ 5 mảng, lưu tạm 5 phút); `/stats/orders` nhận thêm `range`. Không có migration.
 - 2026-11-17: lấy tin cũ Zalo theo **30 ngày gần đây** (trước: tối đa 300 khách, 50 tin mỗi khách nên thiếu tin cũ): nút ở hộp kết nối Zalo đổi thành "Lấy tin 30 ngày từ Zalo", "Đồng bộ tin cũ" từng hội thoại cũng lấy 30 ngày (tối đa 1.000 tin/khách), xong tự nhận diện địa điểm quan tâm. Không có migration.
 - 2026-11-17: form tạo tài khoản có thêm vai trò **Admin toàn quyền** (chỉ admin toàn quyền tạo, không gắn phòng ban). Không có migration.
+- 2026-11-17: mọi bảng 10 dòng một trang; biểu đồ Thống kê có nút phóng to (hộp gần toàn màn hình), bấm cột/điểm/ô/dòng xem chi tiết đúng mốc (danh sách đơn hoặc hội thoại), mỗi thẻ có nút "Xuất file Excel (.csv)"; bảng Chi tiết đơn đặt tour: mã đơn rút gọn 10 ký tự, cột Nền tảng có lọc, dòng tổng doanh thu và tỷ trọng; chốt tour xong mở Thống kê thấy ngay (xoá bộ nhớ tạm khi đơn đổi); bấm ra ngoài đóng hộp tài khoản; thanh bên rộng hơn; khung chat ẩn nhãn trạng thái khi mở cột thông tin khách; tạo tài khoản và đặt lại mật khẩu hiện nội dung đăng nhập để sao chép, đặt lại mật khẩu tự sinh 12 ký tự; xoá voucher (đang thử, xem Lưu ý trước khi bàn giao); máy chủ khởi động tự lấy tin Zalo 30 ngày. API mới `GET /stats/detail`, `DELETE /vouchers/:id`; `/stats/orders` thêm `channel`, `from`, `to`, 10 đơn/trang. Không có migration.
 
 Lệnh cập nhật VPS chuẩn (migrate an toàn kể cả khi không có gì mới):
 

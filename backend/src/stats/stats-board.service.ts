@@ -1,8 +1,10 @@
+import { phienThongKe } from '../common/stats-cache';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BoardRange, demTheoKhoang, khoangBoard, thuGioVN, trungVi, tuanSapToi, viTriMoc } from '../common/stats-board';
 import { seriesEnd } from '../common/stats-series';
-import { CHUA_PHAN, sqlPhamHoiThoai } from '../common/scope';
+import { CHUA_PHAN, locHoiThoai, sqlPhamHoiThoai } from '../common/scope';
+import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 const CACHE_MS = 5 * 60_000;
@@ -20,16 +22,16 @@ const MUC_GIA_TRI = [0, 5e6, 10e6, 20e6, 50e6, 100e6]; // < 5 tr, 5–10, 10–2
  */
 @Injectable()
 export class StatsBoardService {
-  private cache = new Map<string, { at: number; data: unknown }>();
+  private cache = new Map<string, { at: number; v: number; data: unknown }>();
 
   constructor(private prisma: PrismaService, private config: ConfigService) {}
 
   async get(range: BoardRange, scope: string[] | null) {
     const key = `${range}:${scope === null ? '*' : [...scope].sort().join(',')}`;
     const c = this.cache.get(key);
-    if (c && Date.now() - c.at < CACHE_MS) return c.data;
+    if (c && c.v === phienThongKe() && Date.now() - c.at < CACHE_MS) return c.data;
     const data = await this.tinh(range, scope);
-    this.cache.set(key, { at: Date.now(), data });
+    this.cache.set(key, { at: Date.now(), v: phienThongKe(), data });
     return data;
   }
 
@@ -378,6 +380,35 @@ export class StatsBoardService {
         costByChannel,
       },
     };
+  }
+
+  /**
+   * Chi tiết khi bấm một mốc / một kênh trên biểu đồ: danh sách hội thoại (10 dòng một trang), cùng phạm vi phòng.
+   * customers = khách có tin gần nhất trong khoảng; newCustomers = khách lần đầu nhắn; conversations = hội thoại bắt đầu; contacts = khách đòi gặp nhân viên.
+   */
+  async chiTiet(kind: 'customers' | 'newCustomers' | 'conversations' | 'contacts', from: Date, to: Date, scope: string[] | null, channel?: Kenh, page = 1) {
+    const cot = kind === 'customers' ? 'lastCustomerMessageAt' : kind === 'conversations' ? 'createdAt' : kind === 'contacts' ? 'contactRequestedAt' : null;
+    const where: Prisma.ConversationWhereInput = {
+      ...locHoiThoai(scope),
+      ...(channel ? { channel } : {}),
+      ...(cot ? { [cot]: { gte: from, lt: to } } : { customer: { createdAt: { gte: from, lt: to } } }),
+    };
+    const SIZE = 10;
+    const [total, rows] = await Promise.all([
+      this.prisma.conversation.count({ where }),
+      this.prisma.conversation.findMany({
+        where,
+        orderBy: cot ? { [cot]: 'desc' } : { lastMessageAt: 'desc' },
+        skip: (page - 1) * SIZE,
+        take: SIZE,
+        select: {
+          id: true, channel: true, status: true, lastMessageAt: true, lastCustomerMessageAt: true, createdAt: true, contactRequestedAt: true, lastMessagePreview: true,
+          customer: { select: { name: true, phone: true, createdAt: true } },
+          assignee: { select: { fullName: true } },
+        },
+      }),
+    ]);
+    return { total, page, pageSize: SIZE, items: rows.map((r) => ({ ...r, at: cot ? (r as Record<string, unknown>)[cot] : r.customer.createdAt })) };
   }
 
   private dealsTrong(from: Date, to: Date, pham: ReturnType<typeof sqlPhamHoiThoai>) {

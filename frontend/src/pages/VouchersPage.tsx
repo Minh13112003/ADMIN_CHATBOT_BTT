@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
 import useSWR from 'swr';
-import { fetcher, loiCua, patch, post } from '@/lib/api';
+import { del, fetcher, loiCua, patch, post } from '@/lib/api';
 import type { CatalogTour, Me, Place, Voucher, VoucherList, VoucherStatus } from '@/lib/types';
-import { ErrorText, inputClass, Modal, NhapNgay, primaryClass } from '@/components/ui';
+import { ErrorText, inputClass, Modal, NhapNgay, Pager, primaryClass, usePaged } from '@/components/ui';
 
 const TRANG_THAI: Record<VoucherStatus, { label: string; className: string }> = {
   ACTIVE: { label: 'Hiệu lực', className: 'bg-green-soft text-green-ink' },
@@ -30,12 +30,16 @@ export default function VouchersPage() {
   const [loc, setLoc] = useState<'' | VoucherStatus>('');
   const [sua, setSua] = useState<Voucher | 'new' | null>(null);
   const [daChep, setDaChep] = useState<string | null>(null);
+  const [xoa, setXoa] = useState<Voucher | null>(null);
+  const [dangXoa, setDangXoa] = useState(false);
+  const [loiXoa, setLoiXoa] = useState('');
   const [loi, setLoi] = useState('');
 
   const ds = useMemo(() => {
     const t = tim.trim().toLowerCase();
     return (data?.items ?? []).filter((v) => (!loc || v.status === loc) && (!t || v.code.toLowerCase().includes(t) || (v.tourName ?? v.categoryName ?? '').toLowerCase().includes(t)));
   }, [data, tim, loc]);
+  const trang = usePaged(ds);
 
   const chep = async (code: string) => {
     try {
@@ -113,7 +117,7 @@ export default function VouchersPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {ds.map((v) => (
+                {trang.rows.map((v) => (
                   <tr key={v.id} className="align-middle">
                     <td className="px-4 py-3">
                       <span className="inline-flex items-center gap-1">
@@ -142,14 +146,56 @@ export default function VouchersPage() {
                     <td className="whitespace-nowrap px-4 py-3 text-right">
                       <button type="button" onClick={() => setSua(v)} className="min-h-9 rounded-lg px-2.5 text-xs font-semibold hover:bg-fill">Sửa</button>
                       <button type="button" onClick={() => void khoa(v)} className="min-h-9 rounded-lg px-2.5 text-xs font-semibold text-body hover:bg-fill">{v.isActive ? 'Tạm khoá' : 'Mở lại'}</button>
+                      <button type="button" onClick={() => { setLoiXoa(''); setXoa(v); }} className="min-h-9 rounded-lg px-2.5 text-xs font-semibold text-brand-text hover:bg-brand-soft">Xoá</button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+            <Pager className="px-4 pb-4" page={trang.page} total={trang.total} onChange={trang.setPage} />
           </div>
         )}
       </section>
+      {xoa && (
+        <Modal
+          title="Xoá voucher"
+          width={480}
+          onClose={() => setXoa(null)}
+          footer={
+            <>
+              <span className="flex-1" />
+              <button type="button" onClick={() => setXoa(null)} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Huỷ</button>
+              <button
+                type="button"
+                disabled={dangXoa}
+                onClick={async () => {
+                  setDangXoa(true);
+                  setLoiXoa('');
+                  try {
+                    await del(`/vouchers/${xoa.id}`);
+                    setXoa(null);
+                    await mutate();
+                  } catch (e) {
+                    setLoiXoa(loiCua(e));
+                  } finally {
+                    setDangXoa(false);
+                  }
+                }}
+                className="min-h-11 rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+              >
+                {dangXoa ? 'Đang xoá...' : 'Xoá vĩnh viễn'}
+              </button>
+            </>
+          }
+        >
+          <div className="flex flex-col gap-3 text-sm">
+            <p>Xoá voucher <strong className="font-mono">{xoa.code}</strong> ({xoa.label})? Không khôi phục lại được.</p>
+            {xoa.used > 0 && <p className="rounded-xl border border-amber-line bg-amber-soft p-3 text-amber-ink">Voucher đã dùng {xoa.used} lần. Các đơn đó vẫn giữ mã và số tiền giảm, doanh thu cũ không đổi.</p>}
+            <p className="text-xs text-muted">Muốn ngừng tạm thời thì dùng "Tạm khoá" thay vì xoá.</p>
+            <ErrorText>{loiXoa}</ErrorText>
+          </div>
+        </Modal>
+      )}
       {sua && <VoucherDrawer voucher={sua === 'new' ? null : sua} onClose={() => setSua(null)} onDone={() => void mutate()} />}
     </main>
   );

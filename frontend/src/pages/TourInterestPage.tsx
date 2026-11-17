@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import useSWR from 'swr';
-import { Modal, UnderlineTabs } from '@/components/ui';
+import { Modal, Pager, UnderlineTabs, usePaged } from '@/components/ui';
 import { fetcher, post } from '@/lib/api';
 import { CHANNEL, thoiGianTruoc } from '@/lib/labels';
 import type { Channel } from '@/lib/types';
@@ -15,7 +15,7 @@ type Asker = { customerId: string; name: string; phone: string | null; channel: 
 
 type Ky = '' | '7' | '30';
 type View = 'place' | 'tour';
-const TRANG = 25;
+const TRANG = 10; // mỗi bảng 10 dòng một trang (chủ dự án chốt 2026-11-17)
 const so = (n: number) => n.toLocaleString('vi-VN');
 const ngay = (iso: string) => new Date(iso).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 const gia = (v: number | null) => (v ? `${v.toLocaleString('vi-VN')} đ` : 'Chưa có giá');
@@ -218,7 +218,7 @@ function PlaceStatsModal({ place, ky, kenh, onClose }: { place: PlaceRow; ky: Ky
         <>
           <span className="flex-1 text-[0.8125rem] text-muted">{ds ? `Đang hiển thị ${so(loc.length)} / ${so(ds.length)} tin` : ''}</span>
           <button type="button" onClick={onClose} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
-          <button type="button" disabled={!ds?.length} onClick={xuat} className="inline-flex min-h-11 items-center rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">Xuất danh sách</button>
+          <button type="button" disabled={!ds?.length} onClick={xuat} className="inline-flex min-h-11 items-center rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">Xuất file Excel (.csv)</button>
         </>
       }
     >
@@ -327,6 +327,7 @@ function TourStatsModal({ tourKey, ky, kenh, onClose }: { tourKey: string; ky: K
     const t = tim.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd');
     return (ds ?? []).filter((k) => (!locKenh || k.channel === locKenh) && (!t || `${k.name} ${k.phone ?? ''}`.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').includes(t)));
   }, [ds, tim, locKenh]);
+  const trangKhach = usePaged(loc);
   const cao = Math.max(1, ...(d?.daily.map((x) => x.count) ?? [1]));
   const tongKenh = d ? Object.values(d.channels).reduce((s, n) => s + (n ?? 0), 0) : 0;
 
@@ -348,7 +349,7 @@ function TourStatsModal({ tourKey, ky, kenh, onClose }: { tourKey: string; ky: K
           <button type="button" onClick={onClose} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
           <button type="button" disabled={!ds?.length} onClick={xuat} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" /></svg>
-            Xuất danh sách
+            Xuất file Excel (.csv)
           </button>
         </>
       }
@@ -456,7 +457,7 @@ function TourStatsModal({ tourKey, ky, kenh, onClose }: { tourKey: string; ky: K
               {loiDs && <p role="alert" className="text-sm text-brand-text">Không tải được danh sách khách.</p>}
               {ds && !loc.length && <p className="text-sm text-muted">Không có khách khớp.</p>}
               <ul className="flex flex-col gap-3">
-                {loc.map((k) => (
+                {trangKhach.rows.map((k) => (
                   <li key={k.customerId} className="rounded-2xl border border-line p-3.5">
                     <div className="flex items-center gap-3">
                       <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-full bg-blue-soft text-sm font-bold text-blue-ink">{k.name.trim().split(/\s+/).slice(-2).map((w) => w[0]).join('').toUpperCase()}</span>
@@ -486,6 +487,7 @@ function TourStatsModal({ tourKey, ky, kenh, onClose }: { tourKey: string; ky: K
                   </li>
                 ))}
               </ul>
+              <Pager page={trangKhach.page} total={trangKhach.total} onChange={trangKhach.setPage} />
             </div>
           )}
         </div>
@@ -527,7 +529,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
 
   const p = kyQuery(ky, kenh);
   p.set('view', view);
-  p.set('take', String(full ? TRANG : view === 'place' ? 50 : 10));
+  p.set('take', String(full ? TRANG : 10));
   p.set('skip', String(full ? trang * TRANG : 0));
   if (moi && view === 'tour') p.set('moi', '1');
   if (view === 'tour' && sapXep !== 'askers') p.set('sort', sapXep);
@@ -603,7 +605,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
           </label>
         )}
         {full && <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm tên tour (không cần gõ dấu)" aria-label="Tìm tour" className="min-h-11 min-w-[220px] flex-1 rounded-[10px] border border-field bg-surface px-3 text-sm" />}
-        <button type="button" disabled={!data?.items.length} onClick={xuat} className="ml-auto inline-flex min-h-11 items-center rounded-[9px] border border-field bg-surface px-4 text-[0.8125rem] font-semibold hover:bg-fill disabled:opacity-40">Xuất CSV</button>
+        <button type="button" disabled={!data?.items.length} onClick={xuat} className="ml-auto inline-flex min-h-11 items-center rounded-[9px] border border-field bg-surface px-4 text-[0.8125rem] font-semibold hover:bg-fill disabled:opacity-40">Xuất file Excel (.csv)</button>
       </div>
 
       {!full && (

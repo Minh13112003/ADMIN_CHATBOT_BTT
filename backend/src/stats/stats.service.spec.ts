@@ -10,18 +10,22 @@ describe('dauKy theo giờ Việt Nam', () => {
 
 describe('chi tiết báo cáo theo phòng ban', () => {
   const create = () => {
-    const prisma = { deal: { count: jest.fn().mockResolvedValue(1), findMany: jest.fn().mockResolvedValue([{ id: 'd1', amount: 39980000n, conversation: { assignee: { department: { name: 'FIT' } } } }]) } };
+    const prisma = { deal: { aggregate: jest.fn().mockResolvedValue({ _sum: { amount: 39980000n, guests: 2 } }), count: jest.fn().mockResolvedValue(1), findMany: jest.fn().mockResolvedValue([{ id: 'd1', amount: 39980000n, conversation: { assignee: { department: { name: 'FIT' } } } }]) } };
     return { prisma, service: new StatsService(prisma as never, {} as never) };
   };
   it('giữ phạm vi phòng khi tìm khách hoặc lọc sale; phân trang ở máy chủ', async () => {
     const { prisma, service } = create();
     const result = await service.getOrders('month', ['fit'], { search: 'Trung Quốc', staffId: 'sale-1', page: 2 });
     const args = prisma.deal.findMany.mock.calls[0][0];
-    expect(args.where.conversation).toEqual({ OR: [{ assignee: { departmentId: { in: ['fit'] } } }] });
-    expect(args.where.closedById).toBe('sale-1');
-    expect(args.where.AND[0]).toMatchObject({ status: 'CONFIRMED', voidedAt: null });
+    const goc = args.where.AND[0];
+    expect(goc.conversation).toEqual({ OR: [{ assignee: { departmentId: { in: ['fit'] } } }] });
+    expect(goc.closedById).toBe('sale-1');
+    expect(goc).toMatchObject({ status: 'CONFIRMED', voidedAt: null });
     expect(args.where.AND[1].OR).toHaveLength(4);
-    expect(args.skip).toBe(20);
+    expect(args.skip).toBe(10); // 10 đơn một trang
+    expect(result).toMatchObject({ pageSize: 10, sumAmount: 39980000, allAmount: 39980000 });
+    // Tỷ trọng tính trên cùng kỳ, cùng phòng nhưng không có bộ lọc tìm kiếm.
+    expect(prisma.deal.aggregate.mock.calls[1][0].where).toEqual(goc);
     expect(prisma.deal.count.mock.calls[0][0].where).toEqual(args.where);
     expect(result.items[0].amount).toBe(39980000);
     expect(result.items[0].departmentName).toBe('FIT');
@@ -30,8 +34,17 @@ describe('chi tiết báo cáo theo phòng ban', () => {
     const { prisma, service } = create();
     await service.getOrders('all', [], { status: 'CANCELLED' });
     const where = prisma.deal.findMany.mock.calls[0][0].where;
-    expect(where.conversation).toEqual({ OR: [{ assignee: { departmentId: { in: [] } } }] });
+    expect(where.AND[0].conversation).toEqual({ OR: [{ assignee: { departmentId: { in: [] } } }] });
     expect(where.AND[0].OR).toEqual([{ status: 'CANCELLED' }, { voidedAt: { not: null } }]);
+  });
+  it('lọc theo nền tảng và khoảng ngày của một mốc biểu đồ', async () => {
+    const { prisma, service } = create();
+    const from = new Date('2026-11-10T17:00:00Z');
+    const to = new Date('2026-11-11T17:00:00Z');
+    await service.getOrders('month', null, { channel: 'ZALO', from, to });
+    const where = prisma.deal.findMany.mock.calls[0][0].where;
+    expect(where.AND[0].closedAt).toEqual({ gte: from, lt: to });
+    expect(where.AND[1]).toEqual({ channel: 'ZALO' });
   });
 });
 

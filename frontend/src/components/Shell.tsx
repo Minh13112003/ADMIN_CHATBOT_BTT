@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import useSWR from 'swr';
 import { fetcher, patch, post } from '@/lib/api';
@@ -101,6 +101,18 @@ export function Shell({ children }: { children: ReactNode }) {
   const { data: contacts } = useSWR<ConversationList>(me ? '/conversations?status=CONTACT' : null, fetcher);
   const { ping, clearPing, connected } = useRealtime();
   const [menu, setMenu] = useState<'bell' | 'me' | null>(null);
+  const vungChuong = useRef<HTMLDivElement>(null);
+  const vungToi = useRef<HTMLDivElement>(null);
+  // Bấm ra ngoài hộp thông báo / hộp tài khoản (hoặc nhấn Esc) thì đóng hộp.
+  useEffect(() => {
+    if (!menu) return;
+    const vung = menu === 'bell' ? vungChuong : vungToi;
+    const bam = (e: PointerEvent) => { if (vung.current && !vung.current.contains(e.target as Node)) setMenu(null); };
+    const phim = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenu(null); };
+    document.addEventListener('pointerdown', bam);
+    document.addEventListener('keydown', phim);
+    return () => { document.removeEventListener('pointerdown', bam); document.removeEventListener('keydown', phim); };
+  }, [menu]);
   const [doiMk, setDoiMk] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [tkMo, setTkMo] = useState(true);
@@ -129,7 +141,7 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="workspace fixed inset-0 flex min-w-0 flex-col overflow-hidden md:flex-row">
       <div className="relative z-30 hidden h-full shrink-0 md:block">
-        <aside className={`flex h-full flex-col overflow-y-auto overflow-x-hidden border-r border-line bg-surface transition-[width] duration-200 ${thu ? 'w-[76px]' : 'w-[248px]'}`}>
+        <aside className={`flex h-full flex-col overflow-y-auto overflow-x-hidden border-r border-line bg-surface transition-[width] duration-200 ${thu ? 'w-[76px]' : 'w-[276px]'}`}>
           <Link to="/inbox" title="BenThanh Tourist" className={`flex h-[72px] shrink-0 items-center gap-3 border-b border-line-soft ${thu ? 'justify-center px-0' : 'px-4'}`}>
             <img src="/logo.png" alt="" width="36" height="36" className="size-9 shrink-0 object-contain" />
             {!thu && (
@@ -213,7 +225,7 @@ export function Shell({ children }: { children: ReactNode }) {
             {!connected && <p className="text-xs text-brand-text">Mất kết nối tức thời, tin mới có thể đến chậm</p>}
           </div>
 
-          <div className="relative">
+          <div ref={vungChuong} className="relative">
             <button
               type="button"
               onClick={() => setMenu(menu === 'bell' ? null : 'bell')}
@@ -252,7 +264,7 @@ export function Shell({ children }: { children: ReactNode }) {
             )}
           </div>
 
-          <div className="relative">
+          <div ref={vungToi} className="relative">
             <button
               type="button"
               onClick={() => setMenu(menu === 'me' ? null : 'me')}

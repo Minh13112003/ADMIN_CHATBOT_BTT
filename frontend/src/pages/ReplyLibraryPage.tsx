@@ -5,7 +5,9 @@ import {
   ErrorText,
   Field,
   inputClass,
+  Pager,
   primaryClass,
+  usePaged,
   Segmented,
   Switch,
 } from "@/components/ui";
@@ -49,6 +51,7 @@ export default function ReplyLibraryPage() {
 
 function RuleLibrary() {
   const { data, error, mutate } = useSWR<Rule[]>("/auto-replies", fetcher);
+  const trang = usePaged(data);
   const [editing, setEditing] = useState<Rule | "new" | null>(null);
   const [name, setName] = useState("");
   const [type, setType] = useState<RuleType>("KEYWORD");
@@ -141,7 +144,7 @@ function RuleLibrary() {
             </tr>
           </thead>
           <tbody>
-            {data?.map((r) => (
+            {trang.rows.map((r) => (
               <tr key={r.id} className="border-t border-line-soft">
                 <td className="p-3 font-semibold">{r.name}</td>
                 <td className="p-3">{RULE_TYPE[r.type]}</td>
@@ -175,6 +178,7 @@ function RuleLibrary() {
             ))}
           </tbody>
         </table>
+        <Pager className="px-3 pb-3" page={trang.page} total={trang.total} onChange={trang.setPage} />
         {!data && !error && (
           <p className="p-4 text-muted">Đang tải quy tắc...</p>
         )}

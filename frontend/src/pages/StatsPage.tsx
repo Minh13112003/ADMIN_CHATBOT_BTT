@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import { Dialog } from '@/components/ui';
 import { ChartCard, ChartSkeleton, phanTram, so, tienGon } from '@/components/stats/BoardCharts';
 import { exportCsv, initials } from '@/components/stats/AnalyticsUI';
-import { OrdersPanel } from '@/components/stats/ReportSections';
+import { OrdersTable } from '@/components/stats/StatsDetails';
 import { ChannelsTab, CustomersTab, RevenueTab, SalesTab, ToursTab } from '@/components/stats/StatsTabs';
 import { fetcher } from '@/lib/api';
 import { CHANNEL, thoiGianTruoc, thoiLuong, vnd } from '@/lib/labels';
@@ -108,7 +108,7 @@ export default function StatsPage({ forcedView }: { forcedView?: View } = {}) {
             </button>
             <button type="button" onClick={exportReport} disabled={!b} className="flex min-h-11 items-center gap-2 rounded-xl bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg>
-              Xuất CSV
+              Xuất file Excel (.csv)
             </button>
           </div>
         )}
@@ -132,17 +132,17 @@ export default function StatsPage({ forcedView }: { forcedView?: View } = {}) {
         <div role="status" aria-label="Đang tải" className="flex flex-col gap-4"><ChartSkeleton /><ChartSkeleton /></div>
       ) : (
         <div className={`flex flex-col gap-5 transition-opacity ${isValidating ? 'opacity-70' : ''}`}>
-          {view === 'customers' && <CustomersTab b={b} />}
-          {view === 'tours' && <ToursTab b={b} />}
-          {view === 'sales' && <SalesTab b={b} onSelect={setSaleId} />}
-          {view === 'revenue' && <RevenueTab b={b} orders={<div className="analytics-page !p-0"><OrdersPanel key={query} query={query} /></div>} />}
-          {view === 'channels' && <ChannelsTab b={b} status={owner && kenh ? <ChannelStatusCard rows={kenh} /> : null} />}
+          {view === 'customers' && <CustomersTab b={b} base={query} />}
+          {view === 'tours' && <ToursTab b={b} base={query} />}
+          {view === 'sales' && <SalesTab b={b} base={query} onSelect={setSaleId} />}
+          {view === 'revenue' && <RevenueTab b={b} base={query} />}
+          {view === 'channels' && <ChannelsTab b={b} base={query} status={owner && kenh ? <ChannelStatusCard rows={kenh} /> : null} />}
           <p className="text-center text-xs text-muted">Doanh thu chỉ tính đơn đã chốt (không tính đơn chờ xác nhận, đơn huỷ). Đây không phải tiền thực thu.</p>
         </div>
       )}
 
       {sale && (
-        <Dialog title="Chi tiết tư vấn viên" onClose={() => setSaleId(null)} variant="drawer" drawerWidth={560}>
+        <Dialog title="Chi tiết tư vấn viên" onClose={() => setSaleId(null)} variant="drawer" drawerWidth={760}>
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-3">
               <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft font-bold text-brand-text">{initials(sale.name)}</span>
@@ -165,7 +165,7 @@ export default function StatsPage({ forcedView }: { forcedView?: View } = {}) {
               ))}
             </dl>
             <div className="flex items-center justify-between rounded-xl border border-line p-3 text-sm"><span className="text-muted">Doanh thu đã chốt</span><strong className="text-brand-text">{vnd(sale.revenue)} ({tienGon(sale.revenue)})</strong></div>
-            <div className="analytics-page !p-0"><OrdersPanel key={`${query}:${sale.id}`} query={`${query}&staffId=${encodeURIComponent(sale.id)}`} compact /></div>
+            <div><h3 className="mb-2 text-sm font-bold">Đơn sale này đã chốt trong kỳ</h3><OrdersTable key={`${query}:${sale.id}`} base={query} embedded fixed={{ staffId: sale.id, status: 'CONFIRMED' }} /></div>
           </div>
         </Dialog>
       )}

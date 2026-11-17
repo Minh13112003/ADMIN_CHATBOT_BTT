@@ -1,3 +1,4 @@
+import { thongKeDoi } from '../common/stats-cache';
 import { AppNotificationsService } from '../app-mobile/app-notifications.service';
 import { ZaloService } from '../channels/zalo.service';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
@@ -342,6 +343,7 @@ export class ConversationsService {
     if (status === 'CLOSED') throw new BadRequestException('Dùng chức năng Chốt tour để nhập đơn');
     const c = await this.lay(id);
     if (c.status === 'CLOSED') await this.prisma.deal.updateMany({ where: { conversationId: id, voidedAt: null, status: 'CONFIRMED' }, data: { voidedAt: new Date() } });
+    if (c.status === 'CLOSED') thongKeDoi();
     const log = c.status === 'CLOSED' ? `${user.fullName} mở lại hội thoại, đơn đã chốt không còn tính doanh thu` : undefined;
     return this.capNhat(user, id, { status, ...(status === 'CONTACT' ? { contactRequestedAt: new Date() } : {}) }, log);
   }
@@ -404,6 +406,7 @@ export class ConversationsService {
       if (dto.dealId && tuApp) await this.appThongBao?.baoDon(tx, { customerId: c.customerId, dealId: dto.dealId, tourName: data.tourName, status: 'CONFIRMED' });
       else await tx.deal.create({ data: { ...data, conversationId: id, customerId: c.customerId, channel: c.channel, source: 'STAFF', orderCode: dto.orderCode } });
     });
+    thongKeDoi();
     const thanhPhan = [`${khach.adults} người lớn`, khach.children && `${khach.children} trẻ em`, khach.infants && `${khach.infants} em bé`].filter(Boolean).join(', ');
     const log = dto.dealId
       ? `${user.fullName} xác nhận đơn khách đặt${tuApp ? ' trong app' : ' qua bttAI'}: ${data.tourName} (${tourCode}), ${thanhPhan}${voucherLog}, còn ${tien} đ`
@@ -430,6 +433,7 @@ export class ConversationsService {
       await tx.deal.update({ where: { id: dealId }, data: { status: 'CANCELLED', ...(don.source === 'APP' ? { bookingStatus: 'CANCELLED', bookingUpdatedAt: new Date() } : {}) } });
       if (don.source === 'APP') await this.appThongBao?.baoDon(tx, { customerId: don.customerId, dealId, tourName: don.tourName, status: 'CANCELLED' });
     });
+    thongKeDoi();
     const c = await this.lay(id);
     const conLai = await this.prisma.deal.count({ where: { conversationId: id, status: { in: ['PENDING', 'CONFIRMED'] }, voidedAt: null } });
     return this.capNhat(
@@ -580,6 +584,7 @@ export class ConversationsService {
       }
       return false;
     });
+    thongKeDoi();
     for (const f of files) if (f.attachmentPath) await this.tep.xoaTep(f.attachmentPath);
     this.log.warn(`${user.fullName} (${user.id}) xoá hội thoại ${id} của khách "${c.customer.name}"${xoaKhach ? ', đã xoá luôn khách' : ''}, ${files.length} file`);
     this.realtime.emit('conversation:update', { id });

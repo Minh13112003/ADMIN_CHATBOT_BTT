@@ -282,3 +282,58 @@ export function AnhKhach({ ten, anh, className }: { ten: string; anh?: string | 
   }
   return <span aria-hidden="true" className={className}>{ten.trim().split(' ').pop()?.charAt(0)}</span>;
 }
+
+/** Mỗi bảng 10 dòng một trang (chủ dự án chốt 2026-11-17). */
+export const PAGE_SIZE = 10;
+
+/** Chia trang phía trình duyệt cho danh sách đã tải hết. Đổi bộ lọc (danh sách đổi độ dài) thì về trang 1. */
+export function usePaged<T>(items: T[] | undefined, size = PAGE_SIZE) {
+  const [page, setPage] = useState(1);
+  const total = items?.length ?? 0;
+  const pages = Math.max(1, Math.ceil(total / size));
+  const cur = Math.min(page, pages);
+  useEffect(() => setPage(1), [total]);
+  return { page: cur, setPage, total, pageSize: size, rows: (items ?? []).slice((cur - 1) * size, cur * size) };
+}
+
+/** Thanh chuyển trang: "11–20 / 57" và các nút số trang. Ẩn khi chỉ có 1 trang. */
+export function Pager({ page, total, pageSize = PAGE_SIZE, onChange, className = '' }: { page: number; total: number; pageSize?: number; onChange: (p: number) => void; className?: string }) {
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  if (total <= pageSize) return total ? <p className={`mt-3 text-xs text-muted ${className}`}>{total.toLocaleString('vi-VN')} dòng</p> : null;
+  const from = Math.max(1, Math.min(page - 2, pages - 4));
+  const nums = Array.from({ length: Math.min(5, pages) }, (_, i) => from + i);
+  const nut = 'grid min-h-9 min-w-9 place-items-center rounded-lg border border-line px-2 text-sm font-medium hover:bg-fill disabled:opacity-40 disabled:hover:bg-transparent';
+  return (
+    <nav aria-label="Chuyển trang" className={`mt-3 flex flex-wrap items-center justify-between gap-2 ${className}`}>
+      <span className="text-xs text-muted">{((page - 1) * pageSize + 1).toLocaleString('vi-VN')}–{Math.min(page * pageSize, total).toLocaleString('vi-VN')} / {total.toLocaleString('vi-VN')} dòng</span>
+      <div className="flex items-center gap-1">
+        <button type="button" className={nut} disabled={page <= 1} onClick={() => onChange(page - 1)} aria-label="Trang trước">‹</button>
+        {nums[0] > 1 && <span className="px-1 text-muted">…</span>}
+        {nums.map((n) => (
+          <button key={n} type="button" onClick={() => onChange(n)} aria-current={n === page ? 'page' : undefined} className={`${nut} ${n === page ? 'border-brand bg-brand-soft font-bold text-brand-text' : ''}`}>{n}</button>
+        ))}
+        {nums[nums.length - 1] < pages && <span className="px-1 text-muted">…</span>}
+        <button type="button" className={nut} disabled={page >= pages} onClick={() => onChange(page + 1)} aria-label="Trang sau">›</button>
+      </div>
+    </nav>
+  );
+}
+
+/** Nút sao chép có báo "Đã chép" 2 giây; trình duyệt chặn bộ nhớ tạm thì báo để người dùng tự chọn và chép. */
+export function CopyButton({ text, label = 'Sao chép', className = '' }: { text: string; label?: string; className?: string }) {
+  const [tt, setTt] = useState<'' | 'ok' | 'loi'>('');
+  const chep = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setTt('ok');
+    } catch {
+      setTt('loi');
+    }
+    setTimeout(() => setTt(''), 2000);
+  };
+  return (
+    <button type="button" onClick={() => void chep()} aria-live="polite" className={className || 'inline-flex min-h-10 items-center rounded-[9px] border border-field bg-surface px-3 text-sm font-semibold hover:bg-fill'}>
+      {tt === 'ok' ? 'Đã chép' : tt === 'loi' ? 'Không chép được, hãy chọn và chép tay' : label}
+    </button>
+  );
+}

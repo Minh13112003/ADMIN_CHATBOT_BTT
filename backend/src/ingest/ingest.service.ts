@@ -1,3 +1,4 @@
+import { thongKeDoi } from '../common/stats-cache';
 import { ngayVN, timDiaDiem } from '../common/dia-diem';
 import { BadRequestException, ConflictException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -443,6 +444,7 @@ export class IngestService {
       });
       return { sau, log };
     });
+    thongKeDoi();
     this.realtime.emit('message:new', { conversationId: conv.id, message: ketQua.log });
     this.realtime.emit('conversation:update', { id: conv.id });
     this.realtime.emit('contact:new', { id: conv.id, name: ketQua.sau.customer.name, channel: ketQua.sau.channel, assignee: ketQua.sau.assignee?.fullName ?? null, kind: 'BOOKING' });
@@ -481,6 +483,7 @@ export class IngestService {
       for (const text of logs) ra.push(await tx.message.create({ data: { conversationId: don.conversationId, senderType: 'SYSTEM', internal: true, text } }));
       return ra;
     });
+    thongKeDoi();
     for (const m of tin) this.realtime.emit('message:new', { conversationId: don.conversationId, message: m });
     this.realtime.emit('conversation:update', { id: don.conversationId });
     return { matched: true, status: moi ?? don.status };
