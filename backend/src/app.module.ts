@@ -18,6 +18,7 @@ import { RealtimeGateway } from './realtime/realtime.gateway';
 import { StorageModule } from './storage/storage.module';
 import { StatsController } from './stats/stats.controller';
 import { StatsService } from './stats/stats.service';
+import { StatsBoardService } from './stats/stats-board.service';
 import { AutoRepliesController, TemplatesController } from './templates/templates.controller';
 import { UsersController } from './users/users.controller';
 import { DepartmentsController } from './users/departments.controller';
@@ -38,6 +39,7 @@ import { AppAuthGuard } from './app-mobile/app-auth.guard';
 import { AppAuthController, AppUsersController, ConversationAppAccountController } from './app-mobile/app-mobile.controller';
 import { AppBookingsController, AppCatalogController, ConversationAppBookingController } from './app-mobile/app-bookings.controller';
 import { AppBookingsService } from './app-mobile/app-bookings.service';
+import { ProfileController } from './auth/profile.controller';
 import { AppFavoritesController, AppMiscController, AppNotificationsController } from './app-mobile/app-extras.controller';
 import { AppExtrasService } from './app-mobile/app-extras.service';
 import { AppNotificationsService } from './app-mobile/app-notifications.service';
@@ -82,6 +84,7 @@ import { AppNotificationsService } from './app-mobile/app-notifications.service'
     AppNotificationsController,
     AppFavoritesController,
     AppMiscController,
+    ProfileController,
     ConversationsController,
     CustomersController,
     DealsController,
@@ -110,6 +113,7 @@ import { AppNotificationsService } from './app-mobile/app-notifications.service'
     ConversationsService,
     AssignmentService,
     StatsService,
+    StatsBoardService,
     RealtimeGateway,
   ],
 })

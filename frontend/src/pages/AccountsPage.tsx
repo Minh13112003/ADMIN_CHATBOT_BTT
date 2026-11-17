@@ -180,6 +180,7 @@ export default function AccountsPage() {
         <Dialog
           title={laChu ? 'Tạo tài khoản' : 'Tạo tài khoản sale'}
           variant="drawer"
+          drawerWidth={600}
           onClose={() => {
             if (!dangGui) setCreating(false);
           }}

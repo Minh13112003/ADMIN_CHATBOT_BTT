@@ -17,15 +17,18 @@ export function ReportIcon({ type = 'chart' }: { type?: 'chart' | 'people' | 'me
   };
   return <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{paths[type]}</svg>;
 }
+/** @deprecated KHÔNG CÒN DÙNG (2026-11-17): thẻ số và khung của trang Thống kê cũ (thay bằng Kpi, ChartCard, HBars trong BoardCharts.tsx). Giữ lại theo yêu cầu chủ dự án, chưa xoá. */
 export function Metric({ label, value, note, tone = 'slate', icon = 'chart' }: { label: string; value: string; note: string; tone?: string; icon?: Parameters<typeof ReportIcon>[0]['type'] }) {
   return <article className={`report-metric tone-${tone}`}><div className="report-metric-label"><span>{label}</span><span className="metric-symbol"><ReportIcon type={icon} /></span></div><strong title={value}>{value}</strong><p>{note}</p></article>;
 }
+/** @deprecated KHÔNG CÒN DÙNG (2026-11-17): thẻ số và khung của trang Thống kê cũ (thay bằng Kpi, ChartCard, HBars trong BoardCharts.tsx). Giữ lại theo yêu cầu chủ dự án, chưa xoá. */
 export function Panel({ title, description, action, children, className = '' }: { title: string; description?: string; action?: ReactNode; children: ReactNode; className?: string }) {
   return <section className={`report-panel ${className}`}><header className="report-panel-heading"><div><h2>{title}</h2>{description && <p>{description}</p>}</div>{action}</header><div className="report-panel-body">{children}</div></section>;
 }
 export function Empty({ children = 'Chưa có dữ liệu trong kỳ này.' }: { children?: ReactNode }) {
   return <div className="report-empty"><ReportIcon /><p>{children}</p></div>;
 }
+/** @deprecated KHÔNG CÒN DÙNG (2026-11-17): thẻ số và khung của trang Thống kê cũ (thay bằng Kpi, ChartCard, HBars trong BoardCharts.tsx). Giữ lại theo yêu cầu chủ dự án, chưa xoá. */
 export function RankingBars({ rows, format, color = 'var(--color-brand-button)' }: { rows: { key: string; label: string; value: number; detail?: string; onClick?: () => void }[]; format: (value: number) => string; color?: string }) {
   const max = Math.max(1, ...rows.map(r => r.value));
   return rows.length ? <div className="report-ranking">{rows.map((r, i) => <div className="report-ranking-row" key={r.key}><div><span>{String(i + 1).padStart(2, '0')}</span>{r.onClick ? <button onClick={r.onClick}>{r.label}</button> : <b>{r.label}</b>}<strong>{format(r.value)}</strong></div><div className="report-track"><span style={{ width: `${r.value / max * 100}%`, background: color, opacity: 1 - Math.min(i * .12, .45) }} /></div>{r.detail && <small>{r.detail}</small>}</div>)}</div> : <Empty />;

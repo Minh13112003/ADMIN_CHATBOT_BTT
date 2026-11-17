@@ -4,7 +4,7 @@ Nguồn chuẩn: `backend/prisma/schema.prisma`.
 
 | Bảng | Vai trò |
 |---|---|
-| `users` | Tài khoản `ADMIN`, `DEPT_ADMIN`, `DIGITAL`, `SALE`; phòng ban, phạm vi Digital (`scopeIds`), mã nhân viên, vị trí, đang trực |
+| `users` | Tài khoản `ADMIN`, `DEPT_ADMIN`, `DIGITAL`, `SALE`; phòng ban, phạm vi Digital (`scopeIds`), mã nhân viên, vị trí, đang trực, `avatarPath` ảnh đại diện tự tải ở trang cá nhân |
 | `departments` | Phòng ban (FIT, Inbound...). Hội thoại thuộc phòng của người phụ trách |
 | `customers` | Khách, SĐT duy nhất, các cách viết tên trong `aliases` |
 | `customer_identities` | Mã khách theo từng kênh: `(channel, externalId)` trỏ về một khách |

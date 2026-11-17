@@ -5,6 +5,7 @@ import { fetcher, patch, post } from '@/lib/api';
 import { CHANNEL } from '@/lib/labels';
 import { useRealtime, type Ping } from '@/lib/realtime';
 import type { Channel, ConversationList, Me } from '@/lib/types';
+import { AnhNhanVien } from './AnhNhanVien';
 import { ChangePasswordDialog } from './ChangePasswordDialog';
 import { Dialog, Switch } from './ui';
 
@@ -58,7 +59,7 @@ const NAV = [
 ] as { href: string; label: string; icon: ReactNode; admin?: boolean; dept?: boolean }[];
 
 type NavItem = (typeof NAV)[number];
-const TK_MUC = [{ id: 'overview', label: 'Tổng quan' }, { id: 'customers', label: 'Khách & Tour' }, { id: 'sales', label: 'Hiệu suất sale' }, { id: 'revenue', label: 'Doanh thu đã chốt' }, { id: 'digital', label: 'Nhu cầu tour' }];
+const TK_MUC = [{ id: 'customers', label: 'Khách & Quan tâm' }, { id: 'tours', label: 'Tour' }, { id: 'sales', label: 'Hiệu suất sale' }, { id: 'revenue', label: 'Doanh thu đã chốt' }, { id: 'channels', label: 'Kênh & Chi phí AI' }, { id: 'digital', label: 'Nhu cầu tour' }];
 /** Mục nào hiện với vai trò nào. Chỉ để dễ dùng, quyền thật do backend kiểm tra. */
 function hienMuc(n: NavItem, role: Me['role']) {
   // Hiệu suất sale và Nhu cầu tour nằm trong menu con của Thống kê; riêng Digital không có Thống kê nên giữ mục Nhu cầu tour.
@@ -103,7 +104,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const [doiMk, setDoiMk] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [tkMo, setTkMo] = useState(true);
-  const tkView = new URLSearchParams(search).get('view') ?? 'overview';
+  const tkView = ((v) => (v === 'overview' ? 'customers' : v))(new URLSearchParams(search).get('view') ?? 'customers');
   const [thu, setThu] = useState(() => { try { return localStorage.getItem('btt-sidebar') === '1'; } catch { return false; } });
   useEffect(() => { try { localStorage.setItem('btt-sidebar', thu ? '1' : '0'); } catch { /* bỏ qua */ } }, [thu]);
 
@@ -169,7 +170,7 @@ export function Shell({ children }: { children: ReactNode }) {
                       {tkDangMo && (
                         <div className="ml-[22px] mt-1 space-y-0.5 border-l border-line-soft pl-2">
                           {TK_MUC.map((m) => (
-                            <Link key={m.id} to={m.id === 'overview' ? '/stats' : `/stats?view=${m.id}`} aria-current={tkView === m.id ? 'page' : undefined} className="flex h-8 items-center rounded-lg px-3 text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text">
+                            <Link key={m.id} to={`/stats?view=${m.id}`} aria-current={tkView === m.id ? 'page' : undefined} className="flex h-8 items-center rounded-lg px-3 text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text">
                               {m.label}
                             </Link>
                           ))}
@@ -183,7 +184,7 @@ export function Shell({ children }: { children: ReactNode }) {
           ))}
           <div className="mt-auto" />
           <div className={`flex items-center gap-2.5 border-t border-line-soft p-3 ${thu ? 'justify-center' : ''}`} title={me.fullName}>
-            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-bold text-brand-text">{me.fullName.trim().split(' ').pop()?.charAt(0)}</span>
+            <AnhNhanVien ten={me.fullName} anh={me.avatarUrl} className="size-9 shrink-0 rounded-full bg-brand-soft text-sm font-bold text-brand-text" />
             {!thu && (
               <div className="min-w-0">
                 <strong className="block truncate text-sm">{me.fullName}</strong>
@@ -257,14 +258,14 @@ export function Shell({ children }: { children: ReactNode }) {
               onClick={() => setMenu(menu === 'me' ? null : 'me')}
               aria-label={`Thông tin nhân viên ${me.fullName}`}
               aria-expanded={menu === 'me'}
-              className="flex size-11 items-center justify-center rounded-full bg-strong font-semibold text-on-strong"
+              className="flex size-11 items-center justify-center overflow-hidden rounded-full bg-strong font-semibold text-on-strong"
             >
-              {me.fullName.trim().split(' ').pop()?.charAt(0)}
+              <AnhNhanVien ten={me.fullName} anh={me.avatarUrl} className="size-11 rounded-full" />
             </button>
             {menu === 'me' && (
               <div className="fixed right-4 top-20 w-[340px] max-w-[calc(100vw-32px)] overflow-hidden rounded-2xl border border-line bg-surface shadow-xl sm:absolute sm:right-0 sm:top-12">
                 <div className="flex items-center gap-3 border-b border-line-soft bg-brand-soft/60 p-4">
-                  <span className="grid size-12 shrink-0 place-items-center rounded-full bg-strong text-lg font-bold text-on-strong">{me.fullName.trim().split(' ').pop()?.charAt(0)}</span>
+                  <AnhNhanVien ten={me.fullName} anh={me.avatarUrl} className="size-12 shrink-0 rounded-full bg-strong text-lg font-bold text-on-strong" />
                   <div className="min-w-0">
                     <div className="truncate text-base font-bold">{me.fullName}</div>
                     <div className="truncate text-sm text-muted">{me.email}</div>
@@ -302,6 +303,10 @@ export function Shell({ children }: { children: ReactNode }) {
                   </div>
                 )}
                 <div className="flex flex-col border-t border-line-soft p-2 [&>*]:flex [&>*]:min-h-11 [&>*]:items-center [&>*]:gap-3 [&>*]:rounded-lg [&>*]:px-3 [&>*]:text-left [&>*]:text-sm [&>*]:font-medium [&>*:hover]:bg-fill">
+                  <Link to="/profile" onClick={() => setMenu(null)}>
+                    <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" {...stroke}><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg>
+                    Trang cá nhân
+                  </Link>
                   <Link to="/settings" onClick={() => setMenu(null)}>
                     <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" {...stroke}><circle cx="12" cy="12" r="3" /><path d="M4 7h4M16 7h4M4 17h4M16 17h4" /></svg>
                     Cài đặt hiển thị

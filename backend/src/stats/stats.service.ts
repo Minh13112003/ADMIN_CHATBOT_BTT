@@ -49,9 +49,9 @@ export class StatsService {
   }
 
   /** Chi tiết báo cáo dùng cùng phạm vi với KPI, không gọi danh sách đơn toàn hệ thống. */
-  async getOrders(period: Period, scope: string[] | null, query: { status?: 'CONFIRMED' | 'PENDING' | 'CANCELLED'; search?: string; staffId?: string; page?: number }) {
+  async getOrders(period: Period, scope: string[] | null, query: { status?: 'CONFIRMED' | 'PENDING' | 'CANCELLED'; search?: string; staffId?: string; page?: number; from?: Date }) {
     const status = query.status ?? 'CONFIRMED';
-    const from = dauKy(period);
+    const from = query.from ?? dauKy(period);
     const search = query.search?.trim();
     const where: Prisma.DealWhereInput = {
       conversation: locHoiThoai(scope),

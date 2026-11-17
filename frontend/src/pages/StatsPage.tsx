@@ -1,70 +1,197 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import useSWR from 'swr';
 import { Dialog } from '@/components/ui';
-import { StatsCharts } from '@/components/stats/StatsCharts';
-import { Metric, Panel, RankingBars, ReportIcon, exportCsv, initials, number, percent } from '@/components/stats/AnalyticsUI';
-import { CustomerFunnel, CustomersReport, DepartmentPanel, OrdersPanel, SalesTable, TourTable } from '@/components/stats/ReportSections';
+import { ChartCard, ChartSkeleton, phanTram, so, tienGon } from '@/components/stats/BoardCharts';
+import { exportCsv, initials } from '@/components/stats/AnalyticsUI';
+import { OrdersPanel } from '@/components/stats/ReportSections';
+import { ChannelsTab, CustomersTab, RevenueTab, SalesTab, ToursTab } from '@/components/stats/StatsTabs';
 import { fetcher } from '@/lib/api';
-import { thoiLuong, trieu, vnd } from '@/lib/labels';
-import type { Department, Me, Stats } from '@/lib/types';
+import { CHANNEL, thoiGianTruoc, thoiLuong, vnd } from '@/lib/labels';
+import type { Channel, Department, Me, StatsBoard, StatsBoardRange } from '@/lib/types';
 import TourInterestPage from './TourInterestPage';
 import '@/components/stats/analytics.css';
 
-type Period = 'today' | 'week' | 'month' | 'all';
-type View = 'overview' | 'customers' | 'sales' | 'revenue' | 'digital';
-const periods: { value: Period; label: string }[] = [{ value: 'today', label: 'Hôm nay' }, { value: 'week', label: '7 ngày gần đây' }, { value: 'month', label: 'Tháng này' }, { value: 'all', label: 'Từ trước đến nay' }];
-const views: { id: View; label: string; icon: Parameters<typeof ReportIcon>[0]['type'] }[] = [{ id: 'overview', label: 'Tổng quan', icon: 'chart' }, { id: 'customers', label: 'Khách & Tour', icon: 'people' }, { id: 'sales', label: 'Hiệu suất sale', icon: 'ratio' }, { id: 'revenue', label: 'Doanh thu đã chốt', icon: 'money' }, { id: 'digital', label: 'Nhu cầu tour (Digital)', icon: 'search' }];
+type View = 'customers' | 'tours' | 'sales' | 'revenue' | 'channels' | 'digital';
+export const STATS_TABS: { id: View; label: string }[] = [
+  { id: 'customers', label: 'Khách & Quan tâm' },
+  { id: 'tours', label: 'Tour' },
+  { id: 'sales', label: 'Hiệu suất sale' },
+  { id: 'revenue', label: 'Doanh thu đã chốt' },
+  { id: 'channels', label: 'Kênh & Chi phí AI' },
+  { id: 'digital', label: 'Nhu cầu tour' },
+];
+const RANGES: { key: StatsBoardRange; label: string }[] = [
+  { key: '7d', label: '7 ngày' },
+  { key: '30d', label: '30 ngày' },
+  { key: 'quarter', label: 'Quý (theo tuần)' },
+];
+/** Đường dẫn cũ (?view=overview, ?view=customers...) vẫn mở được. */
+const VIEW_CU: Record<string, View> = { overview: 'customers' };
 
-export default function StatsPage({ forcedView }: { forcedView?: View }) {
+type ChannelStatus = { channel: Channel; lastCustomerMessageAt: string | null; conversationsToday: number; medianSeconds: number | null; connected: boolean };
+
+/**
+ * Thống kê (thiết kế Stitch duyệt 2026-11-17): 5 mảng, mỗi biểu đồ một thẻ cả hàng.
+ * Kỳ 7 ngày / 30 ngày theo ngày, quý theo tuần. Số lấy từ GET /stats/board, làm mới 5 phút.
+ */
+export default function StatsPage({ forcedView }: { forcedView?: View } = {}) {
   const [params, setParams] = useSearchParams();
-  const period = periods.some(p => p.value === params.get('period')) ? params.get('period') as Period : 'month';
+  const rawView = forcedView ?? params.get('view') ?? 'customers';
+  const view: View = VIEW_CU[rawView] ?? (STATS_TABS.some((t) => t.id === rawView) ? (rawView as View) : 'customers');
+  const range: StatsBoardRange = RANGES.some((r) => r.key === params.get('range')) ? (params.get('range') as StatsBoardRange) : '30d';
   const departmentId = params.get('departmentId') ?? '';
-  const view = forcedView ?? (views.some(v => v.id === params.get('view')) ? params.get('view') as View : 'overview');
   const { data: me } = useSWR<Me>('/auth/me', fetcher);
   const owner = me?.role === 'ADMIN';
   const { data: departments } = useSWR<Department[]>(owner ? '/departments' : null, fetcher);
   const scope = owner ? departmentId : '';
-  const query = new URLSearchParams({ period, ...(scope ? { departmentId: scope } : {}) }).toString();
-  const { data: s, error, mutate, isValidating } = useSWR<Stats>(me ? `/stats?${query}` : null, fetcher, { refreshInterval: 300_000 });
-  const [selectedSale, setSelectedSale] = useState<Stats['staff'][number] | null>(null);
-  const [refreshVersion, setRefreshVersion] = useState(0);
-  const departmentName = owner ? departments?.find(p => p.id === scope)?.name ?? (scope ? 'Phòng đang chọn' : 'Toàn công ty') : me?.department?.name ?? 'Phòng của bạn';
-  const changeFilter = (key: string, value: string) => { const next = new URLSearchParams(params); value ? next.set(key, value) : next.delete(key); setSelectedSale(null); setParams(next); };
-  const tabUrl = (tab: View) => { const next = new URLSearchParams({ period, ...(scope ? { departmentId: scope } : {}) }); next.set('view', tab); return `/stats?${next}`; };
-  const exportReport = () => {
-    if (!s) return;
-    exportCsv(`bao-cao-${view}-${period}.csv`, [['Báo cáo', views.find(v => v.id === view)!.label], ['Phạm vi', departmentName], ['Kỳ', periods.find(p => p.value === period)!.label], ['Cập nhật', s.updatedAt], [], ...(view === 'sales'
-      ? [['Nhân viên', 'Phòng ban', 'Lượt trả lời', 'Khách chốt', 'Đơn chốt', 'Doanh thu (VND)'], ...s.staff.filter(p => p.isSale).map(p => [p.name, p.departmentName ?? '', p.responses, p.closedCustomers ?? '', p.closed, p.revenue])]
-      : [['Tour', 'Đơn xác nhận', 'Hành khách', 'Doanh thu (VND)'], ...s.tours.map(t => [t.name, t.orders, t.guests, t.revenue])])]);
+  const query = new URLSearchParams({ range, ...(scope ? { departmentId: scope } : {}) }).toString();
+  const { data: b, error, mutate, isValidating } = useSWR<StatsBoard>(me && view !== 'digital' ? `/stats/board?${query}` : null, fetcher, { refreshInterval: 300_000, keepPreviousData: true });
+  const { data: kenh } = useSWR<ChannelStatus[]>(owner && view === 'channels' ? '/stats/channels' : null, fetcher, { refreshInterval: 300_000 });
+  const [saleId, setSaleId] = useState<string | null>(null);
+  const sale = useMemo(() => b?.sales.rows.find((r) => r.id === saleId) ?? null, [b, saleId]);
+  const departmentName = owner ? (departments?.find((p) => p.id === scope)?.name ?? (scope ? 'Phòng đang chọn' : 'Toàn công ty')) : (me?.department?.name ?? 'Phòng của bạn');
+
+  const set = (key: string, value: string) => {
+    const next = new URLSearchParams(params);
+    if (value) next.set(key, value);
+    else next.delete(key);
+    setParams(next, { replace: true });
   };
-  const sales = s?.staff.filter(p => p.isSale) ?? [];
-  const refresh = () => { void mutate(); setRefreshVersion(v => v + 1); };
-  const departmentPanel = s && <DepartmentPanel s={s} owner={!!owner} scope={scope} name={departmentName} onSelect={id => changeFilter('departmentId', id)} />;
-  return <div className="analytics-page">
-    <header className="report-heading"><div><div className="report-eyebrow">BÁO CÁO KINH DOANH <span>/</span> {departmentName}</div><h1>{view === 'digital' ? 'Nhu cầu tour (Digital)' : view === 'sales' ? 'Hiệu suất đội ngũ tư vấn' : view === 'revenue' ? 'Doanh thu đã chốt' : view === 'customers' ? 'Khách hàng & Tour' : owner && !scope ? 'Tổng quan kinh doanh' : `Thống kê phòng ${departmentName}`}</h1><p>{view === 'digital' ? 'Tour khách quan tâm, tính theo tour sale ghim trên tin nhắn. Bấm "Xem thống kê" để xem chi tiết từng tour.' : view === 'sales' ? 'Theo dõi chất lượng phản hồi và kết quả chốt tour của từng nhân viên.' : 'Từ cuộc hội thoại đến đơn tour — mọi chỉ số trong cùng phạm vi quản lý.'}</p></div><div className="report-actions"><button className="report-button" onClick={refresh} disabled={isValidating}><ReportIcon type="refresh" />{isValidating ? 'Đang cập nhật' : 'Làm mới'}</button>{view !== 'digital' && <button className="report-button primary" onClick={exportReport} disabled={!s}><ReportIcon type="download" />Xuất báo cáo CSV</button>}</div></header>
-    <nav className="report-tabs" aria-label="Báo cáo quản trị">{views.map(tab => <Link key={tab.id} to={tabUrl(tab.id)} aria-current={view === tab.id ? 'page' : undefined}><ReportIcon type={tab.icon} />{tab.label}</Link>)}</nav>
-    {view === 'digital' ? <TourInterestPage embedded /> : <>
-    <section className="report-filters" aria-label="Bộ lọc báo cáo"><div className="report-filter-fields"><label><span>Kỳ báo cáo</span><select value={period} onChange={e => changeFilter('period', e.target.value)}>{periods.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}</select></label>{owner ? <label><span>Phòng ban</span><select aria-label="Lọc theo phòng ban" value={departmentId} onChange={e => changeFilter('departmentId', e.target.value)}><option value="">Tất cả phòng ban</option>{departments?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label> : <div className="report-scope"><ReportIcon type="lock" /><span>Phạm vi cố định<strong>{departmentName}</strong></span></div>}</div><div className="report-filter-meta"><span className={`report-badge ${owner ? 'green' : 'blue'}`}><ReportIcon type="lock" />{owner ? 'Admin toàn quyền' : 'Admin phòng ban'}</span><small>{s ? `Cập nhật ${new Date(s.updatedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · Tự làm mới mỗi 5 phút` : 'Đang lấy số liệu'}</small></div></section>
-    {error ? <div className="report-error" role="alert">Không tải được báo cáo. <button onClick={refresh}>Thử lại</button></div> : !s ? <div className="report-loading" role="status"><div /><div /><div /><span>Đang tải báo cáo…</span></div> : <>
-      {view === 'overview' && <>
-        <div className="report-kpis six"><Metric label="Khách nhắn tin" value={number(s.customers)} note={`${number(s.phones)} khách có số điện thoại`} icon="people" /><Metric label="Khách được phản hồi" value={s.conversion ? number(s.conversion.respondedCustomers) : '—'} note="Đã phản hồi yêu cầu gặp nhân viên" tone="blue" icon="message" /><Metric label="Khách chốt tour" value={s.conversion ? number(s.conversion.closedCustomers) : '—'} note="Trong nhóm khách nhắn tin của kỳ" tone="green" icon="check" /><Metric label="Tỷ lệ chốt khách" value={s.conversion ? percent(s.closeRate) : '—'} note="Khách chốt / khách nhắn tin" tone="purple" icon="ratio" /><Metric label="Đơn đã xác nhận" value={number(s.closed)} note={`${number(s.guests)} hành khách đi tour`} tone="amber" icon="check" /><Metric label="Doanh thu đã chốt" value={trieu(s.totalRevenue)} note="Loại trừ đơn chờ và đơn hủy" tone="red" icon="money" /></div>
-        {s.pending.count > 0 && <div className="report-notice"><span className="notice-icon">!</span><div><strong>{number(s.pending.count)} đơn tour đang chờ xác nhận</strong><p>Tổng giá trị {vnd(s.pending.amount)} · Tất cả thời gian, chưa tính vào doanh thu đã chốt.</p></div><Link to={tabUrl('revenue')}>Xem báo cáo đơn →</Link></div>}
-        <div className="report-grid overview-grid"><Panel title="Hành trình chuyển đổi" description="Cùng nhóm khách nhắn tin trong kỳ"><CustomerFunnel s={s} /><div className="report-panel-foot">Phản hồi yêu cầu tư vấn trung vị <strong>{thoiLuong(s.responseTime.medianSeconds)}</strong></div></Panel><StatsCharts key={`${query}:${refreshVersion}:overview`} period={period} departmentId={scope} showCost={false} compact /></div>
-        <div className="report-grid">{departmentPanel}<Panel title="Tour đóng góp doanh thu cao nhất" description="Top 5 tour từ đơn đã xác nhận" action={<Link className="report-text-link" to={tabUrl('revenue')}>Xem tất cả →</Link>}><RankingBars rows={s.tours.slice(0, 5).map(t => ({ key: t.name, label: t.name, value: t.revenue, detail: `${number(t.orders)} đơn · ${number(t.guests)} hành khách` }))} format={trieu} /></Panel></div><TourTable s={s} />
-      </>}
-      {view === 'revenue' && <>
-        <div className="report-kpis four"><Metric label="Doanh thu đã chốt" value={trieu(s.totalRevenue)} note="Tổng tiền đơn xác nhận còn hiệu lực" tone="red" icon="money" /><Metric label="Đơn đã xác nhận" value={number(s.closed)} note="Không bao gồm đơn chờ và đơn hủy" icon="check" /><Metric label="Tổng hành khách" value={number(s.guests)} note="Số người đi tour trên đơn đã chốt" tone="blue" icon="people" /><Metric label="Giá trị bình quân đơn" value={s.closed ? vnd(s.totalRevenue / s.closed) : '—'} note="Doanh thu / số đơn đã xác nhận" tone="green" icon="money" /></div>
-        <div className="report-grid overview-grid"><StatsCharts key={`${query}:${refreshVersion}:revenue`} period={period} departmentId={scope} showCost={false} revenueOnly compact />{departmentPanel}</div><TourTable s={s} /><OrdersPanel key={`${query}:${refreshVersion}`} query={query} />
-      </>}
-      {view === 'customers' && <CustomersReport s={s} query={query} refreshVersion={refreshVersion} />}
-      {view === 'sales' && <>
-        <div className="report-kpis four"><Metric label="Phản hồi trung vị" value={thoiLuong(s.responseTime.medianSeconds)} note={`${number(s.responseTime.count)} lượt yêu cầu được phản hồi`} icon="message" tone="blue" /><Metric label="Phản hồi trong 5 phút" value={percent(s.responseTime.within5MinRate)} note="Tính trên các lượt yêu cầu đã phản hồi" icon="ratio" tone="green" /><Metric label="Đội ngũ tư vấn" value={number(sales.length)} note={`${sales.filter(p => p.onDuty).length} nhân viên đang trực`} icon="people" /><Metric label="Doanh thu của sale" value={trieu(sales.reduce((v, p) => v + p.revenue, 0))} note={`${number(sales.reduce((v, p) => v + p.closed, 0))} đơn do sale xác nhận`} tone="red" icon="money" /></div>
-        <div className="report-grid"><Panel title="Doanh thu chốt theo nhân sự" description="Nhấp tên để xem chi tiết tư vấn viên"><RankingBars rows={sales.slice(0, 6).map(p => ({ key: p.id ?? p.name, label: p.name, value: p.revenue, onClick: () => setSelectedSale(p) }))} format={trieu} /></Panel><Panel title="Chất lượng phản hồi khách hàng" description="Tỷ lệ phản hồi yêu cầu tư vấn trong 5 phút"><RankingBars rows={sales.filter(p => p.within5MinRate !== null).slice(0, 6).map(p => ({ key: p.id ?? p.name, label: p.name, value: p.within5MinRate! * 100, detail: `${number(p.responses)} lượt trả lời · Trung vị ${thoiLuong(p.medianSeconds)}`, onClick: () => setSelectedSale(p) }))} format={n => percent(n / 100)} color="var(--color-on)" /></Panel></div><SalesTable sales={sales} onSelect={setSelectedSale} />
-      </>}
-      <footer className="report-footer"><span><span className="report-dot" />Dữ liệu trong phạm vi {departmentName.toLocaleLowerCase('vi')}</span><span>Doanh thu từ đơn đã xác nhận · Không phải tiền thực thu</span></footer>
-    </>}
-    </>}
-    {selectedSale && <Dialog title="Chi tiết hiệu suất tư vấn viên" onClose={() => setSelectedSale(null)} variant="drawer"><div className="analytics-page report-sale-detail"><div className="sale-profile"><span className="report-avatar large">{initials(selectedSale.name)}</span><div><h2>{selectedSale.name}</h2><p>{selectedSale.departmentName ?? departmentName}</p><span className={`report-badge ${selectedSale.onDuty ? 'green' : ''}`}>{selectedSale.onDuty ? 'Đang trực' : 'Đang nghỉ'}</span></div></div><div className="report-detail-kpis">{[['Khách chốt', selectedSale.closedCustomers == null ? '—' : number(selectedSale.closedCustomers)], ['Đơn xác nhận', number(selectedSale.closed)], ['Hành khách', selectedSale.guests == null ? '—' : number(selectedSale.guests)], ['Lượt trả lời', number(selectedSale.responses)], ['Trung vị phản hồi', thoiLuong(selectedSale.medianSeconds)], ['Trong 5 phút', percent(selectedSale.within5MinRate)]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div><div className="report-sale-revenue"><span>Doanh thu đã chốt</span><strong>{vnd(selectedSale.revenue)}</strong></div>{selectedSale.id && <OrdersPanel key={`${query}:${selectedSale.id}`} query={`${query}&staffId=${encodeURIComponent(selectedSale.id)}`} compact />}</div></Dialog>}
-  </div>;
+  const tabUrl = (id: View) => {
+    const next = new URLSearchParams(params);
+    next.set('view', id);
+    return `/stats?${next}`;
+  };
+
+  const exportReport = () => {
+    if (!b) return;
+    const head = [['Báo cáo', STATS_TABS.find((t) => t.id === view)!.label], ['Phạm vi', departmentName], ['Kỳ', RANGES.find((r) => r.key === range)!.label], ['Cập nhật', new Date(b.updatedAt).toLocaleString('vi-VN')], []];
+    const body: (string | number)[][] =
+      view === 'sales' ? [['Nhân viên', 'Mã NV', 'Phòng ban', 'Hội thoại xử lý', 'Phản hồi trung vị (giây)', 'Trong 5 phút', 'Đơn chốt', 'Doanh thu (VND)'], ...b.sales.rows.map((r) => [r.name, r.employeeCode ?? '', r.departmentName ?? '', r.conversations, r.medianSeconds ?? '', r.within5MinRate == null ? '' : phanTram(r.within5MinRate), r.deals, r.revenue])]
+      : view === 'tours' ? [['Tour', 'Địa điểm', 'Khách quan tâm', 'Đơn chốt', 'Hành khách', 'Doanh thu (VND)'], ...b.tours.rows.map((r) => [r.name, r.place ?? '', r.interested, r.orders, r.guests, r.revenue])]
+      : view === 'customers' ? [['Mốc', ...(['ZALO', 'WEB', 'APP', 'FACEBOOK'] as Channel[]).map((k) => CHANNEL[k].label), 'Khách mới', 'Khách quay lại'], ...b.buckets.map((x, i) => [x.label, b.customers.byChannelSeries.ZALO[i], b.customers.byChannelSeries.WEB[i], b.customers.byChannelSeries.APP[i], b.customers.byChannelSeries.FACEBOOK[i], b.customers.newSeries[i], b.customers.returningSeries[i]])]
+      : view === 'channels' ? [['Mốc', 'Hội thoại bot', 'Hội thoại có nhân viên', 'Chi phí Gemini (VND)', 'Token'], ...b.buckets.map((x, i) => [x.label, b.channels.botSeries[i], b.channels.staffSeries[i], Math.round(b.channels.costSeries[i]), b.channels.tokenSeries[i]])]
+      : [['Mốc', 'Doanh thu (VND)', 'Kỳ trước (VND)', 'Đơn', 'Hành khách'], ...b.buckets.map((x, i) => [x.label, b.revenue.series[i], b.revenue.prevSeries[i], b.revenue.dealSeries[i], b.revenue.guestSeries[i]])];
+    exportCsv(`thong-ke-${view}-${range}.csv`, [...head, ...body]);
+  };
+
+  return (
+    <div className="mx-auto flex w-full max-w-[1400px] min-w-0 flex-col gap-5 p-4 sm:p-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">Thống kê</h1>
+            <span className="rounded-md bg-fill px-2 py-0.5 text-xs font-semibold text-body">{departmentName}</span>
+          </div>
+          <p className="mt-1 text-xs text-muted">
+            {view === 'digital' ? 'Tour khách quan tâm, tính theo tour sale ghim trên tin nhắn.' : b ? `Cập nhật ${new Date(b.updatedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} · tự làm mới mỗi 5 phút` : 'Đang lấy số liệu…'}
+          </p>
+        </div>
+        {view !== 'digital' && (
+          <div className="flex flex-wrap items-center gap-2">
+            <div role="group" aria-label="Kỳ thống kê" className="flex gap-1 rounded-xl bg-fill p-1">
+              {RANGES.map((r) => (
+                <button key={r.key} type="button" aria-pressed={range === r.key} onClick={() => set('range', r.key)} className={`min-h-9 whitespace-nowrap rounded-[9px] px-3 text-xs font-semibold sm:text-sm ${range === r.key ? 'bg-surface text-brand-text shadow-sm' : 'text-body'}`}>
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            {owner && (
+              <select aria-label="Lọc theo phòng ban" value={departmentId} onChange={(e) => set('departmentId', e.target.value)} className="h-11 max-w-56 rounded-xl border border-line bg-surface px-3 text-sm font-medium">
+                <option value="">Tất cả phòng ban</option>
+                {departments?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            )}
+            <button type="button" onClick={() => void mutate()} disabled={isValidating} aria-label="Làm mới số liệu" className="flex size-11 items-center justify-center rounded-xl border border-line bg-surface text-body hover:bg-fill disabled:opacity-50">
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className={isValidating ? 'animate-spin' : ''}><path d="M20 7a9 9 0 1 0 1 8M20 3v5h-5" /></svg>
+            </button>
+            <button type="button" onClick={exportReport} disabled={!b} className="flex min-h-11 items-center gap-2 rounded-xl bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg>
+              Xuất CSV
+            </button>
+          </div>
+        )}
+      </header>
+
+      <nav aria-label="Mảng thống kê" className="-mx-4 flex gap-6 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-1">
+        {STATS_TABS.map((t) => (
+          <Link key={t.id} to={tabUrl(t.id)} aria-current={view === t.id ? 'page' : undefined} className="whitespace-nowrap border-b-2 border-transparent pb-3 text-sm font-semibold text-muted hover:text-ink aria-[current=page]:border-brand aria-[current=page]:text-brand-text">
+            {t.label}
+          </Link>
+        ))}
+      </nav>
+
+      {view === 'digital' ? (
+        <TourInterestPage embedded />
+      ) : error && !b ? (
+        <div role="alert" className="rounded-2xl border border-alert-line bg-brand-faint p-4 text-sm text-alert-ink">
+          Không tải được số liệu thống kê. <button type="button" className="font-semibold underline" onClick={() => void mutate()}>Thử lại</button>
+        </div>
+      ) : !b ? (
+        <div role="status" aria-label="Đang tải" className="flex flex-col gap-4"><ChartSkeleton /><ChartSkeleton /></div>
+      ) : (
+        <div className={`flex flex-col gap-5 transition-opacity ${isValidating ? 'opacity-70' : ''}`}>
+          {view === 'customers' && <CustomersTab b={b} />}
+          {view === 'tours' && <ToursTab b={b} />}
+          {view === 'sales' && <SalesTab b={b} onSelect={setSaleId} />}
+          {view === 'revenue' && <RevenueTab b={b} orders={<div className="analytics-page !p-0"><OrdersPanel key={query} query={query} /></div>} />}
+          {view === 'channels' && <ChannelsTab b={b} status={owner && kenh ? <ChannelStatusCard rows={kenh} /> : null} />}
+          <p className="text-center text-xs text-muted">Doanh thu chỉ tính đơn đã chốt (không tính đơn chờ xác nhận, đơn huỷ). Đây không phải tiền thực thu.</p>
+        </div>
+      )}
+
+      {sale && (
+        <Dialog title="Chi tiết tư vấn viên" onClose={() => setSaleId(null)} variant="drawer" drawerWidth={560}>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-3">
+              <span className="flex size-12 items-center justify-center rounded-full bg-brand-soft font-bold text-brand-text">{initials(sale.name)}</span>
+              <div className="min-w-0">
+                <h2 className="truncate text-lg font-bold">{sale.name}</h2>
+                <p className="text-xs text-muted">{[sale.employeeCode, sale.position, sale.departmentName].filter(Boolean).join(' · ') || departmentName}</p>
+              </div>
+              <span className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${sale.onDuty ? 'bg-green-soft text-green-ink' : 'bg-fill text-body'}`}>{sale.onDuty ? 'Đang trực' : 'Đang nghỉ'}</span>
+            </div>
+            <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+              {[
+                ['Hội thoại xử lý', so(sale.conversations)],
+                ['Đơn chốt', so(sale.deals)],
+                ['Hành khách', so(sale.guests)],
+                ['Phản hồi trung vị', thoiLuong(sale.medianSeconds)],
+                ['Trong 5 phút', phanTram(sale.within5MinRate)],
+                ['Tỷ lệ chốt', phanTram(sale.closeRate)],
+              ].map(([k, v]) => (
+                <div key={k} className="rounded-xl bg-fill p-3"><dt className="text-xs text-muted">{k}</dt><dd className="mt-1 font-bold">{v}</dd></div>
+              ))}
+            </dl>
+            <div className="flex items-center justify-between rounded-xl border border-line p-3 text-sm"><span className="text-muted">Doanh thu đã chốt</span><strong className="text-brand-text">{vnd(sale.revenue)} ({tienGon(sale.revenue)})</strong></div>
+            <div className="analytics-page !p-0"><OrdersPanel key={`${query}:${sale.id}`} query={`${query}&staffId=${encodeURIComponent(sale.id)}`} compact /></div>
+          </div>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+function ChannelStatusCard({ rows }: { rows: ChannelStatus[] }) {
+  const show = rows.filter((r) => r.connected || r.lastCustomerMessageAt);
+  return (
+    <ChartCard title="Tình trạng kênh kết nối" description="Kênh đang nhận tin của khách, số khách nhắn hôm nay (từ 00:00 giờ Việt Nam)">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {show.map((r) => (
+          <div key={r.channel} className="rounded-xl border border-line bg-page p-4 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <strong>{CHANNEL[r.channel].label}</strong>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${r.connected ? 'bg-green-soft text-green-ink' : 'bg-fill text-body'}`}>{r.connected ? 'Đã kết nối' : 'Chưa kết nối'}</span>
+            </div>
+            <dl className="mt-3 space-y-1.5">
+              <div className="flex justify-between gap-2"><dt className="text-muted">Khách nhắn hôm nay</dt><dd className="font-semibold">{so(r.conversationsToday)}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted">Tin gần nhất</dt><dd className="font-semibold">{r.lastCustomerMessageAt ? thoiGianTruoc(r.lastCustomerMessageAt) : '—'}</dd></div>
+              <div className="flex justify-between gap-2"><dt className="text-muted">Phản hồi trung vị hôm nay</dt><dd className="font-semibold">{thoiLuong(r.medianSeconds)}</dd></div>
+            </dl>
+          </div>
+        ))}
+      </div>
+    </ChartCard>
+  );
 }

@@ -7,6 +7,8 @@ import { AuthUser, CurrentUser } from '../auth/auth.decorators';
 import { phamViThongKe } from '../common/scope';
 import { Granularity } from '../common/stats-series';
 import { Period, StatsService } from './stats.service';
+import { StatsBoardService } from './stats-board.service';
+import { khoangBoard, type BoardRange } from '../common/stats-board';
 
 class StatsQuery {
   @IsOptional() @IsIn(['today', 'week', 'month', 'all']) period?: Period;
@@ -19,6 +21,8 @@ class OrdersQuery extends StatsQuery {
   @IsOptional() @IsString() @MaxLength(120) search?: string;
   @IsOptional() @IsString() @MaxLength(60) staffId?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number;
+  /** Kỳ của trang Thống kê mới; có thì thay cho period. */
+  @IsOptional() @IsIn(['7d', '30d', 'quarter']) range?: BoardRange;
 }
 
 class SeriesQuery {
@@ -28,11 +32,23 @@ class SeriesQuery {
   @IsOptional() @IsString() @MaxLength(60) departmentId?: string;
 }
 
+class BoardQuery {
+  @IsOptional() @IsIn(['7d', '30d', 'quarter']) range?: BoardRange;
+  @IsOptional() @IsString() @MaxLength(60) departmentId?: string;
+}
+
 const DEFAULT_PERIODS: Record<Granularity, number> = { day: 14, week: 12, month: 12, quarter: 8 };
 
 @Controller('stats')
 export class StatsController {
-  constructor(private svc: StatsService) {}
+  constructor(private svc: StatsService, private board: StatsBoardService) {}
+
+  /** Trang Thống kê mới: số cho cả 5 tab trong một lần gọi. */
+  @Roles(Role.ADMIN, Role.DEPT_ADMIN)
+  @Get('board')
+  getBoard(@CurrentUser() me: AuthUser, @Query() q: BoardQuery) {
+    return this.board.get(q.range ?? '30d', phamViThongKe(me, q.departmentId));
+  }
 
   /** Thống kê (doanh thu, khách chi nhiều): chỉ admin. */
   @Roles(Role.ADMIN, Role.DEPT_ADMIN)
@@ -44,7 +60,7 @@ export class StatsController {
   @Roles(Role.ADMIN, Role.DEPT_ADMIN)
   @Get('orders')
   orders(@CurrentUser() me: AuthUser, @Query() q: OrdersQuery) {
-    return this.svc.getOrders(q.period ?? 'month', phamViThongKe(me, q.departmentId), q);
+    return this.svc.getOrders(q.period ?? 'month', phamViThongKe(me, q.departmentId), { ...q, from: q.range ? khoangBoard(q.range).from : undefined });
   }
 
 

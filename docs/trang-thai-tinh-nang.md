@@ -62,7 +62,10 @@
 | Xoá hội thoại (admin) | Chỉ test giả | |
 | Hộp thư theo bản Stitch: bộ lọc trạng thái vào nút Bộ lọc, cột danh sách 380px | Chỉ test giả | |
 | Giao diện tối mới (than ấm, bỏ tông xanh tím) | Chỉ test giả | |
+| Trang cá nhân `/profile`: đổi ảnh đại diện, họ tên, mật khẩu; xem mã NV, chức vụ, đơn vị | Chỉ test giả | Cần migration `20261117090000_user_avatar`. Cài đặt bỏ mục Phiên đăng nhập & Bảo mật |
+| Kênh kết nối: "Khách nhắn hôm nay" (số hội thoại có tin khách từ 00:00 giờ VN) | Chỉ test giả | Trước tên là "Hội thoại có tin khách hôm nay" |
 | Tin nhắn kiểu Zalo: ẩn giờ/icon, rê chuột (cả hàng ngang) hiện ghim + trả lời, bấm tin xem nền tảng và ngày giờ, mốc ngày giữa các ngày, ảnh/sticker gửi riêng không viền | Chỉ test giả | 2026-11-17, chưa mở trình duyệt kiểm tra |
+| Thống kê mới theo Stitch: 5 mảng (Khách & Quan tâm, Tour, Hiệu suất sale, Doanh thu đã chốt, Kênh & Chi phí AI) + Nhu cầu tour; kỳ 7 ngày / 30 ngày (theo ngày), quý (13 tuần, theo tuần); biểu đồ đường, miền, cột, cột chồng, tròn, phễu, bản đồ nhiệt, bong bóng, phân tán, thác nước, tần suất | Chỉ test giả | 2026-11-17. API `GET /stats/board`. Đã chạy thử truy vấn (chỉ đọc), chưa mở trình duyệt. Bản đồ nhiệt dùng giờ khách đòi gặp nhân viên (không quét bảng messages) |
 
 ## Nhật ký
 
@@ -81,7 +84,9 @@ Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration khôn
 - 2026-11-16: App Mobile đợt 1 (tài khoản app, đăng nhập SĐT, hồ sơ, PIN; sale tạo tài khoản trong menu ⋯; lệnh create-app-account). **Có migration** `20261116090000_app_accounts`. Sticker WebP động, nhận GIF từ Zalo (không migration).
 - 2026-11-13: danh sách hội thoại ghi người gửi tin cuối ("Bạn:", "Khách:", tên đồng nghiệp, "Zalo OA:"), đọc 1 dòng/hội thoại qua chỉ mục. Không có migration.
 - 2026-11-13: hộp thống kê địa điểm thêm biểu đồ 7 ngày, tin nhắn dạng bảng 10 dòng/trang có nút số trang, bộ lọc kênh chỉ hiện kênh có tin. Chỉ frontend, không có migration.
+- 2026-11-17: trang cá nhân (ảnh, họ tên, mật khẩu), form tạo tài khoản rộng hơn, bỏ Phiên đăng nhập trong Cài đặt, đổi tên "Khách nhắn hôm nay". **Có migration** `20261117090000_user_avatar`.
 - 2026-11-17: tin nhắn kiểu Zalo (rê chuột, bấm xem chi tiết, mốc ngày). Chỉ frontend, không có migration.
+- 2026-11-17: trang Thống kê làm lại theo thiết kế Stitch, API mới `GET /stats/board?range=7d|30d|quarter` (một lần gọi đủ 5 mảng, lưu tạm 5 phút); `/stats/orders` nhận thêm `range`. Không có migration.
 
 Lệnh cập nhật VPS chuẩn (migrate an toàn kể cả khi không có gì mới):
 

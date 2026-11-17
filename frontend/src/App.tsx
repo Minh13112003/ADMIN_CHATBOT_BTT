@@ -12,6 +12,7 @@ import InboxPage from '@/pages/InboxPage';
 import LoginPage from '@/pages/LoginPage';
 import StatsPage from '@/pages/StatsPage';
 import SettingsPage from '@/pages/SettingsPage';
+import ProfilePage from '@/pages/ProfilePage';
 import ReplyLibraryPage from '@/pages/ReplyLibraryPage';
 import DealsPage from '@/pages/DealsPage';
 import RemindersPage from '@/pages/RemindersPage';
@@ -71,6 +72,7 @@ export function App() {
         <Route path="/reminders" element={<NotDigital><RemindersPage /></NotDigital>} />
         <Route path="/templates" element={<NotDigital><ReplyLibraryPage /></NotDigital>} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/tour-interest" element={<TourInterestPage />} />
         <Route path="/stats" element={<AdminOrDept><StatsPage /></AdminOrDept>} />
         <Route path="/performance" element={<Navigate to="/stats?view=sales" replace />} />

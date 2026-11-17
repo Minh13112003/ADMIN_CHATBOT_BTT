@@ -96,6 +96,7 @@ model User {
   fullName       String
   employeeCode   String?   @unique
   position       String?
+  avatarPath     String? // Ảnh đại diện nhân viên tự tải lên ở trang cá nhân (đường dẫn trong nơi lưu file)
   role           Role      @default(SALE)
   departmentId   String? // Phòng ban của sale / admin phòng; ADMIN và DIGITAL để trống
   scopeIds       String[]  @default([]) // DIGITAL: các phòng được phép xem

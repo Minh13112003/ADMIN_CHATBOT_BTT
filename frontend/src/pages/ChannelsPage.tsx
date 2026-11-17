@@ -130,7 +130,7 @@ export default function ChannelsPage() {
             {c.connected ? (
               <dl className="mt-[22px] grid grid-cols-2 gap-3 rounded-[10px] bg-fill p-4 text-[0.8rem] [&_dd]:mt-2 [&_dd]:text-[1.3rem] [&_dd]:font-bold">
                 <div>
-                  <dt className="text-muted">Hội thoại có tin khách hôm nay</dt>
+                  <dt className="text-muted">Khách nhắn hôm nay</dt>
                   <dd className="mt-1 text-xl font-bold">
                     {c.conversationsToday}
                   </dd>

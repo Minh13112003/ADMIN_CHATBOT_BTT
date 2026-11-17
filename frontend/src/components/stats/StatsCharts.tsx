@@ -1,3 +1,7 @@
+/**
+ * @deprecated KHÔNG CÒN DÙNG (2026-11-17): biểu đồ của trang Thống kê cũ. Trang mới dùng components/stats/BoardCharts.tsx và StatsTabs.tsx (API /stats/board).
+ * Giữ lại theo yêu cầu chủ dự án, chưa xoá. Không import file này vào chỗ mới.
+ */
 import { useState } from 'react';
 import useSWR from 'swr';
 import { Segmented } from '@/components/ui';

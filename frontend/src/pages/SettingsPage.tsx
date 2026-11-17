@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Segmented, Switch } from '@/components/ui';
 import useSWR from 'swr';
-import { ChangePasswordDialog } from '@/components/ChangePasswordDialog';
+import { Link } from 'react-router';
 import { fetcher, patch, post } from '@/lib/api';
 import type { Me } from '@/lib/types';
 import { playChime, readNotify, saveNotify } from '@/lib/notify';
@@ -18,7 +18,6 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState<ThemeSettings>(readTheme);
   const [systemReduce, setSystemReduce] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const { data: me, mutate: mutateMe } = useSWR<Me>('/auth/me', fetcher);
-  const [changePassword, setChangePassword] = useState(false);
   const [notify, setNotify] = useState(readNotify);
   useEffect(() => {
     applyTheme(settings);
@@ -60,7 +59,6 @@ export default function SettingsPage() {
           <a href="#settings-account">Tài khoản của tôi</a>
           <a href="#settings-notify">Thông báo & Chuông</a>
           <a href="#settings-keys">Phím tắt</a>
-          <a href="#settings-session">Phiên đăng nhập</a>
           <small>Thay đổi được lưu tự động trên trình duyệt này.</small>
         </aside>
         <div className="min-w-0 space-y-6">
@@ -145,20 +143,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
-      <section id="settings-session" className="rounded-2xl border border-line bg-surface shadow-sm p-5">
-        <h2 className="mb-1 font-semibold">Phiên đăng nhập & Bảo mật</h2>
-        <p className="mb-3 text-sm text-muted">Phiên đăng nhập tự hết hạn sau 12 giờ. Hiện chưa xem được danh sách các thiết bị khác.</p>
-        <dl className="grid grid-cols-[120px_minmax(0,1fr)] gap-y-2 text-sm">
-          <dt className="text-muted">Thiết bị này</dt>
-          <dd className="break-words">{navigator.userAgent.includes("Edg/") ? "Microsoft Edge" : navigator.userAgent.includes("Firefox") ? "Firefox" : navigator.userAgent.includes("Chrome") ? "Google Chrome" : "Trình duyệt khác"} · {navigator.userAgent.includes("Windows") ? "Windows" : navigator.userAgent.includes("Android") ? "Android" : navigator.userAgent.includes("iPhone") ? "iPhone" : navigator.userAgent.includes("Mac") ? "macOS" : "Hệ điều hành khác"}</dd>
-          <dt className="text-muted">Tài khoản</dt>
-          <dd>{me?.email ?? "Đang tải..."}</dd>
-        </dl>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setChangePassword(true)}>Đổi mật khẩu</button>
-          <button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post("/auth/logout"); window.location.href = "/login"; }}>Đăng xuất</button>
-        </div>
-      </section>
       <section id="settings-keys" className="rounded-2xl border border-line bg-surface shadow-sm p-5">
         <h2 className="mb-3 font-semibold">Phím tắt thao tác nhanh</h2>
         <ul className="grid gap-2 text-sm sm:grid-cols-2">
@@ -185,10 +169,9 @@ export default function SettingsPage() {
       >
         Khôi phục mặc định
       </button>
-      <section id="settings-account" className="rounded-2xl border border-line bg-surface shadow-sm p-5"><h2 className="mb-3 font-semibold">Tài khoản của tôi</h2>{!me ? <p className="text-sm text-muted">Đang tải...</p> : <><p className="font-medium">{me.fullName}</p><p className="text-sm text-muted">{me.email} · {me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</p>{me.role === 'SALE' && <div className="mt-4 flex items-center justify-between gap-3"><span className="text-sm">Đang trực, nhận khách tự động</span><Switch label="Đang trực" checked={me.onDuty} onChange={async (onDuty) => { await patch('/users/me/duty', { onDuty }); await mutateMe(); }} /></div>}<div className="mt-5 flex flex-wrap gap-2"><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setChangePassword(true)}>Đổi mật khẩu</button><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post('/auth/logout'); window.location.href = '/login'; }}>Đăng xuất</button></div></>}</section>
+      <section id="settings-account" className="rounded-2xl border border-line bg-surface shadow-sm p-5"><h2 className="mb-3 font-semibold">Tài khoản của tôi</h2>{!me ? <p className="text-sm text-muted">Đang tải...</p> : <><p className="font-medium">{me.fullName}</p><p className="text-sm text-muted">{me.email} · {me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</p>{me.role === 'SALE' && <div className="mt-4 flex items-center justify-between gap-3"><span className="text-sm">Đang trực, nhận khách tự động</span><Switch label="Đang trực" checked={me.onDuty} onChange={async (onDuty) => { await patch('/users/me/duty', { onDuty }); await mutateMe(); }} /></div>}<div className="mt-5 flex flex-wrap gap-2"><Link to="/profile" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface">Trang cá nhân (ảnh, họ tên, mật khẩu)</Link><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post('/auth/logout'); window.location.href = '/login'; }}>Đăng xuất</button></div></>}</section>
         </div>
       </div>
-      {changePassword && <ChangePasswordDialog onClose={() => setChangePassword(false)} />}
     </main>
   );
 }

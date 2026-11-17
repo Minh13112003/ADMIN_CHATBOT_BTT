@@ -228,7 +228,7 @@ textarea {
 }
 .app-drawer {
   margin: 0 0 0 auto;
-  width: min(360px, 100vw);
+  width: min(var(--drawer-w, 360px), 100vw);
   height: 100dvh;
   max-height: 100dvh;
   border-radius: 20px 0 0 20px;

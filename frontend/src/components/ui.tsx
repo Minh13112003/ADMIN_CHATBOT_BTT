@@ -58,11 +58,14 @@ export function Dialog({
   onClose,
   children,
   variant = 'modal',
+  drawerWidth,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   variant?: 'modal' | 'drawer';
+  /** Bề rộng ngăn kéo trên máy tính (px), mặc định 360. Điện thoại vẫn toàn màn hình. */
+  drawerWidth?: number;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -87,6 +90,7 @@ export function Dialog({
         if (e.target === e.currentTarget) onClose();
       }}
       className={`app-dialog ${variant === 'drawer' ? 'app-drawer' : ''}`}
+      style={drawerWidth ? { ['--drawer-w' as string]: `${drawerWidth}px` } : undefined}
     >
       <div className="dialog-content">
         <header className="mb-5 flex items-center justify-between gap-3">

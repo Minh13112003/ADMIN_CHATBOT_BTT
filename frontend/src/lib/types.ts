@@ -20,6 +20,8 @@ export type Me = {
   departmentId?: string | null;
   department?: { name: string } | null;
   scopeIds?: string[];
+  /** Đường dẫn ảnh đại diện (tương đối, ghép bằng linkTep), null = chưa có ảnh. */
+  avatarUrl?: string | null;
 };
 
 export type Person = { id: string; fullName: string };
@@ -238,3 +240,42 @@ export type Voucher = {
   status: VoucherStatus;
 };
 export type VoucherList = { summary: { active: number; usedThisMonth: number; expiringSoon: number }; items: Voucher[] };
+
+/** GET /stats/board: số cho trang Thống kê mới (5 tab). Chuỗi theo mốc cùng độ dài với `buckets`. */
+type Kenh4 = Record<Channel, number>;
+type Hist = { labels: string[]; counts: number[] };
+export type StatsBoardRange = '7d' | '30d' | 'quarter';
+export type StatsBoard = {
+  range: StatsBoardRange;
+  granularity: 'day' | 'week';
+  updatedAt: string;
+  buckets: { start: string; end: string; label: string }[];
+  customers: {
+    total: number; newCustomers: number; phones: number; contacts: number; interested: number; converted: number;
+    byChannelSeries: Record<Channel, number[]>; byChannelTotal: Kenh4; newSeries: number[]; returningSeries: number[];
+    contactHeatmap: number[][]; places: { place: string; asks: number; customers: number }[]; totalAsks: number;
+  };
+  tours: {
+    interestedTours: number;
+    rows: { key: string; name: string; place: string | null; interested: number; orders: number; guests: number; revenue: number }[];
+    byPlace: { place: string; interested: number; orders: number }[];
+    guestsPerDeal: Hist;
+    upcoming: { week: string; guests: number }[];
+  };
+  revenue: {
+    total: number; prevTotal: number; deals: number; guests: number; gross: number; discount: number;
+    series: number[]; prevSeries: number[]; dealSeries: number[]; guestSeries: number[]; byChannel: Kenh4;
+    byDepartment: { name: string; series: number[]; total: number }[];
+    valueHistogram: Hist;
+    pending: { count: number; amount: number }; cancelled: { count: number; amount: number };
+    topCustomers: { id: string; name: string; phone: string | null; orders: number; guests: number; revenue: number; channels: Channel[] }[];
+  };
+  sales: {
+    rows: { id: string; name: string; employeeCode: string | null; position: string | null; departmentName: string | null; onDuty: boolean; isActive: boolean; conversations: number; responses: number; medianSeconds: number | null; within5MinRate: number | null; deals: number; guests: number; revenue: number; closeRate: number | null; medianSeries: (number | null)[] }[];
+    responses: number; medianSeconds: number | null; within5MinRate: number | null; responseHistogram: Hist; medianSeries: (number | null)[];
+  };
+  channels: {
+    conversationsSeries: Record<Channel, number[]>; botSeries: number[]; staffSeries: number[]; botConversations: number; staffConversations: number;
+    cost: number; tokens: number; costSeries: number[]; tokenSeries: number[]; costByChannel: Kenh4 & { OTHER: number };
+  };
+};

@@ -8,6 +8,7 @@ import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
 import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthUser, COOKIE_NAME, CurrentUser, Public, Roles } from './auth.decorators';
+import { linkAnhNhanVien } from './profile.controller';
 import { capPhien } from './session';
 
 class LoginDto {
@@ -50,11 +51,12 @@ export class AuthController {
     const [u, load] = await Promise.all([
       this.prisma.user.findUniqueOrThrow({
         where: { id: me.id },
-        select: { id: true, email: true, fullName: true, role: true, employeeCode: true, position: true, onDuty: true, departmentId: true, department: { select: { name: true } }, scopeIds: true },
+        select: { id: true, email: true, fullName: true, role: true, employeeCode: true, position: true, onDuty: true, departmentId: true, department: { select: { name: true } }, scopeIds: true, avatarPath: true },
       }),
       this.prisma.conversation.count({ where: { assigneeId: me.id, status: { in: ['CONTACT', 'PENDING'] } } }),
     ]);
-    return { ...u, load };
+    const { avatarPath, ...con } = u;
+    return { ...con, avatarUrl: linkAnhNhanVien(u.id, avatarPath), load };
   }
 
   @Roles(Role.ADMIN, Role.SALE, Role.DEPT_ADMIN, Role.DIGITAL)

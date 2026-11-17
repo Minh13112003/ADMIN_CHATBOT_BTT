@@ -1,3 +1,7 @@
+/**
+ * @deprecated KHÔNG CÒN DÙNG (2026-11-17): trang Mẫu nhanh cũ. Route /templates đang dùng ReplyLibraryPage.
+ * Giữ lại theo yêu cầu chủ dự án, chưa xoá. Không import file này vào chỗ mới.
+ */
 import { useEffect, useState, type FormEvent } from 'react';
 import useSWR from 'swr';
 import { DeleteButton, ErrorText, inputClass, primaryClass, Segmented, Switch } from '@/components/ui';
