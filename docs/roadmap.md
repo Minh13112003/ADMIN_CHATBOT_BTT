@@ -37,6 +37,12 @@ Chủ dự án xác nhận 11/11/2026: Inbound sẽ có tour riêng, không có 
 - **Lưu ý khi chạy quảng cáo:** Zalo và Facebook giới hạn gửi tin chủ động ngoài khung thời gian hoặc khi khách chưa đồng ý; chưa có SĐT thì chưa chạy theo số.
 - **Đã xong từ trước:** giao diện danh sách khách, đoạn tin, mở tin nhắn gốc ở tab mới (`/inbox?c=&m=`), phạm vi theo phòng ban.
 
+## Nợ: nối Facebook Messenger (chủ dự án để mai làm, ghi 2026-11-17)
+- **Đang kẹt ở bước 1:** chủ dự án đăng ký tài khoản Meta for Developers (developers.facebook.com) nhưng bước nhập email báo "Không thể gửi email. Vui lòng thử lại sau" với mọi email (máy chủ Facebook trả `success: false`). Nghi tài khoản bị tạm chặn gửi mã vì bấm gửi lại mã OTP 2-3 lần. Hướng xử lý: chờ khoảng 24 giờ rồi thử lại, chỉ bấm gửi một lần; không được thì nhờ đồng nghiệp tạo ứng dụng rồi thêm chủ dự án làm admin ứng dụng; đã soạn sẵn nội dung gửi báo cáo cho Meta.
+- **Các bước còn lại:** tạo ứng dụng loại Business có sản phẩm Messenger; lấy ID Trang, App Secret, Page access token; nhập ở trang Kênh kết nối (đã có ô nhập, lưu mã hoá); khai báo webhook sau khi máy chủ có phần nhận tin; nhắn thử bằng tài khoản có vai trò trong ứng dụng; chuyển ứng dụng sang chế độ Live cho khách thật (có thể phải qua Meta duyệt quyền và xác minh doanh nghiệp, chưa kiểm chứng tài liệu chính thức).
+- **Cập nhật 2026-11-18:** chủ dự án đã đăng ký được và tạo ứng dụng (use case Messenger). Code đã viết xong (webhook, gửi tin, tự kiểm tra kết nối), chờ nhập thông tin trên VPS và thử với Trang thật, rồi chuyển ứng dụng sang Live.
+- **Còn lại sau khi chạy thật:** thẻ `HUMAN_AGENT` để nhân viên trả lời trong 7 ngày (cần Meta duyệt); chatbot bttAI trả lời trên Messenger.
+
 ## Về sau
 - Zalo OA, Facebook: skill `add-channel`.
 - Phân quyền chi tiết hơn ngoài chức năng admin khoá/mở tài khoản và đặt lại mật khẩu.

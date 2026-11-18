@@ -14,7 +14,7 @@ export const CHANNEL: Record<Channel, { label: string; short: string; bot: strin
   WEB: { label: 'bttAI Web', short: 'Web', bot: 'bttAI', className: 'bg-blue-soft text-blue-ink', connected: true },
   APP: { label: 'bttAI App', short: 'App', bot: 'bttAI', className: 'bg-green-soft text-green-ink', connected: true },
   ZALO: { label: 'Zalo OA', short: 'Zalo', bot: 'Bot Zalo', className: 'bg-blue-soft text-blue-ink', connected: true },
-  FACEBOOK: { label: 'Facebook', short: 'Facebook', bot: 'Bot Facebook', className: 'bg-purple-soft text-purple-ink', connected: false },
+  FACEBOOK: { label: 'Facebook', short: 'Facebook', bot: 'Bot Facebook', className: 'bg-purple-soft text-purple-ink', connected: true },
 };
 export const CHANNEL_LIST: Channel[] = ['WEB', 'APP', 'ZALO', 'FACEBOOK'];
 

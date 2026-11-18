@@ -31,6 +31,17 @@
 | Kênh kết nối: trạng thái token, hạn refresh token, tin gửi lỗi, cảnh báo | Chỉ test giả | Lỗi token và số tin lỗi giữ trong bộ nhớ, khởi động lại thì mất |
 | Gợi ý trả lời bằng AI | Chưa làm | Cần gọi Gemini, chờ làm đợt sau |
 
+## Facebook Messenger (viết 2026-11-18)
+
+| Tính năng | Trạng thái | Ghi chú |
+|---|---|---|
+| Lưu xong tự kiểm tra kết nối (token đúng Trang, khớp App Secret, tự đăng ký webhook, đăng ký Trang) | Chỉ test giả | `POST /channel-settings/facebook/test`; thành công thì thẻ Facebook hiện "Đã kết nối" |
+| Webhook nhận tin khách (chữ, ảnh, sticker, PDF, bấm nút, trích dẫn) | Chỉ test giả | `X-Hub-Signature-256` kiểm bằng App Secret, mã chống trùng `fb:<mid>` |
+| Tên, ảnh khách từ hồ sơ Messenger | Chỉ test giả | User Profile API |
+| Nhân viên trả lời từ trang này sang Messenger (chữ, ảnh, PDF) | Chỉ test giả | Gửi trước khi lưu; quá 24 giờ thì Meta từ chối, báo lỗi cho sale |
+| Tin nhân viên trả lời trên Meta Business Suite | Chỉ test giả | Sự kiện `message_echoes`, bỏ tin chính hệ thống gửi (cùng App ID) |
+| Dòng nhắc khung 24 giờ trong khung chat | Chỉ test giả | |
+
 ## Digital (Nhu cầu tour)
 
 | Tính năng | Trạng thái | Ghi chú |
@@ -100,6 +111,7 @@ Mỗi dòng: ngày, việc, lệnh cập nhật VPS (ghi rõ có migration khôn
 - 2026-11-17: trang Thống kê làm lại theo thiết kế Stitch, API mới `GET /stats/board?range=7d|30d|quarter` (một lần gọi đủ 5 mảng, lưu tạm 5 phút); `/stats/orders` nhận thêm `range`. Không có migration.
 - 2026-11-17: lấy tin cũ Zalo theo **30 ngày gần đây** (trước: tối đa 300 khách, 50 tin mỗi khách nên thiếu tin cũ): nút ở hộp kết nối Zalo đổi thành "Lấy tin 30 ngày từ Zalo", "Đồng bộ tin cũ" từng hội thoại cũng lấy 30 ngày (tối đa 1.000 tin/khách), xong tự nhận diện địa điểm quan tâm. Không có migration.
 - 2026-11-17: form tạo tài khoản có thêm vai trò **Admin toàn quyền** (chỉ admin toàn quyền tạo, không gắn phòng ban). Không có migration.
+- 2026-11-18: **nối Facebook Messenger**: webhook `GET/POST /webhooks/facebook`, gửi trả lời, hồ sơ khách, ghi tin trả lời trên Meta Business Suite; hộp kết nối thêm ô App ID, lưu xong tự kiểm tra kết nối (vòng xoay, hộp báo thành công/thất bại từng bước), tự đăng ký webhook và Trang; thẻ Facebook hiện "Đã kết nối" sau khi kiểm tra thành công; khung chat nhắc khung 24 giờ. API mới `POST /channel-settings/facebook/test`, `GET /channel-settings/facebook/status`. Không có migration.
 - 2026-11-17: mọi bảng 10 dòng một trang; biểu đồ Thống kê có nút phóng to (hộp gần toàn màn hình), bấm cột/điểm/ô/dòng xem chi tiết đúng mốc (danh sách đơn hoặc hội thoại), mỗi thẻ có nút "Xuất file Excel (.csv)"; bảng Chi tiết đơn đặt tour: mã đơn rút gọn 10 ký tự, cột Nền tảng có lọc, dòng tổng doanh thu và tỷ trọng; chốt tour xong mở Thống kê thấy ngay (xoá bộ nhớ tạm khi đơn đổi); bấm ra ngoài đóng hộp tài khoản; thanh bên rộng hơn; khung chat ẩn nhãn trạng thái khi mở cột thông tin khách; tạo tài khoản và đặt lại mật khẩu hiện nội dung đăng nhập để sao chép, đặt lại mật khẩu tự sinh 12 ký tự; xoá voucher (đang thử, xem Lưu ý trước khi bàn giao); máy chủ khởi động tự lấy tin Zalo 30 ngày. API mới `GET /stats/detail`, `DELETE /vouchers/:id`; `/stats/orders` thêm `channel`, `from`, `to`, 10 đơn/trang. Không có migration.
 
 Lệnh cập nhật VPS chuẩn (migrate an toàn kể cả khi không có gì mới):

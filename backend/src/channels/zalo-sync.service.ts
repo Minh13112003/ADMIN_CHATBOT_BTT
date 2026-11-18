@@ -12,8 +12,10 @@ import { THE_XIN_SDT, ZaloService } from './zalo.service';
  * Kéo tin cũ của một khách Zalo về hội thoại. Chỉ GHI LẠI lịch sử: không trả lời tự động, không đổi trạng thái hội thoại,
  * không báo nhân viên, không đụng tin xem trước của danh sách. Tin đã có thì bỏ qua (theo mã tin, hoặc cùng nội dung và gần giờ).
  */
-export type TienDoNhap = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; batDau: string | null; ketThuc: string | null; soNgay: number | null; tuNgay: string | null };
-const TIEN_DO_RONG: TienDoNhap = { dang: false, tong: 0, xong: 0, khachMoi: 0, tinThem: 0, loi: 0, lyDo: null, batDau: null, ketThuc: null, soNgay: null, tuNgay: null };
+export type TienDoNhap = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; batDau: string | null; ketThuc: string | null; soNgay: number | null; tuNgay: string | null;
+  /** Chẩn đoán: tổng tin Zalo trả về (trong khoảng ngày), tin cũ nhất Zalo trả, lỗi đầu tiên gặp. */
+  tinZalo: number; cuNhat: string | null; loiDau: string | null };
+const TIEN_DO_RONG: TienDoNhap = { dang: false, tong: 0, xong: 0, khachMoi: 0, tinThem: 0, loi: 0, lyDo: null, batDau: null, ketThuc: null, soNgay: null, tuNgay: null, tinZalo: 0, cuNhat: null, loiDau: null };
 /** Mặc định lấy tin cũ trong 30 ngày gần đây (chủ dự án yêu cầu 2026-11-17); mỗi khách tối đa 1.000 tin cho an toàn. */
 export const SO_NGAY_TIN_CU = 30;
 const TOI_DA_TIN_MOI_KHACH = 1000;
@@ -86,16 +88,17 @@ export class ZaloSyncService implements OnApplicationBootstrap {
         const { conversationId, moi } = await this.taoNeuChua(k);
         const r = await this.dongBo(conversationId, TOI_DA_TIN_MOI_KHACH, tuNgay);
         await this.capNhatTomTat(conversationId);
-        this.tienDo = { ...this.tienDo, xong: this.tienDo.xong + 1, khachMoi: this.tienDo.khachMoi + (moi ? 1 : 0), tinThem: this.tienDo.tinThem + r.them };
+        const cuNhat = r.cuNhat && (!this.tienDo.cuNhat || r.cuNhat < this.tienDo.cuNhat) ? r.cuNhat : this.tienDo.cuNhat;
+        this.tienDo = { ...this.tienDo, xong: this.tienDo.xong + 1, khachMoi: this.tienDo.khachMoi + (moi ? 1 : 0), tinThem: this.tienDo.tinThem + r.them, tinZalo: this.tienDo.tinZalo + r.tong, cuNhat };
       } catch (e) {
         this.log.warn(`Nhập khách Zalo ${k.userId} lỗi: ${(e as Error).message}`);
-        this.tienDo = { ...this.tienDo, xong: this.tienDo.xong + 1, loi: this.tienDo.loi + 1 };
+        this.tienDo = { ...this.tienDo, xong: this.tienDo.xong + 1, loi: this.tienDo.loi + 1, loiDau: this.tienDo.loiDau ?? (e as Error).message };
       }
       await nghi(nghiMs);
     }
     this.tienDo = { ...this.tienDo, dang: false, ketThuc: new Date().toISOString() };
     this.realtime.emit('conversation:update', {});
-    this.log.log(`Nhập khách cũ xong: ${this.tienDo.xong}/${this.tienDo.tong} khách, ${this.tienDo.khachMoi} khách mới, ${this.tienDo.tinThem} tin, ${this.tienDo.loi} lỗi`);
+    this.log.log(`Nhập khách cũ xong: ${this.tienDo.xong}/${this.tienDo.tong} khách, ${this.tienDo.khachMoi} khách mới, ${this.tienDo.tinThem} tin thêm mới / Zalo trả ${this.tienDo.tinZalo} tin (cũ nhất ${this.tienDo.cuNhat ?? '-'}), ${this.tienDo.loi} lỗi${this.tienDo.loiDau ? ` (${this.tienDo.loiDau})` : ''}`);
   }
 
   private async taoNeuChua(k: { userId: string; ten: string | null; anh: string | null; gio: Date; text: string }): Promise<{ conversationId: string; moi: boolean }> {
@@ -151,7 +154,7 @@ export class ZaloSyncService implements OnApplicationBootstrap {
   }
 
   /** Kéo tin cũ của một khách Zalo trong khoảng từ tuNgay (mặc định 30 ngày gần đây) tới nay. */
-  async dongBo(conversationId: string, toiDa = TOI_DA_TIN_MOI_KHACH, tuNgay: Date = mocNgayGanDay(SO_NGAY_TIN_CU)): Promise<{ them: number; tong: number }> {
+  async dongBo(conversationId: string, toiDa = TOI_DA_TIN_MOI_KHACH, tuNgay: Date = mocNgayGanDay(SO_NGAY_TIN_CU)): Promise<{ them: number; tong: number; cuNhat?: string | null }> {
     const c = await this.prisma.conversation.findUnique({ where: { id: conversationId }, select: { channel: true, customerId: true } });
     if (!c || c.channel !== 'ZALO') throw new BadRequestException('Chỉ dùng được cho hội thoại Zalo');
     const danhTinh = await this.prisma.customerIdentity.findFirst({ where: { customerId: c.customerId, channel: 'ZALO' }, select: { externalId: true } });
@@ -186,7 +189,7 @@ export class ZaloSyncService implements OnApplicationBootstrap {
     if (!moi.length) {
       if (nangCap) this.realtime.emit('message:new', { conversationId });
       await this.quetDiaDiem(conversationId);
-      return { them: 0, tong: tin.length };
+      return { them: 0, tong: tin.length, cuNhat: tin[0].thoiGian.toISOString() };
     }
 
     const data = [];
@@ -212,7 +215,7 @@ export class ZaloSyncService implements OnApplicationBootstrap {
     this.realtime.emit('conversation:update', { id: conversationId });
     this.realtime.emit('message:new', { conversationId });
     await this.quetDiaDiem(conversationId);
-    return { them: moi.length, tong: tin.length };
+    return { them: moi.length, tong: tin.length, cuNhat: tin[0].thoiGian.toISOString() };
   }
 }
 

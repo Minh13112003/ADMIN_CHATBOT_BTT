@@ -117,6 +117,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
         </div>
 
         {conv.channel === 'ZALO' && <KhungZalo lan={conv.lastCustomerMessageAt ?? null} />}
+        {conv.channel === 'FACEBOOK' && <KhungZalo fb lan={conv.lastCustomerMessageAt ?? null} />}
         {(choNhanVien || donCho) && <div className="flex min-h-12 items-center gap-2 border-b border-amber-line bg-auto-soft px-3 py-1.5 text-sm text-amber-ink"><strong className="shrink-0">Cần làm:</strong><span className="min-w-0 flex-1 truncate">{donCho ? `Gọi khách xác nhận đơn ${donCho.tourName} (${trieu(donCho.amount)})` : conv.assignee ? `Khách chờ nhân viên ${conv.assignee.fullName}` : 'Khách đang chờ nhân viên'}</span>{conv.customer.phone && <a className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" href={`tel:${conv.customer.phone}`}>Gọi khách</a>}{donCho && <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => setXacNhan(donCho)}>Xác nhận đơn</button>}</div>}
 
         {timTin && <TimTinTrongChat id={id} onClose={() => setTimTin(false)} />}
@@ -137,17 +138,17 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
 }
 
 /**
- * Khung nhắn của Zalo: tin tư vấn miễn phí trong 48 giờ từ lần cuối khách nhắn; hết khung thì OpenAPI không gửi được,
- * phải chờ khách nhắn lại. Tự cập nhật mỗi phút.
+ * Khung nhắn của kênh: Zalo cho tin tư vấn miễn phí trong 48 giờ, Messenger cho trả lời trong 24 giờ, tính từ lần cuối khách nhắn.
+ * Hết khung thì API không gửi được, phải chờ khách nhắn lại. Tự cập nhật mỗi phút.
  */
-function KhungZalo({ lan }: { lan: string | null }) {
+function KhungZalo({ lan, fb = false }: { lan: string | null; fb?: boolean }) {
   const [bay, setBay] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setBay(Date.now()), 60_000);
     return () => clearInterval(t);
   }, []);
   if (!lan) return null;
-  const KHUNG = 48 * 3600_000;
+  const KHUNG = (fb ? 24 : 48) * 3600_000;
   const con = KHUNG - (bay - new Date(lan).getTime());
   const gio = Math.max(0, Math.floor(con / 3600_000));
   const phut = Math.max(0, Math.floor((con % 3600_000) / 60_000));
@@ -159,7 +160,9 @@ function KhungZalo({ lan }: { lan: string | null }) {
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
       <span className="min-w-0 flex-1 truncate">
         {het ? (
-          <><strong>Hết khung nhắn miễn phí của Zalo.</strong> Khách cần nhắn lại trước, hoặc trả lời trên Trang quản lý Zalo OA.</>
+          fb ? <><strong>Hết khung 24 giờ của Messenger.</strong> Khách cần nhắn lại trước, hoặc trả lời trên Meta Business Suite.</> : <><strong>Hết khung nhắn miễn phí của Zalo.</strong> Khách cần nhắn lại trước, hoặc trả lời trên Trang quản lý Zalo OA.</>
+        ) : fb ? (
+          <>Còn <strong>{gio > 0 ? `${gio} giờ` : `${phut} phút`}</strong> để trả lời (khung 24 giờ của Messenger, tính từ tin cuối của khách)</>
         ) : (
           <>Còn <strong>{gio > 0 ? `${gio} giờ` : `${phut} phút`}</strong> để nhắn miễn phí (khung 48 giờ của Zalo, tính từ tin cuối của khách)</>
         )}
@@ -737,13 +740,13 @@ function XoaHoiThoaiDialog({ id, ten, onClose, onXong }: { id: string; ten: stri
 /** Admin kéo tin cũ của khách Zalo từ Zalo về hội thoại (chỉ ghi lại, không báo nhân viên, không trả lời tự động). */
 function DongBoZaloDialog({ id, onClose }: { id: string; onClose: () => void }) {
   const [dang, setDang] = useState(false);
-  const [kq, setKq] = useState<{ them: number; tong: number } | null>(null);
+  const [kq, setKq] = useState<{ them: number; tong: number; cuNhat?: string | null } | null>(null);
   const [loi, setLoi] = useState('');
   const chay = async () => {
     setDang(true);
     setLoi('');
     try {
-      setKq(await post<{ them: number; tong: number }>(`/conversations/${id}/zalo-history`));
+      setKq(await post<{ them: number; tong: number; cuNhat?: string | null }>(`/conversations/${id}/zalo-history`));
       await globalMutate((k) => typeof k === 'string' && k.startsWith(`/conversations/${id}`), undefined, { revalidate: true });
     } catch (e) {
       setLoi(loiCua(e));
@@ -755,7 +758,7 @@ function DongBoZaloDialog({ id, onClose }: { id: string; onClose: () => void }) 
     <Dialog title="Đồng bộ tin cũ từ Zalo" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <p className="text-sm">Lấy lại toàn bộ tin giữa OA và khách này trong 30 ngày gần đây từ Zalo. Tin đã có trong hệ thống được bỏ qua, địa điểm khách hỏi được tự nhận diện theo ngày của từng tin. Việc này chỉ ghi lại lịch sử, không gửi gì cho khách và không báo nhân viên.</p>
-        {kq && <p role="status" className="rounded-lg border border-green-soft bg-green-soft/40 px-3 py-2 text-sm text-green-ink">{kq.tong === 0 ? 'Zalo không trả tin nào.' : `Đã thêm ${kq.them} tin cũ (Zalo trả ${kq.tong} tin).`}</p>}
+        {kq && <p role="status" className="rounded-lg border border-green-soft bg-green-soft/40 px-3 py-2 text-sm text-green-ink">{kq.tong === 0 ? 'Zalo không trả tin nào trong 30 ngày gần đây.' : `Zalo trả ${kq.tong} tin${kq.cuNhat ? ` (cũ nhất ngày ${new Date(kq.cuNhat).toLocaleDateString('vi-VN')})` : ''}: thêm ${kq.them} tin mới, ${kq.tong - kq.them} tin đã có sẵn.`}</p>}
         <ErrorText>{loi}</ErrorText>
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className={secondaryClass}>Đóng</button>

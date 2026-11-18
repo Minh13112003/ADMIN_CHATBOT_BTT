@@ -1,6 +1,7 @@
 import { thongKeDoi } from '../common/stats-cache';
 import { AppNotificationsService } from '../app-mobile/app-notifications.service';
 import { ZaloService } from '../channels/zalo.service';
+import { FacebookService } from '../channels/facebook.service';
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
@@ -54,7 +55,7 @@ export type PatchInput = { tags?: string[]; note?: string; interest?: string; au
 export class ConversationsService {
   private log = new Logger('Conversations');
 
-  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService, private zalo: ZaloService, private appThongBao?: AppNotificationsService) {}
+  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService, private zalo: ZaloService, private appThongBao?: AppNotificationsService, private fb?: FacebookService) {}
 
   /** Bỏ đường dẫn lưu trữ, thêm `attachment` (link xem có hạn) trước khi gửi ra ngoài. */
   private ra<T extends { id: string; attachmentPath: string | null; attachmentType: string | null; attachmentName: string | null; attachmentSize: number | null }>(m: T) {
@@ -249,6 +250,14 @@ export class ConversationsService {
       if (!danhTinh) throw new BadRequestException('Không tìm thấy tài khoản Zalo của khách này');
       if (chuanBi) await this.zalo.guiTep(danhTinh.externalId, chuanBi, noiDung);
       else await this.zalo.guiTin(danhTinh.externalId, noiDung);
+    }
+    // Kênh Facebook: cũng gửi trước khi lưu (quá khung 24 giờ thì Meta từ chối, báo lỗi cho sale).
+    if (c.channel === 'FACEBOOK') {
+      const danhTinh = await this.prisma.customerIdentity.findFirst({ where: { customerId: c.customerId, channel: 'FACEBOOK' }, select: { externalId: true } });
+      if (!danhTinh) throw new BadRequestException('Không tìm thấy tài khoản Messenger của khách này');
+      if (!this.fb) throw new BadRequestException('Máy chủ chưa bật kênh Facebook');
+      if (chuanBi) await this.fb.guiTep(danhTinh.externalId, chuanBi, noiDung);
+      else await this.fb.guiTin(danhTinh.externalId, noiDung);
     }
     // Lưu file sau cùng các kiểm tra khác để không tải lên rồi mới báo lỗi.
     const dinhKem = chuanBi ? await this.tep.luuDaChuanBi(chuanBi) : null;

@@ -33,6 +33,26 @@ const DETAILS = {
     description: "Chưa kết nối. Cần quyền quản trị Trang.",
   },
 };
+type TrangThaiFacebook = { ketNoi: { luc: string; trang: string } | null; guiLoiHomNay: number; loiGuiGanNhat: string | null };
+
+function ChiTietFacebook({ f }: { f: TrangThaiFacebook }) {
+  const dong = "flex items-center justify-between gap-3 rounded-[10px] border border-line px-3.5 py-2.5 text-[0.8125rem]";
+  return (
+    <div className="mt-3 flex flex-col gap-2">
+      {f.ketNoi && (
+        <div className={dong}>
+          <span className="flex items-center gap-2"><span className="size-2.5 rounded-full bg-on" />Trang {f.ketNoi.trang}</span>
+          <strong className="text-green-ink">Kết nối lúc {new Date(f.ketNoi.luc).toLocaleString("vi-VN")}</strong>
+        </div>
+      )}
+      <div className={`${dong} flex-col items-stretch`}>
+        <span className="flex justify-between gap-3"><span>Tin gửi sang Messenger bị lỗi hôm nay</span><strong className={f.guiLoiHomNay ? "text-alert-ink" : ""}>{f.guiLoiHomNay} tin</strong></span>
+        {f.loiGuiGanNhat && <span className="text-xs text-muted">Lỗi gần nhất: {f.loiGuiGanNhat}</span>}
+      </div>
+    </div>
+  );
+}
+
 type TrangThaiZalo = { coToken: boolean; accessTokenHetLuc: string | null; refreshTokenHetLuc: string | null; loiToken: { luc: string; lyDo: string } | null; guiLoiHomNay: number };
 
 /** Chi tiết kết nối Zalo cho admin (Stitch: "Kênh kết nối - Quản trị kênh hội thoại đa nguồn"). */
@@ -72,6 +92,7 @@ export default function ChannelsPage() {
   const { data: costs } = useSWR<CostSource[]>("/stats/cost-by-source?period=month", fetcher);
   const laAdmin = me?.role === "ADMIN";
   const { data: zalo } = useSWR<TrangThaiZalo>(laAdmin ? "/channel-settings/zalo/status" : null, fetcher, { refreshInterval: 60_000 });
+  const { data: fb, mutate: mutateFb } = useSWR<TrangThaiFacebook>(laAdmin ? "/channel-settings/facebook/status" : null, fetcher, { refreshInterval: 60_000 });
   const zaloCoCauHinh = !!data?.find((c) => c.channel === "ZALO")?.connected || !!zalo?.coToken;
   const zaloLoi = !!zalo && zaloCoCauHinh && (!!zalo.loiToken || !zalo.coToken);
   return (
@@ -118,7 +139,7 @@ export default function ChannelsPage() {
                   {DETAILS[c.channel].title}
                 </h2>
                 <p className="mt-1 text-sm text-muted">
-                  {c.connected && (c.channel === "ZALO" || c.channel === "FACEBOOK") ? "Đang nhận tin từ khách." : DETAILS[c.channel].description}
+                  {c.connected && c.channel === "FACEBOOK" ? "Đã kết nối, tin nhắn Messenger của khách về Hộp thư." : c.connected && c.channel === "ZALO" ? "Đang nhận tin từ khách." : DETAILS[c.channel].description}
                 </p>
               </div>
               <span
@@ -157,6 +178,7 @@ export default function ChannelsPage() {
               </dl>
             ) : <div className="mt-[22px] flex flex-col gap-1 rounded-[10px] border border-dashed border-line bg-fill p-4 text-[0.8rem] [&_span]:text-muted"><strong>Điều kiện kết nối</strong><span>{c.channel === "ZALO" ? "Zalo OA cần được xác thực, dùng gói Tăng trưởng trở lên và cấu hình webhook." : "Cần quyền quản trị Trang Facebook và quyền truy cập tin nhắn Messenger."}</span></div>}
             {c.channel === "ZALO" && zalo && (zalo.coToken || c.connected) && <ChiTietZalo z={zalo} />}
+            {c.channel === "FACEBOOK" && fb && c.connected && <ChiTietFacebook f={fb} />}
             {(c.channel === "ZALO" || c.channel === "FACEBOOK") && me?.role === "ADMIN" && (
               <button type="button" onClick={() => setKetNoi(c.channel as "ZALO" | "FACEBOOK")} className={`${c.connected ? secondaryClass : primaryClass} mt-4 self-start`}>{c.connected ? "Quản lý thông tin kết nối" : "Nhập thông tin kết nối"}</button>
             )}
@@ -168,7 +190,7 @@ export default function ChannelsPage() {
         <section><h2>Khung thời gian phản hồi</h2><p>Quy định của kênh sẽ áp dụng sau khi kết nối tài khoản tương ứng.</p><div><strong>Zalo OA</strong><span>Tư vấn miễn phí trong 48 giờ kể từ lần khách tương tác.</span></div><div><strong>Facebook Messenger</strong><span>Trả lời trong cửa sổ 24 giờ theo chính sách của Meta.</span></div></section>
         <section><h2>Chi phí theo nguồn trong tháng</h2><p>Số liệu ước tính từ các kênh đã được hệ thống ghi nhận.</p>{costs ? costs.map((item) => <div key={item.source}><strong>{item.source === 'AI' ? 'AI bttAI' : item.source === 'ZALO' ? 'Zalo OA' : 'Facebook'}</strong><span>{item.connected ? vnd(item.costVnd) : 'Chưa kết nối'}</span></div>) : <p>Đang tải chi phí...</p>}</section>
       </div>}
-      {ketNoi && <ChannelConnectDialog channel={ketNoi} title={DETAILS[ketNoi].title} onClose={() => setKetNoi(null)} onSaved={() => void mutate()} />}
+      {ketNoi && <ChannelConnectDialog channel={ketNoi} title={DETAILS[ketNoi].title} onClose={() => setKetNoi(null)} onSaved={() => { void mutate(); if (laAdmin) void mutateFb(); }} />}
     </main>
   );
 }

@@ -33,6 +33,8 @@ import { VouchersController } from './vouchers/vouchers.controller';
 import { ChannelSettingsController } from './channels/channel-settings.controller';
 import { ZaloOAuthController, ZaloWebhookController } from './channels/zalo.controller';
 import { ZaloService } from './channels/zalo.service';
+import { FacebookAdminController, FacebookWebhookController } from './channels/facebook.controller';
+import { FacebookService } from './channels/facebook.service';
 import { ZaloImportController, ZaloSyncController, ZaloSyncService } from './channels/zalo-sync.service';
 import { AppAccountService } from './app-mobile/app-account.service';
 import { AppAuthGuard } from './app-mobile/app-auth.guard';
@@ -75,6 +77,8 @@ import { AppNotificationsService } from './app-mobile/app-notifications.service'
     ZaloWebhookController,
     ZaloSyncController,
     ZaloImportController,
+    FacebookAdminController,
+    FacebookWebhookController,
     AppAuthController,
     AppUsersController,
     ConversationAppAccountController,
@@ -100,6 +104,7 @@ import { AppNotificationsService } from './app-mobile/app-notifications.service'
     IngestKeyGuard,
     ZaloService,
     ZaloSyncService,
+    FacebookService,
     IngestService,
     TourInterestService,
     AppAccountService,

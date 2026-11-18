@@ -5,6 +5,7 @@ import { giaiMa, maHoa, xemTruoc } from '../common/secret-box';
 import { Channel, Role } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ZaloService } from './zalo.service';
+import { FacebookService, KET_NOI_LUC } from './facebook.service';
 
 type Truong = { name: string; label: string; secret: boolean; hint?: string };
 /** Trường cần nhập cho từng kênh. Tên trường theo tài liệu từng nền tảng; sửa ở đây khi đối chiếu bản chính thức. */
@@ -18,10 +19,11 @@ export const TRUONG_KENH: Partial<Record<Channel, Truong[]>> = {
     { name: 'refreshToken', label: 'Refresh token (tự lấy khi bấm "Kết nối với Zalo")', secret: true },
   ],
   FACEBOOK: [
-    { name: 'pageId', label: 'ID Trang', secret: false },
-    { name: 'appSecret', label: 'Khoá bí mật của ứng dụng (App Secret)', secret: true },
-    { name: 'pageAccessToken', label: 'Page access token', secret: true },
-    { name: 'verifyToken', label: 'Mã xác minh webhook', secret: true },
+    { name: 'appId', label: 'App ID', secret: false, hint: 'Dãy số trên đầu trang ứng dụng ở developers.facebook.com (hoặc trong địa chỉ trang: /apps/<App ID>/).' },
+    { name: 'pageId', label: 'ID Trang', secret: false, hint: 'Hiện dưới tên Trang trong mục Cài đặt API Messenger → Tạo mã truy cập.' },
+    { name: 'appSecret', label: 'Khoá bí mật của ứng dụng (App Secret)', secret: true, hint: 'Cài đặt ứng dụng → Cơ bản → Khoá bí mật của ứng dụng, bấm Hiện.' },
+    { name: 'pageAccessToken', label: 'Page access token', secret: true, hint: 'Cài đặt API Messenger → Tạo mã truy cập → Tạo mã của Trang.' },
+    { name: 'verifyToken', label: 'Mã xác minh webhook', secret: true, hint: 'Bạn tự đặt một chuỗi ngẫu nhiên khoảng 20 chữ và số. Hệ thống tự khai cho Meta, không cần dán ở đâu khác.' },
   ],
 };
 
@@ -35,7 +37,7 @@ function kenh(ten: string): Channel {
 @Roles(Role.ADMIN)
 @Controller('channel-settings')
 export class ChannelSettingsController {
-  constructor(private prisma: PrismaService, private config: ConfigService, private zalo: ZaloService) {}
+  constructor(private prisma: PrismaService, private config: ConfigService, private zalo: ZaloService, private fb: FacebookService) {}
 
   private khoaMaHoa() {
     const k = this.config.get<string>('ENCRYPTION_KEY');
@@ -52,6 +54,7 @@ export class ChannelSettingsController {
     return {
       encryptionReady: khoa.length >= 32,
       ...(k === 'ZALO' ? { urls: { webhook: this.zalo.diaChiWebhook(), callback: this.zalo.diaChiCallback() } } : {}),
+      ...(k === 'FACEBOOK' ? { urls: { webhook: this.fb.diaChiWebhook() }, connected: !!theoTen.get(KET_NOI_LUC) } : {}),
       fields: TRUONG_KENH[k]!.map((t) => {
         const d = theoTen.get(t.name);
         const banRo = d && khoa ? giaiMa(d.valueEnc, khoa) : null;
@@ -81,6 +84,8 @@ export class ChannelSettingsController {
         });
       }),
     );
+    // Facebook: đổi thông tin thì phải kiểm tra lại mới tính là đã kết nối (giao diện tự chạy kiểm tra ngay sau khi lưu).
+    if (k === 'FACEBOOK') await this.prisma.channelSecret.deleteMany({ where: { channel: k, name: KET_NOI_LUC } });
     return this.xem(ten);
   }
 

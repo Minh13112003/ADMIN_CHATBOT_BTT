@@ -4,7 +4,54 @@ import { api, del, fetcher, loiCua } from '@/lib/api';
 import { ErrorText, inputClass, Modal, primaryClass, secondaryClass } from './ui';
 
 type Field = { name: string; label: string; secret: boolean; hint?: string; set: boolean; preview: string | null; updatedAt: string | null };
-type Settings = { encryptionReady: boolean; fields: Field[]; urls?: { webhook: string; callback: string } };
+type Settings = { encryptionReady: boolean; fields: Field[]; urls?: { webhook: string; callback?: string }; connected?: boolean };
+type KetQuaKiemTra = { ok: boolean; trang: { id: string; name: string } | null; buoc: { ten: string; ok: boolean; loi?: string }[]; loi: string | null };
+
+const IconTron = ({ ok }: { ok: boolean }) => (
+  <span aria-hidden="true" className={`grid size-14 place-items-center rounded-full ${ok ? 'bg-green-soft text-green-ink' : 'bg-brand-soft text-brand-text'}`}>
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">{ok ? <path d="m5 12.5 4.5 4.5L19 7.5" /> : <path d="M7 7l10 10M17 7 7 17" />}</svg>
+  </span>
+);
+
+/**
+ * Kiểm tra kết nối Facebook: đang chạy thì hiện vòng xoay (không đóng được), xong thì báo thành công / thất bại kèm từng bước.
+ * Backend tự kiểm tra token, tự đăng ký webhook và đăng ký Trang (POST /channel-settings/facebook/test).
+ */
+function HopKiemTraFacebook({ kq, onClose }: { kq: KetQuaKiemTra | 'dang'; onClose: () => void }) {
+  if (kq === 'dang') {
+    return (
+      <Modal title="Đang kết nối với Facebook" onClose={() => undefined} width={420}>
+        <div role="status" className="flex flex-col items-center gap-4 py-6 text-center">
+          <span aria-hidden="true" className="size-12 animate-spin rounded-full border-4 border-fill border-t-brand" />
+          <p className="text-sm text-body">Đang kiểm tra token, đăng ký webhook và đăng ký Trang nhận tin nhắn. Có thể mất vài giây...</p>
+        </div>
+      </Modal>
+    );
+  }
+  return (
+    <Modal title={kq.ok ? 'Kết nối thành công' : 'Kết nối thất bại'} onClose={onClose} width={480} footer={<button type="button" onClick={onClose} className={primaryClass}>Đóng</button>}>
+      <div role={kq.ok ? 'status' : 'alert'} className="flex flex-col items-center gap-3 text-center">
+        <IconTron ok={kq.ok} />
+        <p className="text-sm">
+          {kq.ok
+            ? <>Đã kết nối với Trang <strong>{kq.trang?.name}</strong>. Tin nhắn Messenger của khách sẽ về Hộp thư. Thẻ Facebook ở trang Kênh kết nối đã chuyển sang <strong>Đã kết nối</strong>.</>
+            : <>{kq.loi}</>}
+        </p>
+      </div>
+      {kq.buoc.length > 0 && (
+        <ol className="mt-4 flex flex-col gap-2 rounded-xl border border-line bg-page p-3 text-left text-[0.8125rem]">
+          {kq.buoc.map((b) => (
+            <li key={b.ten} className="flex gap-2">
+              <span aria-hidden="true" className={`mt-0.5 shrink-0 font-bold ${b.ok ? 'text-green-ink' : 'text-brand-text'}`}>{b.ok ? '✓' : '✕'}</span>
+              <span className="min-w-0"><span className="sr-only">{b.ok ? 'Đạt: ' : 'Lỗi: '}</span>{b.ten}{b.loi && <span className="block text-xs text-muted">{b.loi}</span>}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+      {kq.ok && <p className="mt-3 text-xs text-muted">Ứng dụng Meta đang ở chế độ thử thì chỉ tài khoản có vai trò trong ứng dụng nhắn tới mới vào được. Mở cho mọi khách: chuyển ứng dụng sang chế độ Live.</p>}
+    </Modal>
+  );
+}
 
 function DiaChi({ nhan, gia }: { nhan: string; gia: string }) {
   const [daChep, setDaChep] = useState(false);
@@ -20,7 +67,7 @@ function DiaChi({ nhan, gia }: { nhan: string; gia: string }) {
 }
 
 /** Hộp nhập thông tin kết nối Zalo OA / Facebook. Giá trị bí mật chỉ gửi lên, không bao giờ hiện lại (chỉ thấy đuôi 4 ký tự). */
-type TienDo = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; ketThuc: string | null; soNgay: number | null };
+type TienDo = { dang: boolean; tong: number; xong: number; khachMoi: number; tinThem: number; loi: number; lyDo: string | null; ketThuc: string | null; soNgay: number | null; tinZalo?: number; cuNhat?: string | null; loiDau?: string | null; tuNgay?: string | null };
 
 /** Nhập các khách đã nhắn OA từ trước khi nối (webhook chỉ báo tin mới). Chạy nền ở server, đây chỉ bấm và xem tiến độ. */
 function NhapKhachCu() {
@@ -44,7 +91,12 @@ function NhapKhachCu() {
       )}
       {xongRoi && !data.lyDo && (
         <p role="status" className="rounded-lg border border-green-soft bg-green-soft/40 px-3 py-2 text-sm text-green-ink">
-          Xong: {data.xong} khách ({data.khachMoi} khách mới), thêm {data.tinThem} tin{data.loi ? `, ${data.loi} khách lỗi` : ''}. Tải lại Hộp thư để xem.
+          Xong: {data.xong} khách ({data.khachMoi} khách mới), thêm {data.tinThem} tin mới{data.loi ? `, ${data.loi} khách lỗi` : ''}. Tải lại Hộp thư để xem.
+          <span className="mt-1 block text-xs text-body">
+            Zalo trả {data.tinZalo ?? 0} tin trong khoảng từ {data.tuNgay ? new Date(data.tuNgay).toLocaleDateString('vi-VN') : '30 ngày trước'}
+            {data.cuNhat ? `, tin cũ nhất ngày ${new Date(data.cuNhat).toLocaleDateString('vi-VN')}` : ''}; {Math.max(0, (data.tinZalo ?? 0) - data.tinThem)} tin đã có sẵn nên bỏ qua.
+            {data.loiDau ? ` Lỗi đầu tiên: ${data.loiDau}` : ''}
+          </span>
         </p>
       )}
       {xongRoi && data.lyDo && <ErrorText>{data.lyDo}</ErrorText>}
@@ -62,6 +114,21 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
   const [loi, setLoi] = useState('');
   const [dang, setDang] = useState(false);
   const [hoiXoa, setHoiXoa] = useState(false);
+  const [kiemTra, setKiemTra] = useState<KetQuaKiemTra | 'dang' | null>(null);
+  const laFb = channel === 'FACEBOOK';
+  const duTruong = !!data?.fields.length && data.fields.every((f) => f.set);
+
+  const chayKiemTra = async () => {
+    setKiemTra('dang');
+    try {
+      const r = await api<KetQuaKiemTra>('/channel-settings/facebook/test', { method: 'POST', body: {} });
+      setKiemTra(r);
+    } catch (e) {
+      setKiemTra({ ok: false, trang: null, buoc: [], loi: loiCua(e) });
+    }
+    await mutate();
+    onSaved();
+  };
 
   const ketNoiZalo = async () => {
     setDang(true);
@@ -84,6 +151,11 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
       setValues({});
       setSua({});
       onSaved();
+      // Facebook: đủ thông tin thì tự kiểm tra kết nối ngay sau khi lưu.
+      if (laFb && r.fields.every((f) => f.set)) {
+        setDang(false);
+        await chayKiemTra();
+      }
     } catch (e) {
       setLoi(loiCua(e));
     } finally {
@@ -119,6 +191,9 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
             </button>
           )}
           <span className="flex-1" />
+          {laFb && duTruong && !coNhap && (
+            <button type="button" disabled={dang || kiemTra === 'dang'} onClick={() => void chayKiemTra()} className={secondaryClass}>Kiểm tra kết nối</button>
+          )}
           <button type="button" onClick={onClose} className={secondaryClass}>Đóng</button>
           <button type="button" disabled={dang || !coNhap || !data?.encryptionReady} onClick={() => void luu()} className={primaryClass}>
             {dang ? 'Đang lưu...' : 'Lưu thông tin'}
@@ -172,11 +247,22 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
             </div>
           );
         })}
-        {data?.urls && (
+        {laFb && data && (
+          <p role="status" className={`rounded-lg border px-3 py-2 text-sm ${data.connected ? 'border-green-soft bg-green-soft/40 text-green-ink' : 'border-line bg-page text-body'}`}>
+            {data.connected ? 'Đã kết nối: lần kiểm tra gần nhất thành công.' : duTruong ? 'Đã nhập đủ thông tin nhưng chưa kết nối được. Bấm "Kiểm tra kết nối" để thử lại.' : 'Nhập đủ 5 ô rồi bấm Lưu: hệ thống tự kiểm tra và tự khai webhook với Meta.'}
+          </p>
+        )}
+        {laFb && data?.urls && (
+          <div className="flex flex-col gap-2.5 rounded-xl border border-line bg-page p-3">
+            <p className="text-xs text-body">Hệ thống tự khai địa chỉ này với Meta khi kiểm tra kết nối. Chỉ cần chép khi muốn khai tay trong Cài đặt API Messenger → Cấu hình webhook.</p>
+            <DiaChi nhan="URL gọi lại (Callback URL)" gia={data.urls.webhook} />
+          </div>
+        )}
+        {!laFb && data?.urls && (
           <div className="flex flex-col gap-2.5 rounded-xl border border-line bg-page p-3">
             <p className="text-xs font-semibold">Khai hai địa chỉ này trong ứng dụng Zalo (developers.zalo.me)</p>
             <DiaChi nhan="Webhook URL (Zalo gửi tin khách về đây)" gia={data.urls.webhook} />
-            <DiaChi nhan="Callback URL (Zalo quay về sau khi cấp quyền)" gia={data.urls.callback} />
+            {data.urls.callback && <DiaChi nhan="Callback URL (Zalo quay về sau khi cấp quyền)" gia={data.urls.callback} />}
           </div>
         )}
         {channel === 'ZALO' && (
@@ -187,8 +273,9 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
         )}
         {channel === 'ZALO' && <NhapKhachCu />}
         <ErrorText>{loi}</ErrorText>
-        <p className="text-xs text-muted">Sau khi lưu, kênh chỉ chuyển sang "Đã kết nối" khi nhận được tin thật đầu tiên từ khách.</p>
+        {!laFb && <p className="text-xs text-muted">Sau khi lưu, kênh chỉ chuyển sang "Đã kết nối" khi nhận được tin thật đầu tiên từ khách.</p>}
       </div>
+      {kiemTra && <HopKiemTraFacebook kq={kiemTra} onClose={() => setKiemTra(null)} />}
     </Modal>
   );
 }

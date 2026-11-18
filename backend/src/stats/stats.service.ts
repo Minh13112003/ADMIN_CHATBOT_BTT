@@ -167,12 +167,14 @@ export class StatsService {
       JOIN conversations c ON c.id = r."conversationId"
       WHERE r."respondedAt" >= ${from}`;
     const ganNhat = await this.prisma.conversation.groupBy({ by: ['channel'], _max: { lastCustomerMessageAt: true } });
+    // Facebook: "Đã kết nối" ngay khi admin bấm kiểm tra thành công (dòng ketNoiLuc), không phải chờ tin khách đầu tiên.
+    const fbDaKiemTra = !!(await this.prisma.channelSecret.findUnique({ where: { channel_name: { channel: 'FACEBOOK', name: 'ketNoiLuc' } }, select: { name: true } }));
     return ['WEB', 'APP', 'ZALO', 'FACEBOOK'].map((channel) => ({
       channel,
       lastCustomerMessageAt: ganNhat.find((c) => c.channel === channel)?._max.lastCustomerMessageAt ?? null,
       conversationsToday: conversations.find((c) => c.channel === channel)?._count._all ?? 0,
       medianSeconds: tomTatPhanHoi(responseRows.filter((r) => r.channel === channel).map((r) => r.seconds)).medianSeconds,
-      connected: channel === 'WEB' || channel === 'APP' || (channel === 'ZALO' && !!ganNhat.find((c) => c.channel === channel)?._max.lastCustomerMessageAt),
+      connected: channel === 'WEB' || channel === 'APP' || (channel === 'FACEBOOK' && fbDaKiemTra) || (channel === 'ZALO' && !!ganNhat.find((c) => c.channel === channel)?._max.lastCustomerMessageAt),
     }));
   }
 

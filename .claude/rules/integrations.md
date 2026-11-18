@@ -6,7 +6,7 @@ Trạng thái ngày 2026-11-06. Cập nhật file này mỗi khi trạng thái �
 |---|---|---|
 | bttAI App, Web, Zalo Mini App | **Đã nối** (chạy trên máy, chưa triển khai server) | Hợp đồng ở `docs/ingest-api.md`. Mini App đi chung kênh `APP` vì dùng cùng tài khoản |
 | Zalo OA | Đã viết, **chưa chạy thật** (2026-11-12) | Webhook `POST /webhooks/zalo` (kiểm tra chữ ký bằng OA Secret Key), OAuth qua `channel-settings/zalo/*`, gửi trả lời từ `ConversationsService.send`. Chỉ test bằng tin giả; tên API, header chữ ký, PKCE chưa đối chiếu tài liệu Zalo. Xem mục Zalo OA bên dưới |
-| Facebook | Để ngỏ theo yêu cầu | Tương tự Zalo |
+| Facebook Messenger | Đã viết, **chưa chạy thật** (2026-11-18) | Webhook `/webhooks/facebook`, tự kiểm tra và tự đăng ký webhook khi admin lưu. Xem mục Facebook bên dưới |
 
 ## Phía chatbot đã nối thế nào (`D:\ChatBot`)
 - `admin_chat.py` gọi `/ingest`. Cấu hình `ADMIN_CHAT_URL`, `INGEST_API_KEY` trong `.env` chatbot; khoá phải trùng bên này.
@@ -30,6 +30,12 @@ Trạng thái ngày 2026-11-06. Cập nhật file này mỗi khi trạng thái �
 ## Ghi chú nghiên cứu Facebook
 Miễn phí, không cần App Review nếu chỉ dùng cho Page của công ty. Trả lời trong 24 giờ, nhân viên có thêm khung 7 ngày. Handover Protocol đã bỏ, dùng Conversation Routing. Không có sự kiện chung báo khách đòi gặp người, phải tự đọc nội dung tin.
 
+## Facebook Messenger, cách hoạt động (viết 2026-11-18, chưa chạy với Trang thật)
+- Admin nhập ở trang Kênh kết nối: App ID, ID Trang, App Secret, Page access token, mã xác minh webhook (tự đặt). Lưu xong giao diện tự gọi `POST /channel-settings/facebook/test` (`FacebookService.kiemTraKetNoi`): `GET /me` bằng Page token kèm `appsecret_proof` (sai App Secret thì Meta báo lỗi 100), so ID Trang; `POST /{app-id}/subscriptions` bằng app token `appId|appSecret` để khai webhook (Meta gọi thử `GET /webhooks/facebook` ngay); `POST /{page-id}/subscribed_apps`. Thành công thì lưu dòng `ketNoiLuc` trong `channel_secrets`, thẻ hiện "Đã kết nối"; lưu thông tin mới thì xoá dòng này. Địa chỉ webhook lấy từ `FRONTEND_URL`, phải là https.
+- Webhook: chữ ký `X-Hub-Signature-256` = HMAC-SHA256(App Secret, nội dung gốc). Sự kiện `messages`, `messaging_postbacks`, `message_echoes`. Mã chống trùng `fb:<mid>`. Echo cùng App ID là tin hệ thống vừa gửi nên bỏ; echo khác (Meta Business Suite) ghi là tin nhân viên "Trang Facebook" qua `IngestService.oaGui`. Chưa có chatbot cho Messenger: chỉ gửi lại trả lời tự động và câu báo đã chuyển nhân viên. Hàm thuần ở `common/facebook.ts`.
+- Gửi: `POST /me/messages`, `messaging_type: RESPONSE`, chữ cắt 2.000 ký tự/tin, ảnh/PDF multipart `filedata`. Quá 24 giờ từ tin cuối của khách thì lỗi 10/2018278, báo sale. Chưa dùng thẻ `HUMAN_AGENT` (7 ngày, cần Meta duyệt).
+- Ứng dụng ở chế độ thử chỉ nhận tin của tài khoản có vai trò trong ứng dụng. Chế độ Live cần link chính sách quyền riêng tư; dùng cho Trang của chính công ty thường chỉ cần quyền tiêu chuẩn (chưa kiểm chứng, nếu Meta đòi App Review thì xin `pages_messaging`).
+
 ## Gemini
 Giá nhập trong `.env` (`GEMINI_PRICE_*`), tỷ giá `USD_VND_RATE`. Chatbot phải gửi số token từ mỗi phản hồi thì mới có số chi phí.
 
@@ -38,4 +44,4 @@ Giá nhập trong `.env` (`GEMINI_PRICE_*`), tỷ giá `USD_VND_RATE`. Chatbot p
 - Webhook `https://<tên miền>/api/v1/webhooks/zalo`: chỉ nhận `user_send_*`, chữ ký `sha256(appId + body gốc + timestamp + OASecretKey)` (cần `rawBody: true` ở `main.ts`), tin vào qua `IngestService.inbound` kênh `ZALO`, `externalMessageId = zalo:<msg_id>` chống trùng. Chưa có chatbot cho Zalo: chỉ gửi lại câu trả lời tự động và câu báo đã chuyển nhân viên.
 - Nhân viên trả lời trong trang này thì gửi sang Zalo (`/v3.0/oa/message/cs`) trước khi lưu; lỗi thì không lưu. Chưa gửi được ảnh/PDF sang Zalo. Khách gửi ảnh/tệp chỉ hiện dòng báo "xem trên Zalo OA".
 - Kênh ZALO chỉ hiện "Đã kết nối" khi đã có tin khách thật.
-- Zalo chỉ đẩy tin MỚI qua webhook. Tin cũ: admin bấm "Lấy tin 30 ngày từ Zalo" (hộp kết nối Zalo) hoặc "Đồng bộ tin cũ từ Zalo" từng hội thoại; lấy mọi khách và tin trong 30 ngày gần đây (`listrecentchat`, `conversation` mỗi lần 10, lùi tới khi quá mốc), tối đa 1.000 tin/khách, rồi quét địa điểm quan tâm. Ảnh đại diện và tên lấy từ hồ sơ Zalo khi có tin (khách mới, thiếu ảnh, hoặc quay lại sau hơn 12 giờ), lưu `customers.avatarUrl`.
+- Zalo chỉ đẩy tin MỚI qua webhook. Tin cũ: admin bấm "Lấy tin 30 ngày từ Zalo" (hộp kết nối Zalo) hoặc "Đồng bộ tin cũ từ Zalo" từng hội thoại; lấy mọi khách và tin trong 30 ngày gần đây (`listrecentchat`, `conversation` mỗi lần 10, lùi tới khi quá mốc), tối đa 1.000 tin/khách, rồi quét địa điểm quan tâm. **Đã kiểm chứng trên VPS 2026-11-17:** Zalo chỉ trả 51 cuộc trò chuyện (`listrecentchat` hết ở offset 50) và lịch sử mỗi khách chỉ từ khoảng 05/11 (lúc OA nối với ứng dụng), mọi khách đều dừng tự nhiên (trang < 10 tin), không lỗi. Tin cũ hơn chỉ xem được trên trang Quản lý OA, API không trả. Ảnh đại diện và tên lấy từ hồ sơ Zalo khi có tin (khách mới, thiếu ảnh, hoặc quay lại sau hơn 12 giờ), lưu `customers.avatarUrl`.
