@@ -53,6 +53,15 @@ export function ErrorText({ children }: { children: ReactNode }) {
   );
 }
 
+/** Điểm bấm nằm ngoài khung hộp thoại (trên nền mờ phía sau). Bấm bằng bàn phím (toạ độ 0,0) không tính. */
+function ngoaiKhung(el: HTMLElement, x: number, y: number, target: EventTarget | null) {
+  // Sự kiện từ hộp thoại con lồng bên trong (ví dụ hộp kết quả) nổi lên đây: không tính, để không đóng luôn hộp cha.
+  if (!(target instanceof Element) || target.closest('dialog') !== el) return false;
+  if (x === 0 && y === 0) return false;
+  const r = el.getBoundingClientRect();
+  return x < r.left || x > r.right || y < r.top || y > r.bottom;
+}
+
 export function Dialog({
   title,
   onClose,
@@ -68,6 +77,7 @@ export function Dialog({
   drawerWidth?: number;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const nhanNgoai = useRef(false);
   const titleId = useId();
   useEffect(() => {
     const dialog = ref.current;
@@ -86,8 +96,14 @@ export function Dialog({
         e.preventDefault();
         onClose();
       }}
+      // Bấm ra ngoài khung (vùng nền mờ) thì đóng. So theo toạ độ cho chắc trên mọi trình duyệt; phải nhấn chuột xuống ở ngoài luôn,
+      // để kéo bôi chữ trong ô nhập rồi thả chuột ra ngoài không làm mất hộp.
+      onPointerDown={(e) => {
+        nhanNgoai.current = ngoaiKhung(e.currentTarget, e.clientX, e.clientY, e.target);
+      }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (nhanNgoai.current && ngoaiKhung(e.currentTarget, e.clientX, e.clientY, e.target)) onClose();
+        nhanNgoai.current = false;
       }}
       className={`app-dialog ${variant === 'drawer' ? 'app-drawer' : ''}`}
       style={drawerWidth ? { ['--drawer-w' as string]: `${drawerWidth}px` } : undefined}
@@ -134,6 +150,7 @@ export function Modal({
   top?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const nhanNgoai = useRef(false);
   const titleId = useId();
   useEffect(() => {
     const dialog = ref.current;
@@ -152,8 +169,14 @@ export function Modal({
         e.preventDefault();
         onClose();
       }}
+      // Bấm ra ngoài khung (vùng nền mờ) thì đóng. So theo toạ độ cho chắc trên mọi trình duyệt; phải nhấn chuột xuống ở ngoài luôn,
+      // để kéo bôi chữ trong ô nhập rồi thả chuột ra ngoài không làm mất hộp.
+      onPointerDown={(e) => {
+        nhanNgoai.current = ngoaiKhung(e.currentTarget, e.clientX, e.clientY, e.target);
+      }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (nhanNgoai.current && ngoaiKhung(e.currentTarget, e.clientX, e.clientY, e.target)) onClose();
+        nhanNgoai.current = false;
       }}
       style={{ ['--w' as string]: `${width}px` }}
       className={`app-dialog app-modal ${sheet ? 'app-sheet' : ''}`}

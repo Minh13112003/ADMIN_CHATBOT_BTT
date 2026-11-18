@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GIOI_HAN_TEP_TOI_DA } from '../common/attachments';
-import { GRAPH, SU_KIEN_WEBHOOK, appSecretProof, chiaDoan, loiGraph } from '../common/facebook';
+import { GRAPH, SU_KIEN_WEBHOOK, appSecretProof, chiaDoan, loiGraph, loiToken } from '../common/facebook';
 import { giaiMa, maHoa } from '../common/secret-box';
 import { PrismaService } from '../prisma/prisma.service';
 import { AttachmentsService, type TepDaLuu } from '../storage/attachments.service';
@@ -87,14 +87,20 @@ export class FacebookService {
     const thieu = [['appId', 'App ID'], ['pageId', 'ID Trang'], ['appSecret', 'App Secret'], ['pageAccessToken', 'Page access token'], ['verifyToken', 'Mã xác minh webhook']].filter(([k]) => !c[k]).map(([, t]) => t);
     if (thieu.length) return ketThuc(`Còn thiếu: ${thieu.join(', ')}.`);
 
+    // Kiểm tra token bằng debug_token (app token appId|appSecret): không cần quyền đọc Trang (pages_read_engagement),
+    // đồng thời kiểm luôn App ID + App Secret, loại token, đúng Trang, và token đã có quyền nhắn tin chưa.
     let trang: { id: string; name: string };
     try {
-      const me = await this.goi('/me', { query: { fields: 'id,name' }, c });
-      trang = { id: String(me.id ?? ''), name: String(me.name ?? '') };
-      if (trang.id !== c.pageId) throw new BadRequestException(`Token này thuộc "${trang.name}" (ID ${trang.id}), không khớp ID Trang đã nhập. Có thể bạn đã dán token người dùng thay vì Page access token.`);
-      buoc.push({ ten: `Token đúng Trang "${trang.name}" và khớp App Secret`, ok: true });
+      const q = new URLSearchParams({ input_token: c.pageAccessToken, access_token: `${c.appId}|${c.appSecret}` });
+      const r = await fetch(`${GRAPH}/debug_token?${q}`, { signal: AbortSignal.timeout(30_000) });
+      const j = (await r.json().catch(() => ({}))) as Record<string, any>;
+      if (!r.ok || j.error) throw new BadRequestException(`App ID hoặc App Secret không đúng (${loiGraph(j)})`);
+      const loi = loiToken(j.data ?? {}, c.appId, c.pageId);
+      if (loi) throw new BadRequestException(loi);
+      trang = { id: c.pageId, name: await this.tenTrang(c) };
+      buoc.push({ ten: `Token đúng Trang "${trang.name}", khớp App ID và App Secret, có quyền nhắn tin`, ok: true });
     } catch (e) {
-      buoc.push({ ten: 'Kiểm tra Page access token và App Secret', ok: false, loi: (e as Error).message });
+      buoc.push({ ten: 'Kiểm tra Page access token, App ID và App Secret', ok: false, loi: (e as Error).message });
       return ketThuc((e as Error).message);
     }
 
@@ -119,6 +125,17 @@ export class FacebookService {
       return ketThuc((e as Error).message, trang);
     }
     return ketThuc(null, trang);
+  }
+
+  /** Tên Trang để hiện cho admin. Đọc tên có thể cần quyền đọc Trang mà ứng dụng chưa có: lỗi thì hiện ID, không coi là kết nối hỏng. */
+  private async tenTrang(c: Record<string, string>): Promise<string> {
+    try {
+      const j = await this.goi(`/${encodeURIComponent(c.pageId)}`, { query: { fields: 'name' }, c });
+      if (typeof j.name === 'string' && j.name.trim()) return j.name.trim();
+    } catch {
+      // bỏ qua
+    }
+    return `ID ${c.pageId}`;
   }
 
   async trangThai() {

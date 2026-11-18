@@ -30,7 +30,7 @@ function HopKiemTraFacebook({ kq, onClose }: { kq: KetQuaKiemTra | 'dang'; onClo
   }
   return (
     <Modal title={kq.ok ? 'Kết nối thành công' : 'Kết nối thất bại'} onClose={onClose} width={480} footer={<button type="button" onClick={onClose} className={primaryClass}>Đóng</button>}>
-      <div role={kq.ok ? 'status' : 'alert'} className="flex flex-col items-center gap-3 text-center">
+      <div role={kq.ok ? 'status' : 'alert'} className="flex min-w-0 flex-col items-center gap-3 text-center [overflow-wrap:anywhere]">
         <IconTron ok={kq.ok} />
         <p className="text-sm">
           {kq.ok
@@ -39,7 +39,7 @@ function HopKiemTraFacebook({ kq, onClose }: { kq: KetQuaKiemTra | 'dang'; onClo
         </p>
       </div>
       {kq.buoc.length > 0 && (
-        <ol className="mt-4 flex flex-col gap-2 rounded-xl border border-line bg-page p-3 text-left text-[0.8125rem]">
+        <ol className="mt-4 flex min-w-0 flex-col gap-2 rounded-xl border border-line bg-page p-3 text-left text-[0.8125rem] [overflow-wrap:anywhere]">
           {kq.buoc.map((b) => (
             <li key={b.ten} className="flex gap-2">
               <span aria-hidden="true" className={`mt-0.5 shrink-0 font-bold ${b.ok ? 'text-green-ink' : 'text-brand-text'}`}>{b.ok ? '✓' : '✕'}</span>
@@ -249,7 +249,7 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
         })}
         {laFb && data && (
           <p role="status" className={`rounded-lg border px-3 py-2 text-sm ${data.connected ? 'border-green-soft bg-green-soft/40 text-green-ink' : 'border-line bg-page text-body'}`}>
-            {data.connected ? 'Đã kết nối: lần kiểm tra gần nhất thành công.' : duTruong ? 'Đã nhập đủ thông tin nhưng chưa kết nối được. Bấm "Kiểm tra kết nối" để thử lại.' : 'Nhập đủ 5 ô rồi bấm Lưu: hệ thống tự kiểm tra và tự khai webhook với Meta.'}
+            {data.connected ? 'Đã kết nối: lần kiểm tra gần nhất thành công.' : duTruong ? 'Đã nhập đủ thông tin nhưng chưa kết nối được. Bấm "Kiểm tra kết nối" để thử lại.' : 'Nhập đủ 5 ô rồi bấm Lưu: hệ thống tự kiểm tra và tự khai webhook với Meta (không cần nhập mã xác minh bên trang Meta).'}
           </p>
         )}
         {laFb && data?.urls && (

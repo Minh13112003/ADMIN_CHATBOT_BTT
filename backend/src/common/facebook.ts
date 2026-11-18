@@ -105,6 +105,27 @@ export function chiaDoan(text: string, toiDa = DO_DAI_TIN_TOI_DA): string[] {
   return ra;
 }
 
+/** Quyền token cần có: nhắn tin, và đăng ký Trang nhận sự kiện webhook. */
+export const QUYEN_CAN = ['pages_messaging', 'pages_manage_metadata'];
+
+/**
+ * Đọc kết quả `debug_token` của Page access token. Trả câu lỗi tiếng Việt, hoặc null khi token dùng được.
+ * Token Trang có `type: "PAGE"` và `profile_id` là ID Trang; quyền nằm ở `scopes` (và `granular_scopes[].target_ids`).
+ */
+export function loiToken(d: Record<string, unknown>, appId: string, pageId: string): string | null {
+  if (d.is_valid !== true) return 'Page access token không hợp lệ hoặc đã hết hạn. Tạo lại token trong mục Cài đặt API Messenger rồi nhập lại.';
+  if (d.app_id !== undefined && String(d.app_id) !== appId) return `Token này được tạo từ ứng dụng khác (App ID ${String(d.app_id)}), không phải ứng dụng có App ID đã nhập.`;
+  if (d.type !== 'PAGE') return 'Đây không phải Page access token (có thể bạn đã dán token người dùng). Lấy token ở Cài đặt API Messenger → Tạo mã truy cập, dòng của Trang.';
+  const gran = Array.isArray(d.granular_scopes) ? (d.granular_scopes as { scope?: string; target_ids?: unknown[] }[]) : [];
+  const trangCuaToken = d.profile_id !== undefined ? String(d.profile_id) : null;
+  const thuocTrang = trangCuaToken ? trangCuaToken === pageId : gran.some((g) => (g.target_ids ?? []).map(String).includes(pageId));
+  if (!thuocTrang) return `Token này thuộc Trang khác${trangCuaToken ? ` (ID ${trangCuaToken})` : ''}, không khớp ID Trang đã nhập.`;
+  const scopes = new Set([...(Array.isArray(d.scopes) ? (d.scopes as string[]) : []), ...gran.map((g) => g.scope ?? '')]);
+  const thieu = QUYEN_CAN.filter((q) => !scopes.has(q));
+  if (thieu.length) return `Token chưa có quyền ${thieu.join(', ')}. Tạo lại token ở Cài đặt API Messenger và bấm cho phép đủ các quyền được hỏi.`;
+  return null;
+}
+
 /** Lỗi Graph API thành câu tiếng Việt cho admin/sale. Mã lỗi theo tài liệu Messenger Platform. */
 export function loiGraph(j: unknown): string {
   const e = ((j ?? {}) as Record<string, unknown>).error as Record<string, unknown> | undefined;
@@ -116,6 +137,7 @@ export function loiGraph(j: unknown): string {
   if (code === 100 && /appsecret_proof/i.test(msg)) return 'Khoá bí mật của ứng dụng (App Secret) không khớp với token. Kiểm tra lại App Secret trong Cài đặt ứng dụng → Cơ bản.';
   if (code === 10 && sub === 2018278) return 'Đã quá 24 giờ từ tin cuối của khách nên Messenger không cho gửi. Chờ khách nhắn lại, hoặc trả lời trên Meta Business Suite.';
   if (code === 551) return 'Người này hiện không nhận được tin nhắn từ Trang.';
+  if (code === 100 && /permission|feature/i.test(msg)) return `Ứng dụng chưa có đủ quyền cho thao tác này (${msg.split('.')[0]}).`;
   if (code === 200 || code === 10) return `Ứng dụng chưa có đủ quyền: ${msg || 'không rõ'}`;
   if (code === 4 || code === 32 || code === 613) return 'Facebook đang giới hạn số lần gọi, thử lại sau ít phút.';
   return `Facebook báo lỗi ${Number.isFinite(code) ? code : ''}${sub ? `/${sub}` : ''}: ${msg || 'không rõ'}`;

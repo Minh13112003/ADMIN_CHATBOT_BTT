@@ -1,5 +1,5 @@
 import { createHmac } from 'crypto';
-import { appSecretProof, bangNhau, chiaDoan, chuKyFacebookHopLe, loiGraph, phanTichFacebook } from './facebook';
+import { appSecretProof, bangNhau, chiaDoan, chuKyFacebookHopLe, loiGraph, loiToken, phanTichFacebook } from './facebook';
 
 describe('chuKyFacebookHopLe', () => {
   const goc = '{"object":"page","entry":[]}';
@@ -77,5 +77,23 @@ describe('loiGraph', () => {
     expect(loiGraph({ error: { code: 200, message: 'Requires pages_messaging' } })).toMatch(/pages_messaging/);
     expect(loiGraph({ error: { code: 1, message: 'Lạ' } })).toBe('Facebook báo lỗi 1: Lạ');
     expect(loiGraph({})).toMatch(/định dạng/);
+  });
+});
+
+describe('loiToken', () => {
+  const tot = { is_valid: true, app_id: '999', type: 'PAGE', profile_id: '123', scopes: ['pages_messaging', 'pages_manage_metadata', 'pages_show_list'] };
+  it('token Trang đúng ứng dụng, đúng Trang, đủ quyền thì dùng được', () => expect(loiToken(tot, '999', '123')).toBeNull());
+  it('nhận Trang qua granular_scopes khi không có profile_id', () => {
+    expect(loiToken({ ...tot, profile_id: undefined, granular_scopes: [{ scope: 'pages_messaging', target_ids: ['123'] }] }, '999', '123')).toBeNull();
+  });
+  it('báo từng lỗi dễ hiểu', () => {
+    expect(loiToken({ ...tot, is_valid: false }, '999', '123')).toMatch(/hết hạn/);
+    expect(loiToken({ ...tot, app_id: '111' }, '999', '123')).toMatch(/ứng dụng khác/);
+    expect(loiToken({ ...tot, type: 'USER' }, '999', '123')).toMatch(/token người dùng/);
+    expect(loiToken({ ...tot, profile_id: '456' }, '999', '123')).toMatch(/Trang khác \(ID 456\)/);
+    expect(loiToken({ ...tot, scopes: ['pages_messaging'] }, '999', '123')).toMatch(/pages_manage_metadata/);
+  });
+  it('lỗi thiếu quyền (mã 100) thành câu ngắn, không dán nguyên đoạn tiếng Anh dài', () => {
+    expect(loiGraph({ error: { code: 100, message: '(#100) Object does not exist, cannot be loaded due to missing permission. Refer to https://x' } })).toBe('Ứng dụng chưa có đủ quyền cho thao tác này ((#100) Object does not exist, cannot be loaded due to missing permission).');
   });
 });
