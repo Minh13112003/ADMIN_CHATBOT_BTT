@@ -518,4 +518,25 @@ export class IngestService {
     const items = rows.map((m) => ({ id: m.id, createdAt: m.createdAt, text: m.replyTo ? `“${tomTat(m.replyTo.text, 80)}”\n${m.text}` : m.text, attachment: this.tep.dinhKem(m, HAN_LINK_KHACH_GIAY) }));
     return { mode: conv.mode, items };
   }
+
+  /**
+   * Tin nhân viên gần đây của một khách, để chatbot biết nhân viên đã nói gì (khách thường trả lời đúng thứ nhân viên vừa gửi:
+   * "Còn này ạ", "Tour này có Tết không"). Chỉ đọc: KHÁC `updates`, không đánh dấu "khách đã xem". Không có log nội bộ (`internal: false`).
+   * Tệp đính kèm chỉ trả loại và tên, không trả link; chatbot không đọc được nội dung tệp. Tối đa 20 tin gần nhất, cũ trước mới sau.
+   */
+  async staffHistory(channel: Channel, externalUserId: string, after?: string) {
+    const identity = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel, externalId: externalUserId } } });
+    if (!identity) return { items: [] };
+    const conv = await this.prisma.conversation.findUnique({ where: { customerId_channel: { customerId: identity.customerId, channel } } });
+    if (!conv) return { items: [] };
+    const moc = after ? new Date(after) : new Date(Date.now() - 2 * 24 * 3600_000);
+    if (Number.isNaN(moc.getTime())) throw new BadRequestException('Mốc thời gian không hợp lệ');
+    const rows = await this.prisma.message.findMany({
+      where: { conversationId: conv.id, internal: false, senderType: 'STAFF', createdAt: { gt: moc } },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+      select: { text: true, createdAt: true, attachmentType: true, attachmentName: true },
+    });
+    return { items: rows.reverse().map((m) => ({ createdAt: m.createdAt, text: m.text, attachmentType: m.attachmentType, attachmentName: m.attachmentName })) };
+  }
 }

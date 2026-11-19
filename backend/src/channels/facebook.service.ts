@@ -19,6 +19,8 @@ export type KetQuaKiemTra = { ok: boolean; trang: { id: string; name: string } |
 export class FacebookService {
   private log = new Logger('Facebook');
   private guiLoi = { ngay: '', so: 0, lyDo: '' };
+  /** Lý do lần đọc hồ sơ khách (tên, ảnh) gần nhất thất bại, để trang Kênh kết nối hiện ra thay vì phải xem log máy chủ. */
+  private hoSoLoi: { luc: string; lyDo: string } | null = null;
 
   constructor(private prisma: PrismaService, private config: ConfigService, private tep: AttachmentsService) {}
 
@@ -147,7 +149,7 @@ export class FacebookService {
       ketNoi = null;
     }
     const ngay = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
-    return { ketNoi, guiLoiHomNay: this.guiLoi.ngay === ngay ? this.guiLoi.so : 0, loiGuiGanNhat: this.guiLoi.ngay === ngay ? this.guiLoi.lyDo : null };
+    return { ketNoi, guiLoiHomNay: this.guiLoi.ngay === ngay ? this.guiLoi.so : 0, loiGuiGanNhat: this.guiLoi.ngay === ngay ? this.guiLoi.lyDo : null, loiHoSoGanNhat: this.hoSoLoi };
   }
 
   /** Gửi tin chữ trả lời khách (trong khung 24 giờ). Tin dài hơn 2.000 ký tự được cắt thành nhiều tin. */
@@ -168,17 +170,42 @@ export class FacebookService {
     if (chu) await this.guiTin(psid, chu);
   }
 
-  /** Tên và ảnh đại diện của khách (User Profile API); lỗi thì trả rỗng, không chặn việc nhận tin. */
+  /**
+   * Tên và ảnh đại diện của khách. Cách 1: User Profile API (`/{psid}`), thử từ nhiều trường xuống ít trường vì Meta từ chối cả yêu cầu nếu một trường
+   * không được phép. Cách 2 khi chưa có tên: danh sách cuộc trò chuyện của Trang (`/me/conversations?user_id=`), có tên người tham gia và chỉ cần
+   * quyền đọc Trang, không cần quyền riêng để đọc hồ sơ người dùng. Lỗi thì trả rỗng, không chặn việc nhận tin.
+   */
   async hoSoKhach(psid: string): Promise<{ ten: string | null; anh: string | null }> {
-    try {
-      const j = await this.goi(`/${encodeURIComponent(psid)}`, { query: { fields: 'name,first_name,last_name,profile_pic' } });
-      const ten = (typeof j.name === 'string' && j.name.trim()) || [j.last_name, j.first_name].filter((x) => typeof x === 'string' && x.trim()).join(' ').trim();
-      const anh = typeof j.profile_pic === 'string' && /^https:\/\//.test(j.profile_pic) && j.profile_pic.length <= 1000 ? j.profile_pic : null;
-      return { ten: ten ? ten.slice(0, 120) : null, anh };
-    } catch (e) {
-      this.log.warn(`Không lấy được hồ sơ khách Facebook: ${(e as Error).message}`);
-      return { ten: null, anh: null };
+    let ten: string | null = null;
+    let anh: string | null = null;
+    const loi: string[] = [];
+    for (const fields of ['name,first_name,last_name,profile_pic', 'first_name,last_name,profile_pic', 'profile_pic', 'name']) {
+      try {
+        const j = await this.goi(`/${encodeURIComponent(psid)}`, { query: { fields } });
+        const t = (typeof j.name === 'string' && j.name.trim()) || [j.last_name, j.first_name].filter((x) => typeof x === 'string' && x.trim()).join(' ').trim();
+        ten = t ? t.slice(0, 120) : null;
+        anh = typeof j.profile_pic === 'string' && /^https:\/\//.test(j.profile_pic) && j.profile_pic.length <= 1000 ? j.profile_pic : null;
+        if (ten || anh) break;
+      } catch (e) {
+        loi.push((e as Error).message);
+      }
     }
+    if (!ten) {
+      try {
+        const j = await this.goi('/me/conversations', { query: { user_id: psid, fields: 'participants' } });
+        const nguoi = (j.data?.[0]?.participants?.data ?? []) as { id?: string; name?: string }[];
+        const t = nguoi.find((n) => String(n.id) === psid)?.name;
+        if (typeof t === 'string' && t.trim()) ten = t.trim().slice(0, 120);
+      } catch (e) {
+        loi.push((e as Error).message);
+      }
+    }
+    if (ten || anh) this.hoSoLoi = null;
+    else {
+      this.hoSoLoi = { luc: new Date().toISOString(), lyDo: loi.at(-1) || 'Facebook không trả tên hay ảnh cho người này' };
+      this.log.warn(`Không lấy được hồ sơ khách Facebook: ${this.hoSoLoi.lyDo}`);
+    }
+    return { ten, anh };
   }
 
   /** Tải ảnh/PDF khách gửi về máy chủ (link Facebook có hạn). Không được thì null để ghi dòng chữ thay thế. */

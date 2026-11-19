@@ -8,6 +8,7 @@ import { RealtimeProvider } from '@/lib/realtime';
 import type { Me } from '@/lib/types';
 import AccountsPage from '@/pages/AccountsPage';
 import CustomersPage from '@/pages/CustomersPage';
+import DataDeletionPage from '@/pages/DataDeletionPage';
 import InboxPage from '@/pages/InboxPage';
 import LoginPage from '@/pages/LoginPage';
 import StatsPage from '@/pages/StatsPage';
@@ -65,6 +66,7 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/xoa-du-lieu" element={<DataDeletionPage />} />
       <Route element={<WorkspaceLayout />}>
         <Route path="/inbox" element={<InboxGate><InboxPage /></InboxGate>} />
         <Route path="/customers" element={<NotDigital><CustomersPage /></NotDigital>} />

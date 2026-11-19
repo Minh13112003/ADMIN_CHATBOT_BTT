@@ -100,4 +100,10 @@ export class IngestController {
   updates(@Query() q: UpdatesQuery) {
     return this.svc.updates(q.channel, q.externalUserId, q.after);
   }
+
+  /** Tin nhân viên gần đây, chỉ đọc (xem `IngestService.staffHistory`). */
+  @Get('staff-history')
+  staffHistory(@Query() q: UpdatesQuery) {
+    return this.svc.staffHistory(q.channel, q.externalUserId, q.after);
+  }
 }

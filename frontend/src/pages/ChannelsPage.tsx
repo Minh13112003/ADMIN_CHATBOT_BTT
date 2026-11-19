@@ -33,7 +33,7 @@ const DETAILS = {
     description: "Chưa kết nối. Cần quyền quản trị Trang.",
   },
 };
-type TrangThaiFacebook = { ketNoi: { luc: string; trang: string } | null; guiLoiHomNay: number; loiGuiGanNhat: string | null };
+type TrangThaiFacebook = { ketNoi: { luc: string; trang: string } | null; guiLoiHomNay: number; loiGuiGanNhat: string | null; loiHoSoGanNhat: { luc: string; lyDo: string } | null };
 
 function ChiTietFacebook({ f }: { f: TrangThaiFacebook }) {
   const dong = "flex items-center justify-between gap-3 rounded-[10px] border border-line px-3.5 py-2.5 text-[0.8125rem]";
@@ -49,6 +49,12 @@ function ChiTietFacebook({ f }: { f: TrangThaiFacebook }) {
         <span className="flex justify-between gap-3"><span>Tin gửi sang Messenger bị lỗi hôm nay</span><strong className={f.guiLoiHomNay ? "text-alert-ink" : ""}>{f.guiLoiHomNay} tin</strong></span>
         {f.loiGuiGanNhat && <span className="text-xs text-muted">Lỗi gần nhất: {f.loiGuiGanNhat}</span>}
       </div>
+      {f.loiHoSoGanNhat && (
+        <div className={`${dong} flex-col items-stretch`}>
+          <span className="font-medium">Chưa lấy được tên và ảnh khách từ Facebook</span>
+          <span className="text-xs text-muted [overflow-wrap:anywhere]">{f.loiHoSoGanNhat.lyDo}</span>
+        </div>
+      )}
     </div>
   );
 }

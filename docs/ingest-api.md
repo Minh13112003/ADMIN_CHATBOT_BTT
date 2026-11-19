@@ -114,3 +114,12 @@ Chỉ gọi khi khung chat phía khách đang mở: mỗi lần gọi được g
 `attachment` là `null` khi tin không có file; tin chỉ có file thì `text` rỗng. `url` là **đường dẫn tương đối**: nơi nhận thêm địa chỉ trang quản trị (chatbot dùng `ADMIN_CHAT_PUBLIC_URL`). Link sống 7 ngày và mở được không cần đăng nhập (xem mục "File đính kèm").
 
 Thiết bị mới phải truyền `after` là thời điểm hiện tại để không đọc tin cũ của khách.
+
+## GET /staff-history?channel=&externalUserId=&after= (thêm 2026-11-19)
+Tin nhân viên gần đây của một khách để **chatbot** biết nhân viên đã nói gì (khách hay trả lời đúng thứ nhân viên vừa gửi). **Chỉ đọc**: khác `/updates`, không ghi "khách đã xem". Chỉ tin nhân viên, không log nội bộ, tối đa 20 tin gần nhất, cũ trước mới sau; `after` bỏ trống thì lấy 2 ngày gần nhất.
+
+```json
+{ "items": [{ "createdAt": "...", "text": "...", "attachmentType": "application/pdf", "attachmentName": "tour.pdf" }] }
+```
+
+Tệp đính kèm chỉ có loại và tên, không có link. Chatbot đưa các tin này vào khối "NHÂN VIÊN BENTHANH ĐÃ NHẮN KHÁCH GẦN ĐÂY" trong prompt (`main.ghi_chu_nhan_vien`); không nối được thì bỏ qua, vẫn trả lời bình thường.
