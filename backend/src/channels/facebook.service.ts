@@ -173,7 +173,7 @@ export class FacebookService {
   /**
    * Tên và ảnh đại diện của khách. Cách 1: User Profile API (`/{psid}`), thử từ nhiều trường xuống ít trường vì Meta từ chối cả yêu cầu nếu một trường
    * không được phép. Cách 2 khi chưa có tên: danh sách cuộc trò chuyện của Trang (`/me/conversations?user_id=`), có tên người tham gia và chỉ cần
-   * quyền đọc Trang, không cần quyền riêng để đọc hồ sơ người dùng. Lỗi thì trả rỗng, không chặn việc nhận tin.
+   * quyền đọc Trang, không cần quyền riêng để đọc hồ sơ người dùng. Cách 3 khi chưa có ảnh: `/{psid}/picture`. Lỗi thì trả rỗng, không chặn việc nhận tin.
    */
   async hoSoKhach(psid: string): Promise<{ ten: string | null; anh: string | null }> {
     let ten: string | null = null;
@@ -196,6 +196,16 @@ export class FacebookService {
         const nguoi = (j.data?.[0]?.participants?.data ?? []) as { id?: string; name?: string }[];
         const t = nguoi.find((n) => String(n.id) === psid)?.name;
         if (typeof t === 'string' && t.trim()) ten = t.trim().slice(0, 120);
+      } catch (e) {
+        loi.push((e as Error).message);
+      }
+    }
+    if (!anh) {
+      // Ảnh qua đường riêng /picture: có khi mở được dù hồ sơ bị từ chối. Ảnh mặc định (hình bóng người) bỏ qua để hộp thư hiện chữ cái đầu của tên.
+      try {
+        const j = await this.goi(`/${encodeURIComponent(psid)}/picture`, { query: { redirect: 'false', type: 'large' } });
+        const u = j.data?.url;
+        if (typeof u === 'string' && /^https:\/\//.test(u) && u.length <= 1000 && !j.data?.is_silhouette) anh = u;
       } catch (e) {
         loi.push((e as Error).message);
       }

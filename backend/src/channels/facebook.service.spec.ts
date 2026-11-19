@@ -40,6 +40,7 @@ describe('FacebookService.hoSoKhach', () => {
     const f = tra(
       ...Array.from({ length: 4 }, () => ({ error: { code: 100, message: '(#100) Unsupported get request. Object with ID 1 does not exist, cannot be loaded due to missing permission' } })),
       { data: [{ participants: { data: [{ id: 'PAGE', name: 'BenThanh Tourist' }, { id: 'U1', name: 'Lam Nguyễn' }] } }] },
+      { error: { code: 100, message: 'Unsupported get request' } },
     );
     expect(await tao().hoSoKhach('U1')).toEqual({ ten: 'Lam Nguyễn', anh: null });
     const u = new URL(f.mock.calls[4][0]);
@@ -47,8 +48,21 @@ describe('FacebookService.hoSoKhach', () => {
     expect(u.searchParams.get('user_id')).toBe('U1');
   });
 
+  it('hồ sơ bị từ chối nhưng đường /picture mở được thì lấy ảnh; ảnh mặc định (hình bóng) thì bỏ', async () => {
+    const tu = (data: Record<string, unknown>) => [
+      ...Array.from({ length: 4 }, () => ({ error: { code: 100, message: 'Unsupported get request' } })),
+      { data: [{ participants: { data: [{ id: 'U1', name: 'Lam' }] } }] },
+      { data },
+    ];
+    const f = tra(...tu({ url: 'https://scontent/a.jpg', is_silhouette: false }));
+    expect(await tao().hoSoKhach('U1')).toEqual({ ten: 'Lam', anh: 'https://scontent/a.jpg' });
+    expect(new URL(f.mock.calls[5][0]).pathname).toMatch(/\/U1\/picture$/);
+    tra(...tu({ url: 'https://scontent/mac-dinh.jpg', is_silhouette: true }));
+    expect(await tao().hoSoKhach('U1')).toEqual({ ten: 'Lam', anh: null });
+  });
+
   it('bị từ chối hết thì trả rỗng, không ném lỗi, và nhớ lý do để trang Kênh kết nối hiện', async () => {
-    tra(...Array.from({ length: 5 }, () => ({ error: { code: 200, message: 'Requires pages_read_engagement' } })));
+    tra(...Array.from({ length: 6 }, () => ({ error: { code: 200, message: 'Requires pages_read_engagement' } })));
     const svc = tao();
     expect(await svc.hoSoKhach('U1')).toEqual({ ten: null, anh: null });
     const t = await svc.trangThai();
