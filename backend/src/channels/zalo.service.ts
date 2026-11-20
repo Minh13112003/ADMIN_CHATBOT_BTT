@@ -252,6 +252,14 @@ export class ZaloService {
         { ten: 'attachment_id', body: async () => tin({ attachment_id: await this.taiLenZalo('gif', tep.data, tep.name, tep.type) }) },
       ];
       if (tep.linkGif && tep.data.length <= 1024 * 1024) cach.push({ ten: 'url', body: async () => tin({ url: `${this.goc()}/api/v1${tep.linkGif}` }) });
+      // Thử thêm bản nhỏ (tối đa 240 px) phòng khi Zalo có giới hạn kích thước ảnh động không ghi trong tài liệu.
+      if (kichThuoc.width > 240 || kichThuoc.height > 240) cach.push({ ten: 'gif nhỏ 240px', body: async () => {
+        const nho = await sharp(tep.data, { animated: true, limitInputPixels: 40_000_000 })
+          .resize({ width: 240, height: 240, fit: 'inside' }).gif({ effort: 7, loop: 0 }).toBuffer();
+        const m = await sharp(nho, { animated: true }).metadata();
+        return { recipient: { user_id: zaloUserId }, message: { attachment: { type: 'template', payload: { template_type: 'media', elements: [{
+          media_type: 'gif', attachment_id: await this.taiLenZalo('gif', nho, tep.name, tep.type), width: m.width, height: m.pageHeight ?? m.height }] } } } };
+      } });
       const loi: string[] = [];
       for (const c of cach) {
         try {

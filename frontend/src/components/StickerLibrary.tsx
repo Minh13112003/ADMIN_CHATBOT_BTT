@@ -39,7 +39,7 @@ export function StickerLibrary({ manage = false, onSelect }: { manage?: boolean;
         // Backend giới hạn 20 upload/phút; giãn lượt khi chọn cả bộ sticker.
         if (index) await new Promise((resolve) => setTimeout(resolve, 3200));
         setMessage(`Đang tải ${index + 1}/${batch.length}: ${file.name}`);
-        if (!/\.webp$/i.test(file.name) || file.size > 5 * 1024 * 1024) throw new Error(`${file.name}: cần file .webp tối đa 5 MB`);
+        if (!/\.(webp|gif)$/i.test(file.name) || file.size > 5 * 1024 * 1024) throw new Error(`${file.name}: cần file .webp hoặc .gif tối đa 5 MB`);
         const form = new FormData();
         form.append('file', file);
         if (uploadPack) form.append('packId', uploadPack);
@@ -90,16 +90,16 @@ export function StickerLibrary({ manage = false, onSelect }: { manage?: boolean;
         </select>
       </label>
       <button type="button" disabled={busy} className={secondaryClass} onClick={() => setPackDialog({ pack: null, name: '' })}>Tạo tệp mới</button>
-      <input ref={input} type="file" multiple hidden accept=".webp,image/webp" onChange={(e) => { void upload(e.target.files); e.target.value = ''; }} />
+      <input ref={input} type="file" multiple hidden accept=".webp,image/webp,.gif,image/gif" onChange={(e) => { void upload(e.target.files); e.target.value = ''; }} />
       <button type="button" disabled={busy} className={primaryClass} onClick={() => input.current?.click()}>{busy ? 'Đang xử lý…' : 'Tải sticker lên'}</button>
-      <p className="basis-full text-sm text-muted">File WebP tối đa 5 MB, chọn được nhiều file một lần. Giữ chuyển động nếu ảnh gốc là ảnh động.</p>
+      <p className="basis-full text-sm text-muted">File WebP hoặc GIF tối đa 5 MB, chọn được nhiều file một lần. Giữ chuyển động nếu ảnh gốc là ảnh động. File GIF được giữ nguyên bản gốc để gửi sang Zalo.</p>
     </div>}
     <input type="search" aria-label="Tìm sticker" placeholder="Tìm sticker theo tên…" value={search} onChange={(e) => setSearch(e.target.value)} className="min-h-11 w-full rounded-xl border border-field bg-surface px-3 text-sm" />
     {message && <p role="status" className="text-sm text-brand-text">{message}</p>}
     <ErrorText>{errorText || (error ? loiCua(error) : '')}</ErrorText>
     {error && <button type="button" className={secondaryClass} onClick={() => void lamMoi()}>Thử lại</button>}
     {isLoading && <p role="status" className="text-sm text-muted">Đang tải kho sticker…</p>}
-    {!isLoading && !error && !nhom.length && <p className="rounded-xl border border-dashed border-line p-6 text-center text-sm text-muted">{search ? 'Không tìm thấy sticker phù hợp.' : manage ? 'Chưa có sticker. Tạo tệp rồi tải file WebP đầu tiên để cả nhóm cùng sử dụng.' : 'Kho sticker đang trống. Nhờ quản trị viên tải sticker lên.'}</p>}
+    {!isLoading && !error && !nhom.length && <p className="rounded-xl border border-dashed border-line p-6 text-center text-sm text-muted">{search ? 'Không tìm thấy sticker phù hợp.' : manage ? 'Chưa có sticker. Tạo tệp rồi tải file WebP hoặc GIF đầu tiên để cả nhóm cùng sử dụng.' : 'Kho sticker đang trống. Nhờ quản trị viên tải sticker lên.'}</p>}
 
     {nhom.map(({ pack, rows: ds }) => <section key={pack?.id ?? 'khac'} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2 border-b border-line pb-2">

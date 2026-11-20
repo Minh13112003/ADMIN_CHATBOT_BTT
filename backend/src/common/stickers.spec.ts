@@ -28,6 +28,21 @@ describe('sticker WebP', () => {
     expect(await chuanBiSticker(image)).toMatchObject({ animated: false, width: 512, height: 256 });
   });
 
+  it('GIF động tải lên được giữ nguyên bản gốc để gửi, vẫn tạo WebP để hiện trên trang', async () => {
+    const gif = await sharp(await webpDong(), { animated: true }).gif({ loop: 0 }).toBuffer();
+    const s = await chuanBiSticker(gif, 'ami_01.gif');
+    expect(s.gif.equals(gif)).toBe(true);
+    expect(s).toMatchObject({ name: 'ami_01', animated: true, width: 16, height: 16 });
+    expect((await sharp(s.webp, { animated: true }).metadata()).pages).toBe(2);
+  });
+
+  it('GIF lớn hơn 512 px thì thu nhỏ, không giữ bản gốc', async () => {
+    const gif = await sharp({ create: { width: 800, height: 400, channels: 4, background: 'red' } }).gif().toBuffer();
+    const s = await chuanBiSticker(gif, 'to.gif');
+    expect(s.gif.equals(gif)).toBe(false);
+    expect(s).toMatchObject({ width: 512, height: 256 });
+  });
+
   it('từ chối giả đuôi, file hỏng và quá dung lượng', async () => {
     await expect(chuanBiSticker(Buffer.from('<svg/>'), 'x.webp')).rejects.toThrow('WebP');
     await expect(chuanBiSticker(Buffer.from('RIFFxxxxWEBPbad'))).rejects.toThrow('Không đọc được');
