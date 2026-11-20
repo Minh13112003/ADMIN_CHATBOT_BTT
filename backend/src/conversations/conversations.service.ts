@@ -1,4 +1,5 @@
 import { thongKeDoi } from '../common/stats-cache';
+import { StickersService } from '../stickers/stickers.service';
 import { AppNotificationsService } from '../app-mobile/app-notifications.service';
 import { ZaloService } from '../channels/zalo.service';
 import { FacebookService } from '../channels/facebook.service';
@@ -55,7 +56,7 @@ export type PatchInput = { tags?: string[]; note?: string; interest?: string; au
 export class ConversationsService {
   private log = new Logger('Conversations');
 
-  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService, private zalo: ZaloService, private appThongBao?: AppNotificationsService, private fb?: FacebookService) {}
+  constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService, private zalo: ZaloService, private appThongBao?: AppNotificationsService, private fb?: FacebookService, private stickers?: StickersService) {}
 
   /** Bỏ đường dẫn lưu trữ, thêm `attachment` (link xem có hạn) trước khi gửi ra ngoài. */
   private ra<T extends { id: string; attachmentPath: string | null; attachmentType: string | null; attachmentName: string | null; attachmentSize: number | null }>(m: T) {
@@ -228,10 +229,10 @@ export class ConversationsService {
    * Sale nào cũng gửi được ("trả lời là nhận", xem common/locks.ts).
    * Đồng nghiệp đang soạn hoặc vừa gửi thì trả 409 OTHER_ACTIVE, giao diện hỏi lại rồi gửi kèm `confirm`.
    */
-  async send(user: AuthUser, id: string, dto: { text?: string; confirm?: boolean; replyToId?: string }, file?: { buffer: Buffer; originalname?: string }) {
+  async send(user: AuthUser, id: string, dto: { text?: string; confirm?: boolean; replyToId?: string; stickerId?: string }, file?: { buffer: Buffer; originalname?: string }) {
     const c = await this.lay(id);
     const noiDung = (dto.text ?? '').trim();
-    if (!noiDung && !file) throw new BadRequestException('Tin nhắn đang trống');
+    if (!noiDung && !file && !dto.stickerId) throw new BadRequestException('Tin nhắn đang trống');
     const now = new Date();
     const khac = await this.dongNghiep(c, user.id, await this.tenNhanVien());
     if (khac && !dto.confirm) {
@@ -244,7 +245,8 @@ export class ConversationsService {
     }
     // Kênh Zalo: gửi sang Zalo trước khi lưu, lỗi thì báo ngay và không lưu tin giả vờ đã gửi.
     // Kiểm tra và thu nhỏ file trước (chưa lưu), để gửi sang Zalo đúng bản đã thu nhỏ.
-    const chuanBi = file ? await this.tep.chuanBi(file) : null;
+    if (dto.stickerId && !this.stickers) throw new BadRequestException('Kho sticker chưa sẵn sàng');
+    const chuanBi = dto.stickerId ? await this.stickers!.prepare(dto.stickerId) : file ? await this.tep.chuanBi(file) : null;
     if (c.channel === 'ZALO') {
       const danhTinh = await this.prisma.customerIdentity.findFirst({ where: { customerId: c.customerId, channel: 'ZALO' }, select: { externalId: true } });
       if (!danhTinh) throw new BadRequestException('Không tìm thấy tài khoản Zalo của khách này');

@@ -20,6 +20,7 @@ import RemindersPage from '@/pages/RemindersPage';
 import ChannelsPage from '@/pages/ChannelsPage';
 import TourInterestPage from '@/pages/TourInterestPage';
 import VouchersPage from '@/pages/VouchersPage';
+import StickersPage from '@/pages/StickersPage';
 
 /** Sale không thấy trang này. Chỉ để dễ dùng, quyền thật do backend kiểm tra. */
 function AdminOnly({ children }: { children: ReactNode }) {
@@ -79,6 +80,7 @@ export function App() {
         <Route path="/stats" element={<AdminOrDept><StatsPage /></AdminOrDept>} />
         <Route path="/performance" element={<Navigate to="/stats?view=sales" replace />} />
         <Route path="/channels" element={<AdminOnly><ChannelsPage /></AdminOnly>} />
+        <Route path="/stickers" element={<AdminOnly><StickersPage /></AdminOnly>} />
         <Route path="/accounts" element={<AdminOrDept><AccountsPage /></AdminOrDept>} />
         <Route path="/vouchers" element={<AdminOrDept><VouchersPage /></AdminOrDept>} />
       </Route>

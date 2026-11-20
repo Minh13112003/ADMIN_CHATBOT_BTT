@@ -1,6 +1,6 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { mkdir, rename, stat, unlink, writeFile } from 'fs/promises';
+import { mkdir, readFile, rename, stat, unlink, writeFile } from 'fs/promises';
 import { dirname } from 'path';
 import { duongDanTrongThuMuc } from '../common/attachments';
 
@@ -39,6 +39,28 @@ export class StorageService {
 
   daCauHinh() {
     return this.laODia || !!(this.url && this.bucket && this.config.get<string>('SUPABASE_SECRET_KEY'));
+  }
+
+  /** Đọc tài sản do server tạo; giới hạn kích thước trước khi đưa vào bộ nhớ. */
+  async doc(path: string, maxBytes: number): Promise<Buffer> {
+    this.bat();
+    if (this.laODia) {
+      const f = duongDanTrongThuMuc(this.thuMuc, path);
+      if (!f || (await stat(f)).size > maxBytes) throw new ServiceUnavailableException('Không đọc được file');
+      return readFile(f);
+    }
+    const res = await fetch(`${this.url}/storage/v1/object/authenticated/${this.bucket}/${path}`, {
+      headers: this.headers, signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok || !res.body) throw new ServiceUnavailableException('Không đọc được file');
+    const chunks: Buffer[] = [];
+    let size = 0;
+    for await (const chunk of res.body as unknown as AsyncIterable<Uint8Array>) {
+      size += chunk.length;
+      if (size > maxBytes) throw new ServiceUnavailableException('File vượt giới hạn');
+      chunks.push(Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
   }
 
   private bat() {

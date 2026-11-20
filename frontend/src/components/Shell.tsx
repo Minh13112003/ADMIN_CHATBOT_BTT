@@ -27,6 +27,7 @@ const NAV = [
   { href: '/deals', label: 'Đơn đặt tour', icon: <><rect x="4" y="3" width="16" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></> },
   { href: '/reminders', label: 'Lịch hẹn nhắc', icon: <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M7 3v4M17 3v4M3 10h18M8 15h8" /></> },
   { href: '/templates', label: 'Thư viện trả lời', icon: <path d="M13 2 4 14h7l-1 8 9-12h-7z" /> },
+  { href: '/stickers', label: 'Kho sticker', admin: true, icon: <><rect x="3" y="3" width="18" height="18" rx="5" /><path d="M8 14s1 3 4 3 4-3 4-3M8 8h1M15 8h1" /></> },
   { href: '/settings', label: 'Cài đặt hiển thị', icon: <><circle cx="12" cy="12" r="3" /><path d="M4 7h4M16 7h4M4 17h4M16 17h4" /></> },
   {
     href: '/stats',

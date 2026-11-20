@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { StickersController } from './stickers/stickers.controller';
+import { StickersService } from './stickers/stickers.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
@@ -64,6 +66,7 @@ import { AppNotificationsService } from './app-mobile/app-notifications.service'
     StorageModule,
   ],
   controllers: [
+    StickersController,
     HealthController,
     AuthController,
     UsersController,
@@ -99,6 +102,7 @@ import { AppNotificationsService } from './app-mobile/app-notifications.service'
     IngestController,
   ],
   providers: [
+    StickersService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
     IngestKeyGuard,

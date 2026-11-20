@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { randomBytes } from 'crypto';
+import sharp from 'sharp';
 import { GIOI_HAN_TEP_TOI_DA } from '../common/attachments';
 import { giaiMa, maHoa } from '../common/secret-box';
 import { AttachmentsService, type TepDaLuu } from '../storage/attachments.service';
@@ -209,7 +210,7 @@ export class ZaloService {
   }
 
   /** Tải tệp lên Zalo (multipart, trường `file`) để lấy mã dùng khi gửi. Tên API theo tài liệu Zalo, chưa kiểm chứng khi chạy thật. */
-  private async taiLenZalo(loai: 'image' | 'file', data: Buffer, ten: string, mime: string): Promise<string> {
+  private async taiLenZalo(loai: 'image' | 'file' | 'gif', data: Buffer, ten: string, mime: string): Promise<string> {
     const c = await this.doc();
     if (!c.accessToken) throw new BadRequestException('Zalo chưa được kết nối (thiếu access token)');
     const goi = async (token: string) => {
@@ -224,7 +225,7 @@ export class ZaloService {
       j = await goi((await this.doc()).accessToken ?? '');
     }
     if (j?.error) throw new BadRequestException(`Zalo không nhận tệp (lỗi ${j.error}: ${j.message ?? 'không rõ'})`);
-    const ma = loai === 'image' ? j?.data?.attachment_id : j?.data?.token;
+    const ma = loai === 'file' ? j?.data?.token : (j?.data?.attachment_id ?? (loai === 'gif' ? j?.data?.token : undefined));
     if (typeof ma !== 'string' || !ma) {
       this.log.warn(`Tải tệp lên Zalo: không thấy mã trong phản hồi, khoá: ${Object.keys(j?.data ?? {}).join(',')}`);
       throw new BadRequestException('Zalo không trả mã tệp, chưa gửi được');
@@ -237,6 +238,18 @@ export class ZaloService {
    * Ảnh có chữ kèm thì gửi chung một tin; PDF có chữ kèm thì gửi chữ thành tin riêng sau tệp.
    */
   async guiTep(zaloUserId: string, tep: { data: Buffer; type: string; name: string; anh: boolean }, chu: string) {
+    if (tep.type === 'image/gif') {
+      if (tep.data.length > 5 * 1024 * 1024) throw new BadRequestException('Ảnh động gửi sang Zalo tối đa 5 MB');
+      const meta = await sharp(tep.data, { animated: true, limitInputPixels: 40_000_000 }).metadata();
+      const ma = await this.taiLenZalo('gif', tep.data, tep.name, tep.type);
+      await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: {
+        recipient: { user_id: zaloUserId }, message: { ...(chu ? { text: chu } : {}), attachment: {
+          type: 'template', payload: { template_type: 'media', elements: [{ media_type: 'gif', attachment_id: ma,
+            width: meta.width, height: meta.pageHeight ?? meta.height }] },
+        } },
+      } });
+      return;
+    }
     if (tep.anh) {
       if (tep.type === 'image/webp') throw new BadRequestException('Zalo chỉ nhận ảnh JPG hoặc PNG');
       if (tep.data.length > 1024 * 1024) throw new BadRequestException('Ảnh gửi sang Zalo tối đa 1 MB');

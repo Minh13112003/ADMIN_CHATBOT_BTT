@@ -1,7 +1,9 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import useSWR, { mutate as globalMutate } from 'swr';
-import { ApiError, del, fetcher, loiCua, patch, post, postForm } from '@/lib/api';
+import { ApiError, del, fetcher, linkTep, loiCua, patch, post, postForm } from '@/lib/api';
+import type { Sticker } from '../StickerLibrary';
+import { rememberSticker, StickerPicker } from './StickerPicker';
 import { CHANNEL, dinhDangSo, STATUS, trieu } from '@/lib/labels';
 import { useRealtime } from '@/lib/realtime';
 import type { Channel, Conversation, Deal, Me, Message, MessageHit, Person, Template, TourTag } from '@/lib/types';
@@ -368,6 +370,10 @@ function Composer({
   const lanGo = useRef(0);
   const [tep, setTep] = useState<File | null>(null);
   const [quickOpen, setQuickOpen] = useState(false);
+  const [stickerOpen, setStickerOpen] = useState(false);
+  const [sticker, setSticker] = useState<Sticker | null>(null);
+  const stickerButton = useRef<HTMLButtonElement>(null);
+  const closeStickers = useCallback(() => setStickerOpen(false), []);
   const { data: mauNhanh } = useSWR<Template[]>('/templates', fetcher);
   const { data: deals } = useSWR<Deal[]>(`/customers/${conv.customer.id}/deals`, fetcher);
   const goiPhimTat = /^\/[a-z0-9_-]*$/.test(draft) ? (mauNhanh ?? []).filter((t) => t.shortcut && t.shortcut.startsWith(draft.slice(1))).slice(0, 5) : [];
@@ -391,6 +397,8 @@ function Composer({
     setDraft('');
     setLoi('');
     setTep(null);
+    setSticker(null);
+    setStickerOpen(false);
   }, [id]);
 
   // Khung gõ 1 dòng, tự cao theo nội dung (tối đa max-h-40 rồi cuộn).
@@ -404,6 +412,7 @@ function Composer({
   /** Kiểm tra sơ bộ cho người dùng khỏi chờ tải lên rồi mới biết lỗi. Backend kiểm tra lại theo nội dung file. */
   const nhanTep = (f: File | undefined | null) => {
     if (!f) return;
+    setSticker(null);
     const anh = ['image/jpeg', 'image/png', 'image/webp'].includes(f.type);
     if (!anh && f.type !== 'application/pdf') return setLoi('Chỉ gửi được ảnh (JPG, PNG, WebP) hoặc file PDF');
     if (anh && f.size > 10 * 1024 * 1024) return setLoi('Ảnh quá lớn, tối đa 10 MB');
@@ -433,11 +442,14 @@ function Composer({
 
   const guiThat = async (confirm: boolean) => {
     const nd = draft.trim();
-    if ((!nd && !tep) || dangGui) return;
+    if ((!nd && !tep && !sticker) || dangGui) return;
     setDangGui(true);
     setLoi('');
     try {
-      if (tep) {
+      if (sticker) {
+        await post(`/conversations/${id}/messages/sticker`, { stickerId: sticker.id, ...(confirm ? { confirm: true } : {}), ...(replyTo ? { replyToId: replyTo.id } : {}) });
+        if (me?.id) rememberSticker(me.id, sticker.id);
+      } else if (tep) {
         const f = new FormData();
         f.append('file', tep);
         if (nd) f.append('text', nd);
@@ -448,7 +460,8 @@ function Composer({
         await post(`/conversations/${id}/messages`, { text: nd, ...(confirm ? { confirm: true } : {}), ...(replyTo ? { replyToId: replyTo.id } : {}) });
       }
       setTep(null);
-      setDraft('');
+      if (!sticker) setDraft('');
+      setSticker(null);
       setHoiLai(null);
       clearReply();
       lanGo.current = 0;
@@ -523,6 +536,12 @@ function Composer({
           </button>
         </div>
       )}
+      {sticker && <div className="flex items-center gap-3 rounded-xl border border-line bg-page p-2">
+        <img src={linkTep(sticker.url)} alt={sticker.name} className="size-16 object-contain" />
+        <span className="min-w-0 flex-1 text-sm"><strong className="block truncate">{sticker.name}</strong><span className="text-xs text-muted">Bấm Gửi để gửi sticker. Nội dung đang soạn được giữ lại.</span></span>
+        <button type="button" disabled={dangGui} className={secondaryClass} onClick={() => setSticker(null)}>Bỏ chọn</button>
+      </div>}
+      {stickerOpen && <StickerPicker anchor={stickerButton} userId={me?.id ?? ''} onClose={closeStickers} onSelect={(s) => { setSticker(s); setTep(null); setStickerOpen(false); stickerButton.current?.focus(); }} />}
       {tep && (
         <div className="flex items-center gap-2 rounded-[10px] border border-line bg-page py-1 pl-1.5 pr-1 text-[0.8125rem]">
           {xemTruoc ? (
@@ -551,6 +570,7 @@ function Composer({
       )}
       {goiPhimTat.length > 0 && <ul aria-label="Gợi ý phím tắt" className="mb-2 overflow-hidden rounded-xl border border-line bg-surface shadow-sm">{goiPhimTat.map((t) => <li key={t.id}><button type="button" onClick={() => chonGoiY(t)} className="flex min-h-11 w-full items-center gap-3 px-3 text-left text-sm hover:bg-brand-soft"><code className="rounded bg-fill px-1.5 font-mono text-xs">/{t.shortcut}</code><strong className="truncate">{t.title}</strong></button></li>)}</ul>}
       <form onSubmit={gui} className="composer-input flex items-end gap-1.5 rounded-xl border border-field bg-surface p-1.5 focus-within:border-brand">
+        <button ref={stickerButton} type="button" disabled={dangGui} aria-label="Chọn sticker" aria-expanded={stickerOpen} aria-controls="chat-sticker-picker" title="Sticker" onClick={() => setStickerOpen((v) => !v)} className={`grid size-11 shrink-0 place-items-center rounded-[10px] border border-field hover:bg-fill ${stickerOpen ? 'bg-brand-soft text-brand-text' : ''}`}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><path d="M8 14s1 3 4 3 4-3 4-3M8 8h1M15 8h1" /></svg></button>
         <input
           ref={chonTep}
           type="file"
@@ -607,7 +627,7 @@ function Composer({
           className="max-h-40 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2.5 text-sm leading-normal"
         />
         <button type="button" title="Câu trả lời nhanh" aria-label="Câu trả lời nhanh" className="grid size-11 shrink-0 place-items-center rounded-[10px] border border-line bg-surface shadow-sm text-brand-text hover:bg-brand-soft" onClick={() => setQuickOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></button>
-        <button type="submit" disabled={dangGui || (!draft.trim() && !tep)} className={primaryClass}>
+        <button type="submit" disabled={dangGui || (!draft.trim() && !tep && !sticker)} className={primaryClass}>
           {dangGui ? 'Đang gửi…' : 'Gửi'}
         </button>
       </form>

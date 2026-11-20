@@ -521,6 +521,23 @@ model AppFeedback {
   @@map("app_feedbacks")
 }
 
+/// Kho sticker dùng chung; giữ bản WebP xem trước và GIF để gửi qua các kênh.
+model Sticker {
+  id        String   @id @default(uuid())
+  name      String
+  webpPath  String
+  gifPath   String
+  gifSize   Int
+  width     Int
+  height    Int
+  animated  Boolean
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([active, createdAt])
+  @@map("stickers")
+}
+
 /// Hành khách của một đơn đặt từ app (khách 1 = người đặt, position 0). Dùng làm thủ tục vé, visa.
 model DealGuest {
   id             String    @id @default(uuid())

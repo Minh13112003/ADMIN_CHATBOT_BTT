@@ -31,6 +31,12 @@ class SendDto {
   @IsOptional() @IsUUID() replyToId?: string;
 }
 
+class SendStickerDto {
+  @IsUUID() stickerId: string;
+  @IsOptional() @IsBoolean() confirm?: boolean;
+  @IsOptional() @IsUUID() replyToId?: string;
+}
+
 /** Gửi kèm file: các trường đi dạng multipart nên `confirm` đến dưới dạng chữ "true". */
 class SendFileDto {
   @IsOptional() @IsString() @MaxLength(4000) text?: string;
@@ -142,6 +148,11 @@ export class ConversationsController {
   sendFile(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: SendFileDto, @UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException('Chưa chọn file');
     return this.svc.send(me, id, dto, file);
+  }
+
+  @Post(':id/messages/sticker')
+  sendSticker(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body() dto: SendStickerDto) {
+    return this.svc.send(me, id, dto);
   }
 
   @Post(':id/give-back')

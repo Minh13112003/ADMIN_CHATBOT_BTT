@@ -6,6 +6,18 @@
 - **Chỉ test giả**: có test đơn vị / dữ liệu giả, chưa thử với hệ thống thật (Zalo, Facebook...).
 - **Chưa làm**.
 
+## Kho sticker (2026-11-19)
+
+- Admin tải WebP tại `/stickers`, xem ảnh động và ẩn khỏi kho. Sale chỉ xem/chọn, quyền được kiểm tra ở backend.
+- Bảng chọn nổi phía trên nút sticker trong khung chat: lưới 4 cột, tìm kiếm, gần đây theo tài khoản trên trình duyệt. Chọn chỉ xem trước; bấm Gửi mới tạo tin. Không tự gửi khi mở kho hoặc tải sticker lên.
+- Giữ WebP để xem trong kho, chuyển GIF đủ khung hình để gửi. Zalo dùng upload/gif + media_type gif (kèm width/height); Messenger dùng attachment image với file GIF. Chưa kiểm thử gửi thật trên hai kênh.
+- Migration mới: `20261119090627_sticker_library` (chỉ thêm bảng và chỉ mục). Đã chạy trên PostgreSQL thử; chưa chạy migration trên database thật từ phiên làm việc này.
+- Kiểm tra trước đó: typecheck, 355 test backend + 2 test frontend, build, smoke riêng sticker đều qua. Smoke cũ dừng ở fixture tạo sale không có departmentId (không liên quan sticker).
+- Website thật ngày 2026-11-19: đăng nhập được nhưng `GET /api/v1/stickers` trả 404; chưa thể nhập bộ sticker. Không gọi API gửi tin cho khách thật.
+- Bộ người dùng cung cấp: 50 GIF tại `D:\Ami-Fat-Cat-Stickers`; tạo 50 WebP tại thư mục con `webp`, đối chiếu số khung hình từng file, giữ nguyên GIF gốc.
+- Trạng thái: **Chỉ test giả**; giao diện cần triển khai bản mới. Bộ chọn dùng màu theo giao diện sáng/tối hiện có.
+- 2026-11-20: kiểm tra lại website, đăng nhập được nhưng API sticker vẫn 404. Đã kiểm tra đủ 50 WebP trong thư mục `webp` giữ số khung hình như GIF gốc và đúng giới hạn. Đóng gói mã nguồn riêng tại `out/sticker-update-20261120.zip`; chưa nhập ảnh lên website và không gửi tin cho khách.
+
 ## Zalo OA
 
 | Tính năng | Trạng thái | Ghi chú |

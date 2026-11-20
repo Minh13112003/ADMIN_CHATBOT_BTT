@@ -35,6 +35,10 @@ Hai cột dưới đây do trigger trong database tính (migration `search_and_s
 | `customers.searchText` | `customers_search_text`, chạy khi đổi `name`, `aliases`, `phone` | Ô tìm kiếm: tên, tên khác, SĐT viết thường, bỏ dấu. Hàm SQL `btt_bo_dau` phải khớp `khoaTimKiem` trong `common/text.ts` |
 | `conversations.lastCustomerMessageAt` | `messages_last_customer`, chạy khi thêm tin `CUSTOMER` | Thống kê "khách nhắn tin trong kỳ" mà không quét bảng tin nhắn |
 
+## Kho sticker
+
+Migration `20261119090627_sticker_library` thêm bảng `stickers`: tên, đường dẫn WebP/GIF riêng tư, kích thước GIF, chiều rộng/cao, cờ ảnh động, trạng thái hoạt động và thời gian tạo. Chỉ admin được thêm/ẩn. Không sửa cấu trúc `messages`: mỗi lần gửi lưu một bản đính kèm độc lập, nên ẩn sticker không làm hỏng lịch sử. Không cần sửa SQL chatbot.
+
 ## Chỉ mục và dung lượng
 
 Đo trên database thử 1 triệu tin, 20.000 khách (ngày 2026-11-06):
