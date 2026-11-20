@@ -1,17 +1,20 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Optional } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { chuanBiSticker, MAX_STICKER_BYTES } from '../common/stickers';
-import { duongDanLuuTru } from '../common/attachments';
+import { duongDanLuuTru, kiemLinkTep, kyLinkTep } from '../common/attachments';
 import type { TepChuanBi } from '../storage/attachments.service';
 
 /** Sticker dùng được: chưa ẩn, và không nằm trong tệp đã ẩn. */
 const DUNG_DUOC = { active: true, OR: [{ packId: null }, { pack: { active: true } }] };
+/** Link GIF công khai cho Zalo tự tải: 1 giờ là đủ để Zalo lấy về ngay lúc gửi. */
+const HAN_LINK_GIF_GIAY = 3600;
 
 @Injectable()
 export class StickersService {
-  constructor(private prisma: PrismaService, private storage: StorageService) {}
+  constructor(private prisma: PrismaService, private storage: StorageService, @Optional() private config?: ConfigService) {}
 
   async list() {
     const rows = await this.prisma.sticker.findMany({ where: DUNG_DUOC, orderBy: { createdAt: 'desc' },
@@ -85,7 +88,23 @@ export class StickersService {
   async prepare(id: string): Promise<TepChuanBi> {
     const s = await this.get(id);
     return { data: await this.storage.doc(s.gifPath, MAX_STICKER_BYTES), type: 'image/gif', ext: 'gif',
-      name: `${s.name}.gif`, anh: true };
+      name: `${s.name}.gif`, anh: true, linkGif: this.kyLinkGif(id) };
+  }
+
+  /** Đường dẫn (sau /api/v1) tới GIF của sticker, ký HMAC bằng JWT_SECRET, tự hết hạn. Dùng tiền tố `sticker:` để không trùng chữ ký link file tin nhắn. */
+  private kyLinkGif(id: string): string | undefined {
+    const secret = this.config?.get<string>('JWT_SECRET');
+    if (!secret) return undefined;
+    const exp = Math.floor(Date.now() / 1000) + HAN_LINK_GIF_GIAY;
+    const q = kyLinkTep(secret, `sticker:${id}`, exp).split('?')[1];
+    return `/stickers/${id}/gif?${q}`;
+  }
+
+  /** GIF công khai cho Zalo: chỉ mở được khi đúng chữ ký và còn hạn. */
+  async gifCongKhai(id: string, exp: unknown, sig: unknown) {
+    const secret = this.config?.get<string>('JWT_SECRET');
+    if (!secret || !kiemLinkTep(secret, `sticker:${id}`, exp, sig, Math.floor(Date.now() / 1000))) throw new NotFoundException('Không tìm thấy sticker');
+    return this.storage.doc((await this.get(id)).gifPath, MAX_STICKER_BYTES);
   }
 
   async hide(id: string) {

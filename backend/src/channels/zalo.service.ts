@@ -237,26 +237,30 @@ export class ZaloService {
    * Gửi ảnh (JPG/PNG tối đa 1 MB) hoặc PDF (tối đa 5 MB) cho khách qua tin tư vấn. Giới hạn theo tài liệu Zalo, chưa kiểm chứng.
    * Ảnh có chữ kèm thì gửi chung một tin; PDF có chữ kèm thì gửi chữ thành tin riêng sau tệp.
    */
-  async guiTep(zaloUserId: string, tep: { data: Buffer; type: string; name: string; anh: boolean }, chu: string): Promise<void> {
+  async guiTep(zaloUserId: string, tep: { data: Buffer; type: string; name: string; anh: boolean; linkGif?: string }, chu: string): Promise<void> {
     if (tep.type === 'image/gif') {
       if (tep.data.length > 5 * 1024 * 1024) throw new BadRequestException('Ảnh động gửi sang Zalo tối đa 5 MB');
       const meta = await sharp(tep.data, { animated: true, limitInputPixels: 40_000_000 }).metadata();
-      const ma = await this.taiLenZalo('gif', tep.data, tep.name, tep.type);
-      // Cấu trúc tin theo SDK chính thức zaloplatform/zalo-php-sdk (MessageBuilder 'media', media_type 'gif'): luôn có `text` (mặc định rỗng),
-      // phần tử có width, height, attachment_id. Ví dụ GIF của SDK gửi qua API v2.0 /oa/message; bản v3 /cs không có ví dụ GIF và đã bị Zalo trả
-      // -200 "Send message failed" khi chạy thật (2026-11-20, thiếu `text`). Thử lần lượt: v3 /cs có `text`, rồi v2.0 /oa/message.
-      const body = { recipient: { user_id: zaloUserId }, message: { text: chu || '', attachment: {
-        type: 'template', payload: { template_type: 'media', elements: [{ media_type: 'gif', attachment_id: ma,
-          width: meta.width, height: meta.pageHeight ?? meta.height }] },
-      } } };
+      const kichThuoc = { width: Math.round(meta.width ?? 0), height: Math.round(meta.pageHeight ?? meta.height ?? 0) };
+      // Lần 1 (2026-11-20) Zalo trả -200 cho cả v3 /cs lẫn v2.0 /oa/message khi tin có `text: ''`. Nghiên cứu lần 2 (SDK chính thức zalo-php-sdk,
+      // @warriorteam/redai-zalo-sdk, chat-adapter-zalo-oa): v2.0 đã ngừng hỗ trợ từ 20/06/2023; các thư viện v3 bỏ hẳn `text` khi không có chữ,
+      // width/height là số đúng kích thước GIF, và có thể dùng `url` (GIF tối đa 1 MB) thay cho attachment_id. Chưa ai xác nhận chạy thật.
+      // Nên: tin GIF không kèm chữ, thử attachment_id rồi `url`; chữ của sale gửi thành tin riêng sau ảnh.
+      const tin = (phanTu: Record<string, unknown>) => ({ recipient: { user_id: zaloUserId }, message: { attachment: {
+        type: 'template', payload: { template_type: 'media', elements: [{ media_type: 'gif', ...phanTu, ...kichThuoc }] } } } });
+      const cach: { ten: string; body: () => Promise<unknown> }[] = [
+        { ten: 'attachment_id', body: async () => tin({ attachment_id: await this.taiLenZalo('gif', tep.data, tep.name, tep.type) }) },
+      ];
+      if (tep.linkGif && tep.data.length <= 1024 * 1024) cach.push({ ten: 'url', body: async () => tin({ url: `${this.goc()}/api/v1${tep.linkGif}` }) });
       const loi: string[] = [];
-      for (const url of [`${OPENAPI}/v3.0/oa/message/cs`, `${OPENAPI}/v2.0/oa/message`]) {
+      for (const c of cach) {
         try {
-          await this.goiApi(url, { method: 'POST', body });
-          if (loi.length) this.log.log(`Zalo nhận ảnh động qua ${url} (cách trước bị từ chối: ${loi.join('; ')})`);
+          await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: await c.body() });
+          this.log.log(`Zalo nhận ảnh động (cách ${c.ten}, ${kichThuoc.width}x${kichThuoc.height}, ${tep.data.length} byte)${loi.length ? `; cách trước bị từ chối: ${loi.join('; ')}` : ''}`);
+          if (chu) await this.guiTin(zaloUserId, chu);
           return;
         } catch (e) {
-          loi.push(`${url.replace(OPENAPI, '')}: ${(e as Error).message}`);
+          loi.push(`${c.ten}: ${(e as Error).message}`);
         }
       }
       // Zalo không nhận ảnh động: gửi khung hình đầu dạng PNG qua đường gửi ảnh thường (đã chạy thật), khách vẫn thấy sticker, chỉ không chuyển động.

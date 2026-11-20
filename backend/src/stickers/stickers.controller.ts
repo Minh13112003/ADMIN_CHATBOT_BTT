@@ -3,7 +3,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { IsBoolean, IsOptional, IsString, IsUUID, MaxLength, ValidateIf } from 'class-validator';
 import type { Response } from 'express';
-import { Roles } from '../auth/auth.decorators';
+import { Public, Roles } from '../auth/auth.decorators';
 import { Role } from '../generated/prisma/client';
 import { MAX_STICKER_BYTES } from '../common/stickers';
 import { StickersService } from './stickers.service';
@@ -49,6 +49,16 @@ export class StickersController {
   async image(@Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
     const data = await this.svc.image(id);
     res.set({ 'Content-Type': 'image/webp', 'Cache-Control': 'private, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
+    res.send(data);
+  }
+
+  /** Zalo tự tải GIF qua link này khi gửi ảnh động bằng `url` (không đăng nhập được), nên mở công khai nhưng bắt buộc chữ ký còn hạn. */
+  @Get(':id/gif')
+  @Public()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  async gif(@Param('id', ParseUUIDPipe) id: string, @Query('exp') exp: string, @Query('sig') sig: string, @Res() res: Response) {
+    const data = await this.svc.gifCongKhai(id, exp, sig);
+    res.set({ 'Content-Type': 'image/gif', 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
     res.send(data);
   }
 

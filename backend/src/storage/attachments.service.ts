@@ -6,7 +6,8 @@ import { duongDanLuuTru, kyLinkTep, loiTep, nhanRaLoaiTep, tenTepAnToan } from '
 import { StorageService } from './storage.service';
 
 export type TepDaLuu = { path: string; type: string; name: string; size: number };
-export type TepChuanBi = { data: Buffer; type: string; ext: string; name: string; anh: boolean };
+/** `linkGif`: đường dẫn công khai có chữ ký (chỉ sticker) để Zalo tự tải GIF bằng `url`. */
+export type TepChuanBi = { data: Buffer; type: string; ext: string; name: string; anh: boolean; linkGif?: string };
 export type TepTraVe = { url: string; type: string; name: string; size: number };
 
 const CANH_DAI_TOI_DA = 1600;

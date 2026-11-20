@@ -529,8 +529,10 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
 
   const p = kyQuery(ky, kenh);
   p.set('view', view);
-  p.set('take', String(full ? TRANG : 10));
-  p.set('skip', String(full ? trang * TRANG : 0));
+  // Bảng địa điểm luôn phân trang (trước chỉ hiện 10 địa điểm đầu, không xem được phần còn lại); bảng tour phân trang khi phóng to.
+  const phanTrang = full || view === 'place';
+  p.set('take', String(phanTrang ? TRANG : 10));
+  p.set('skip', String(phanTrang ? trang * TRANG : 0));
   if (moi && view === 'tour') p.set('moi', '1');
   if (view === 'tour' && sapXep !== 'askers') p.set('sort', sapXep);
   if (full && q.trim()) p.set('search', q.trim());
@@ -542,9 +544,26 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
   const soTrang = data ? Math.max(1, Math.ceil(data.total / TRANG)) : 1;
   const thoat = () => { setFull(false); setSearch(''); setQ(''); setTrang(0); };
 
-  const xuat = () => {
-    if (view === 'tour') taiCsv('nhu-cau-tour.csv', [['Hạng', 'Tên tour', 'Địa điểm', 'Giá / người', 'Khách quan tâm', 'Lượt ghim', 'Đơn chốt', 'Doanh thu', 'Lần đầu', 'Gần nhất'], ...tours.map((t) => [t.rank, t.name, t.place ?? '', t.price ?? '', t.askers, t.asks, t.closed ?? 0, t.revenue ?? 0, t.askers ? ngay(t.firstAskedAt) : '', t.askers ? ngay(t.lastAskedAt) : ''])]);
-    else taiCsv('nhu-cau-theo-dia-diem.csv', [['Hạng', 'Địa điểm', 'Lượt hỏi', 'Khách', 'Chiếm trên tổng lượt (%)'], ...places.map((pl) => [pl.rank, pl.name, pl.asks, pl.askers, (pl.share * 100).toFixed(1)])]);
+  const [dangXuat, setDangXuat] = useState(false);
+  const xuat = async () => {
+    if (view === 'tour') return taiCsv('nhu-cau-tour.csv', [['Hạng', 'Tên tour', 'Địa điểm', 'Giá / người', 'Khách quan tâm', 'Lượt ghim', 'Đơn chốt', 'Doanh thu', 'Lần đầu', 'Gần nhất'], ...tours.map((t) => [t.rank, t.name, t.place ?? '', t.price ?? '', t.askers, t.asks, t.closed ?? 0, t.revenue ?? 0, t.askers ? ngay(t.firstAskedAt) : '', t.askers ? ngay(t.lastAskedAt) : ''])]);
+    // Địa điểm: xuất toàn bộ (mọi trang), không chỉ trang đang xem.
+    setDangXuat(true);
+    try {
+      const q2 = kyQuery(ky, kenh);
+      q2.set('view', 'place');
+      q2.set('take', '100');
+      const tat: PlaceRow[] = [];
+      for (let skip = 0; ; skip += 100) {
+        q2.set('skip', String(skip));
+        const r = await fetcher<Ranking<PlaceRow>>(`/tour-interest?${q2}`);
+        tat.push(...r.items);
+        if (!r.items.length || tat.length >= r.total) break;
+      }
+      taiCsv('nhu-cau-theo-dia-diem.csv', [['Hạng', 'Địa điểm', 'Lượt hỏi', 'Khách', 'Chiếm trên tổng lượt (%)'], ...tat.map((pl) => [pl.rank, pl.name, pl.asks, pl.askers, (pl.share * 100).toFixed(1)])]);
+    } finally {
+      setDangXuat(false);
+    }
   };
 
   return (
@@ -605,7 +624,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
           </label>
         )}
         {full && <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm tên tour (không cần gõ dấu)" aria-label="Tìm tour" className="min-h-11 min-w-[220px] flex-1 rounded-[10px] border border-field bg-surface px-3 text-sm" />}
-        <button type="button" disabled={!data?.items.length} onClick={xuat} className="ml-auto inline-flex min-h-11 items-center rounded-[9px] border border-field bg-surface px-4 text-[0.8125rem] font-semibold hover:bg-fill disabled:opacity-40">Xuất file Excel (.csv)</button>
+        <button type="button" disabled={!data?.items.length || dangXuat} onClick={() => void xuat()} className="ml-auto inline-flex min-h-11 items-center rounded-[9px] border border-field bg-surface px-4 text-[0.8125rem] font-semibold hover:bg-fill disabled:opacity-40">{dangXuat ? 'Đang xuất…' : 'Xuất file Excel (.csv)'}</button>
       </div>
 
       {!full && (
@@ -619,7 +638,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
 
       <section aria-label={view === 'place' ? 'Theo địa điểm' : 'Theo tour chi tiết'} className="min-w-0 overflow-hidden rounded-2xl border border-line bg-surface shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
-          <h2 className="text-lg font-bold">{full ? `${data ? so(data.total) : '…'} tour` : view === 'place' ? 'Nhu cầu theo địa điểm' : sapXep === 'revenue' ? 'Top 10 tour theo doanh thu' : sapXep === 'closed' ? 'Top 10 tour theo số đơn chốt' : 'Top 10 tour khách quan tâm'}</h2>
+          <h2 className="text-lg font-bold">{full ? `${data ? so(data.total) : '…'} tour` : view === 'place' ? `Nhu cầu theo địa điểm${data ? ` · ${so(data.total)} địa điểm` : ''}` : sapXep === 'revenue' ? 'Top 10 tour theo doanh thu' : sapXep === 'closed' ? 'Top 10 tour theo số đơn chốt' : 'Top 10 tour khách quan tâm'}</h2>
           {!full && view === 'place' && (
             <span className="flex flex-wrap items-center gap-2">
               {quet.kq && <span role="status" className="text-xs text-muted">{quet.kq}</span>}
@@ -642,7 +661,7 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
             ? 'Lượt hỏi = số ngày khách nhắc địa điểm trong tin nhắn (mỗi khách mỗi địa điểm tối đa 1 lượt/ngày; hỏi 2 nơi trong một ngày thì mỗi nơi 1 lượt), cộng lượt sale ghim tour thuộc địa điểm đó.'
             : 'Khách đếm một lần cho mỗi tour. Lượt = số lần sale ghim tour. Doanh thu, đơn chốt chỉ tính đơn Đã chốt.'}
         </p>
-        {full && (
+        {(full || (view === 'place' && soTrang > 1)) && (
           <div className="flex items-center justify-between border-t border-line px-5 py-3">
             <button type="button" disabled={trang === 0} onClick={() => setTrang(trang - 1)} className="min-h-11 rounded-lg border border-field px-4 text-sm font-semibold disabled:opacity-40">← Trước</button>
             <span className="text-sm text-muted">Trang {trang + 1}/{soTrang}</span>
