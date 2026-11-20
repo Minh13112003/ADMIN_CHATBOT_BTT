@@ -45,5 +45,7 @@ Chủ dự án xác nhận 11/11/2026: Inbound sẽ có tour riêng, không có 
 
 ## Về sau
 - Zalo OA, Facebook: skill `add-channel`.
+- **Ảnh đại diện khách Facebook (ghi 2026-11-19):** Meta chỉ cho đọc ảnh/tên khách qua mã khách (PSID) khi ứng dụng có tính năng **Business Asset User Profile Access** (Advanced Access, qua App Review); chế độ thử bị từ chối ("Unsupported get request"), tên đang lấy được qua `/me/conversations?user_id=`. Xin tính năng này sau khi các quyền nhắn tin đã được duyệt, kèm video cho thấy ảnh khách trong Hộp thư. Tới lúc đó hộp thư hiện chữ cái đầu của tên.
+- **Đơn tạm → booking thật trên benthanhtourist.com (ghi 2026-11-19, làm sau):** chủ dự án muốn đơn "Chờ xác nhận" trong database này là đơn tạm; khi sale chốt trên trang quản trị thì gọi API đặt tour của benthanhtourist.com để tạo booking thật. Hiện chốt đơn chỉ lưu ở database này, chưa gọi API nào. Cần tài liệu API đặt tour của benthanhtourist.com trước khi làm.
 - Phân quyền chi tiết hơn ngoài chức năng admin khoá/mở tài khoản và đặt lại mật khẩu.
 - Chế độ tối.

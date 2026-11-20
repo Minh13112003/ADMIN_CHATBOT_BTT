@@ -237,18 +237,33 @@ export class ZaloService {
    * Gửi ảnh (JPG/PNG tối đa 1 MB) hoặc PDF (tối đa 5 MB) cho khách qua tin tư vấn. Giới hạn theo tài liệu Zalo, chưa kiểm chứng.
    * Ảnh có chữ kèm thì gửi chung một tin; PDF có chữ kèm thì gửi chữ thành tin riêng sau tệp.
    */
-  async guiTep(zaloUserId: string, tep: { data: Buffer; type: string; name: string; anh: boolean }, chu: string) {
+  async guiTep(zaloUserId: string, tep: { data: Buffer; type: string; name: string; anh: boolean }, chu: string): Promise<void> {
     if (tep.type === 'image/gif') {
       if (tep.data.length > 5 * 1024 * 1024) throw new BadRequestException('Ảnh động gửi sang Zalo tối đa 5 MB');
       const meta = await sharp(tep.data, { animated: true, limitInputPixels: 40_000_000 }).metadata();
       const ma = await this.taiLenZalo('gif', tep.data, tep.name, tep.type);
-      await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: {
-        recipient: { user_id: zaloUserId }, message: { ...(chu ? { text: chu } : {}), attachment: {
-          type: 'template', payload: { template_type: 'media', elements: [{ media_type: 'gif', attachment_id: ma,
-            width: meta.width, height: meta.pageHeight ?? meta.height }] },
-        } },
-      } });
-      return;
+      // Cấu trúc tin theo SDK chính thức zaloplatform/zalo-php-sdk (MessageBuilder 'media', media_type 'gif'): luôn có `text` (mặc định rỗng),
+      // phần tử có width, height, attachment_id. Ví dụ GIF của SDK gửi qua API v2.0 /oa/message; bản v3 /cs không có ví dụ GIF và đã bị Zalo trả
+      // -200 "Send message failed" khi chạy thật (2026-11-20, thiếu `text`). Thử lần lượt: v3 /cs có `text`, rồi v2.0 /oa/message.
+      const body = { recipient: { user_id: zaloUserId }, message: { text: chu || '', attachment: {
+        type: 'template', payload: { template_type: 'media', elements: [{ media_type: 'gif', attachment_id: ma,
+          width: meta.width, height: meta.pageHeight ?? meta.height }] },
+      } } };
+      const loi: string[] = [];
+      for (const url of [`${OPENAPI}/v3.0/oa/message/cs`, `${OPENAPI}/v2.0/oa/message`]) {
+        try {
+          await this.goiApi(url, { method: 'POST', body });
+          if (loi.length) this.log.log(`Zalo nhận ảnh động qua ${url} (cách trước bị từ chối: ${loi.join('; ')})`);
+          return;
+        } catch (e) {
+          loi.push(`${url.replace(OPENAPI, '')}: ${(e as Error).message}`);
+        }
+      }
+      // Zalo không nhận ảnh động: gửi khung hình đầu dạng PNG qua đường gửi ảnh thường (đã chạy thật), khách vẫn thấy sticker, chỉ không chuyển động.
+      this.log.warn(`Zalo không nhận ảnh động, gửi ảnh tĩnh thay thế. ${loi.join('; ')}`);
+      const png = await sharp(tep.data, { limitInputPixels: 40_000_000 })
+        .resize({ width: 512, height: 512, fit: 'inside', withoutEnlargement: true }).png({ compressionLevel: 9 }).toBuffer();
+      return this.guiTep(zaloUserId, { data: png, type: 'image/png', name: tep.name.replace(/\.gif$/i, '') + '.png', anh: true }, chu);
     }
     if (tep.anh) {
       if (tep.type === 'image/webp') throw new BadRequestException('Zalo chỉ nhận ảnh JPG hoặc PNG');

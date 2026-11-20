@@ -521,9 +521,20 @@ model AppFeedback {
   @@map("app_feedbacks")
 }
 
+/// Tệp (bộ) sticker: nhiều sticker chung một tệp, bảng chọn trong chat chia tab theo tệp. Ẩn tệp thì ẩn mọi sticker trong tệp khỏi bảng chọn.
+model StickerPack {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  stickers  Sticker[]
+
+  @@map("sticker_packs")
+}
+
 /// Kho sticker dùng chung; giữ bản WebP xem trước và GIF để gửi qua các kênh.
 model Sticker {
-  id        String   @id @default(uuid())
+  id        String       @id @default(uuid())
   name      String
   webpPath  String
   gifPath   String
@@ -531,10 +542,13 @@ model Sticker {
   width     Int
   height    Int
   animated  Boolean
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  active    Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  packId    String? // Trống = sticker chưa xếp vào tệp nào (hiện ở tab "Khác")
+  pack      StickerPack? @relation(fields: [packId], references: [id], onDelete: SetNull)
 
   @@index([active, createdAt])
+  @@index([packId])
   @@map("stickers")
 }
 

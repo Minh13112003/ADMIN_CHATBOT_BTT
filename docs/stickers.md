@@ -28,6 +28,19 @@ Kiểm tra sau đăng nhập: `GET /api/v1/stickers` phải trả danh sách (c�
 
 Gói cập nhật ngày 2026-11-20 nằm ở `out/sticker-update-20261120.zip`: giải nén vào thư mục gốc dự án trên server (đúng nơi chứa `backend`, `frontend`, `deploy`) trước các lệnh trên. Gói chỉ chứa mã nguồn chức năng sticker và tài liệu, không có `.env`, tài khoản hoặc mật khẩu. Sao lưu các file tương ứng trên server trước khi ghi đè nếu server có sửa riêng. Không cần tải thư mục ảnh lên server qua SFTP: sau khi API hoạt động, admin nhập WebP qua trang Kho sticker.
 
+## Tệp sticker (2026-11-20)
+
+- Admin tạo **tệp** (bộ) ở trang Kho sticker, chọn "Tải vào tệp" trước khi tải file. Mỗi sticker có ô chọn để chuyển sang tệp khác. Đổi tên, ẩn, hiện lại tệp được; ẩn tệp thì sale không thấy sticker trong tệp.
+- Bảng chọn trong chat có tab: Gần đây, Tất cả (chia mục theo tệp), từng tệp, và "Khác" cho sticker chưa xếp tệp. Tìm kiếm tìm trên mọi tệp.
+- API: `GET /stickers/packs` (`?all=1` có cả tệp ẩn), `POST /stickers/packs`, `PATCH /stickers/packs/:id` (chỉ admin), `POST /stickers` nhận thêm `packId`, `PATCH /stickers/:id/pack`.
+
+## Gửi sang Zalo (sửa 2026-11-20)
+
+- Lần chạy thật đầu tiên Zalo trả `-200 Send message failed` ở bước gửi tin GIF (bước tải GIF lên vẫn qua).
+- Theo SDK chính thức `zaloplatform/zalo-php-sdk` (`MessageBuilder`, loại `media`, `media_type: gif`): tin luôn có trường `text` (rỗng cũng gửi), phần tử có `width`, `height`, `attachment_id`; ví dụ GIF của SDK gửi qua **API v2.0** `/v2.0/oa/message`, còn các ví dụ v3 `/v3.0/oa/message/cs` không có GIF. Trang developers.zalo.me không đọc được bằng công cụ nên chưa đối chiếu tài liệu gốc.
+- Code giờ thử lần lượt: v3 `/cs` có `text`, rồi v2.0 `/oa/message`. Cả hai bị từ chối thì gửi **khung đầu dạng PNG** qua đường gửi ảnh thường (khách vẫn thấy sticker nhưng đứng yên), log backend ghi "Zalo không nhận ảnh động, gửi ảnh tĩnh thay thế" kèm lý do. Chưa thử lại trên Zalo thật.
+- File WebP trong `D:\Ami-Fat-Cat-Stickers\webp` là ảnh động thật (kiểm tra 2026-11-20: 8 đến 20 khung, lặp vô hạn, cùng số khung với GIF gốc). Gửi tay trong ứng dụng Zalo mà thành ảnh tĩnh là do ứng dụng Zalo xử lý ảnh lúc gửi, không phải file hỏng; trang quản trị không gửi WebP sang Zalo mà gửi bản GIF.
+
 ## Chuyển động và kiểm thử
 
 Kho giữ WebP động. Tin gửi dùng GIF: Zalo upload/gif + media_type gif và kích thước; Messenger dùng file GIF với attachment loại image. Đây là ảnh động, không phải đăng ký bộ sticker chính thức trên nền tảng. Việc tự phát ảnh còn phụ thuộc ứng dụng phía người nhận.

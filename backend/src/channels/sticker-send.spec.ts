@@ -19,6 +19,49 @@ describe('gửi sticker GIF qua kênh', () => {
     expect(body.message.attachment.payload.elements).toEqual([{ media_type: 'gif', attachment_id: 'gif-id', width: 20, height: 12 }]);
   });
 
+  it('tin GIF luôn có trường text (SDK chính thức của Zalo luôn gửi text, kể cả rỗng)', async () => {
+    const svc = new ZaloService({} as never, { get: () => '' } as never, {} as never);
+    jest.spyOn(svc, 'doc').mockResolvedValue({ accessToken: 'test-token' });
+    const calls = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ error: 0, data: { attachment_id: 'gif-id' } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ error: 0, data: { message_id: 'msg-id' } }) });
+    global.fetch = calls;
+    await svc.guiTep('user', await gif(), '');
+    expect(calls.mock.calls[1][0]).toBe('https://openapi.zalo.me/v3.0/oa/message/cs');
+    expect(JSON.parse(calls.mock.calls[1][1].body).message.text).toBe('');
+  });
+
+  it('v3 bị Zalo trả -200 thì thử API v2.0 /oa/message như ví dụ GIF của SDK chính thức', async () => {
+    const svc = new ZaloService({} as never, { get: () => '' } as never, {} as never);
+    jest.spyOn(svc, 'doc').mockResolvedValue({ accessToken: 'test-token' });
+    const calls = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ error: 0, data: { attachment_id: 'gif-id' } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ error: -200, message: 'Send message failed' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ error: 0, data: { message_id: 'msg-id' } }) });
+    global.fetch = calls;
+    await svc.guiTep('user', await gif(), 'chào');
+    expect(calls).toHaveBeenCalledTimes(3);
+    expect(calls.mock.calls[2][0]).toBe('https://openapi.zalo.me/v2.0/oa/message');
+    const body = JSON.parse(calls.mock.calls[2][1].body);
+    expect(body.message.text).toBe('chào');
+    expect(body.message.attachment.payload.elements[0].media_type).toBe('gif');
+  });
+
+  it('Zalo không nhận ảnh động ở cả 2 cách thì gửi khung đầu dạng PNG qua đường gửi ảnh', async () => {
+    const svc = new ZaloService({} as never, { get: () => '' } as never, {} as never);
+    jest.spyOn(svc, 'doc').mockResolvedValue({ accessToken: 'test-token' });
+    const calls = jest.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ error: 0, data: { attachment_id: 'gif-id' } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ error: -200, message: 'Send message failed' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ error: -200, message: 'Send message failed' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ error: 0, data: { attachment_id: 'png-id' } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ error: 0, data: { message_id: 'msg-id' } }) });
+    global.fetch = calls;
+    await svc.guiTep('user', await gif(), '');
+    expect(calls.mock.calls[3][0]).toBe('https://openapi.zalo.me/v2.0/oa/upload/image');
+    const uploaded = (calls.mock.calls[3][1].body as FormData).get('file') as Blob;
+    expect(uploaded.type).toBe('image/png');
+    const body = JSON.parse(calls.mock.calls[4][1].body);
+    expect(body.message.attachment.payload.elements).toEqual([{ media_type: 'image', attachment_id: 'png-id' }]);
+  });
+
   it('Zalo từ chối upload thì không gửi tin', async () => {
     const svc = new ZaloService({} as never, { get: () => '' } as never, {} as never);
     jest.spyOn(svc, 'doc').mockResolvedValue({ accessToken: 'test-token' });

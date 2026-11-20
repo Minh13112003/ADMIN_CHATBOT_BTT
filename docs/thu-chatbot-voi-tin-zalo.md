@@ -1,6 +1,6 @@
 # Thử chatbot bttAI với tin nhắn Zalo thật
 
-Thử lần 1: 2026-11-18. Sửa chatbot và thử lần 2 (cùng 10 khách, cùng 58 lượt): 2026-11-19. Người thử: Claude, theo yêu cầu của chủ dự án.
+Thử lần 1: 2026-11-18. Sửa chatbot và thử lần 2 (cùng 10 khách, cùng 58 lượt): 2026-11-19. Lần 3 (9 khách mới, 41 lượt, chưa sửa thêm gì): 2026-11-19, xem mục "Lần 3". Người thử: Claude, theo yêu cầu của chủ dự án.
 **Cột "Chấm" là đánh giá của Claude, chủ dự án cần xem lại.** Lần chấm đầu ghi nhầm mã điểm của khách 1, 2, 3; bản này đã sửa lại bằng cách chấm lại cả hai lần.
 
 ## Cách thử
@@ -65,6 +65,77 @@ Gemini **không được huấn luyện lại** trong dự án này, và cũng k
 - Mẫu nhỏ: 10 khách, 58 lượt, chọn khách nhắn nhiều nhất nên nghiêng về khách hỏi sâu. Điểm chấm là đánh giá chủ quan của Claude, chấm sau khi đã thấy cả hai bản trả lời.
 - Chatbot **chưa được nối vào Zalo/Facebook** (webhook của hai kênh chỉ gửi lại trả lời tự động). Các thay đổi chỉ có tác dụng ngay ở web và app; với Zalo/Facebook phải nối chatbot thì mới có.
 - Chưa thử khi trang quản trị đang chạy thật (cờ báo nhân viên và việc đọc tin nhân viên qua `/ingest/staff-history` mới được kiểm bằng giả lập và test đơn vị).
+
+## Lần 3: 9 khách mới chưa từng thử (2026-11-19)
+
+**Mục đích:** lần 2 chấm lại đúng những câu đã dùng để sửa, nên dễ đẹp hơn thực tế. Lần 3 dùng khách chatbot chưa "thấy" để biết các chỗ sửa có tác dụng thật không.
+
+- **Nguồn:** 20 hội thoại có nhân viên trả lời, nhắn trong 14 ngày gần đây, mọi kênh (chủ dự án xuất từ VPS, file có nhãn tin SALE / OA / TEST, không có tên hay email).
+- **Tin sale gõ trong chatadmin:** chỉ có 2 hội thoại (App, Web), cả hai là chủ dự án tự thử nên bỏ. Không có tin nào của tài khoản có chữ "test" trong email. Vậy hiện **chưa có hội thoại thật nào sale trả lời trong chatadmin**; mọi câu nhân viên bên dưới là gõ trên trang Zalo OA.
+- Bỏ 9 hội thoại trùng khách lần 1-2. Còn **9 khách mới, 41 lượt**, tin từ 05/11 đến 19/11.
+- Cách chạy như lần 2. Thêm: chatbot đọc tin nhân viên **với đúng giờ gửi thật**; bỏ dòng "Tin nhắn đã được thu hồi".
+- Dữ liệu tour của chatbot đồng bộ lúc 15:04 ngày 19/11.
+
+| Chấm | Lần 3 (khách mới) | Lần 2 (khách cũ, sau sửa) |
+|---|---|---|
+| ĐÚNG | 13/41 (32%) | 24/58 (41%) |
+| AN TOÀN | 10/41 (24%) | 17/58 (29%) |
+| TẠM ỔN | 11/41 (27%) | 8/58 (14%) |
+| SAI | 7/41 (17%) | 9/58 (16%) |
+
+Trung bình 2.9 giây/lượt. Gọi Gemini 27/41 lượt (token vào trung bình 5,970); 14 lượt đi đường viết sẵn (báo nhân viên khi khách gửi số, câu "chưa có tour…", luồng đặt tour).
+
+**Đọc kết quả:** tỷ lệ SAI giữ nguyên (16-17%), nhưng ĐÚNG giảm và TẠM ỔN tăng. Các chỗ đã sửa vẫn chạy ở khách mới: khách gửi số điện thoại thì báo nhân viên (3/5 lượt; 2 lượt hỏng do lỗi 1 bên dưới), không bịa giá, hỏi ngày không có thì nói thẳng và gợi ý ngày gần nhất (Khách mới 9). Lỗi mới lộ ra chủ yếu nằm ở **đường viết sẵn**, chạy trước Gemini nên không được đọc tin nhân viên.
+
+### Lỗi mới tìm thấy
+
+1. **Luồng đặt tour "bắt cóc" cuộc trò chuyện Zalo (4 lượt SAI).** Khách nói "muốn đăng ký" hay "book" là chatbot vào luồng đặt tour. Sau đó:
+   - Hỏi "bạn muốn đặt tour nào?" mà không hiện tour nào (Khách mới 2 lượt 2, Khách mới 8 lượt 4).
+   - Chọn sai tour: khách hỏi Đài Loan "ngày 30" (30/12), bot chốt tour Tết Âm 07/02 (Khách mới 2 lượt 4).
+   - Nuốt số điện thoại khách: "Mình chưa đọc được số người" (Khách mới 2 lượt 5, Khách mới 8 lượt 5). Khi đó **không báo nhân viên**, vì quy tắc báo sớm tắt lúc đang đặt tour dở.
+
+   Khách Zalo/Facebook không đặt tour được trong chat, vì luồng đặt cần tài khoản app. **Đề xuất:** ở Zalo/Facebook, khách muốn đặt thì báo nhân viên thay vì vào luồng đặt tour.
+2. **Câu viết sẵn "chưa có tour X vào tháng Y" hiểu sai ý (2 lượt SAI).**
+   - Nhân viên hỏi "rớt visa bao lâu rồi", khách trả "Đầu tháng 4 e", bot trả "chưa có tour Hồng Kông vào tháng 4" (Khách mới 7 lượt 4).
+   - Khách nói "12-2 đi Thái, 18-2 đi Hạ Long", bot trả "chưa có tour Hà Nội ngày 12/02" (Khách mới 8 lượt 2).
+
+   Cùng loại với lỗi số 3 ở trên. **Đề xuất:** khi nhân viên vừa hỏi khách, hoặc câu có nhiều nơi, nhiều ngày, thì để Gemini trả lời thay vì dùng câu viết sẵn.
+3. **Gợi ý tour khởi hành ngay hôm đó.** Ngày 19/11, bot gợi ý tour Hồng Kông - Thẩm Quyến khởi hành 19/11 (Khách mới 7 lượt 1 và 2). **Đề xuất:** chỉ gợi ý tour khởi hành từ vài ngày sau. Số ngày cần chủ dự án quyết định.
+4. **Gửi thẻ tour lạc đề:** câu chào tạm biệt kèm 3 thẻ tour Hàn Quốc (Khách mới 1 lượt 2). Hỏi tour phía Nam Trung Quốc, bot gửi thẻ Sri Lanka, Thái (Khách mới 9 lượt 2). Hỏi Singapore - Malaysia, bot gửi thẻ Quy Nhơn, Hà Giang (Khách mới 3 lượt 2).
+5. **Số nước ngoài** (+61, Úc) không được nhận là số điện thoại (Khách mới 8 lượt 5).
+6. **Lỗi cũ vẫn còn:** tin có số điện thoại thì bot bỏ qua câu hỏi kèm theo (Khách mới 3 lượt 1, khách hỏi 3 tour).
+
+### Không phải lỗi chatbot, cần dữ liệu
+
+- **Tour ngoài website:** 2 khách được nhân viên gửi chương trình **tháng 1** (Hồng Kông, Trung Quốc), nhưng website không có đợt nào trong tháng 1. Đã kiểm tra dữ liệu tour đồng bộ hôm nay. Chatbot nói "chưa có" là đúng theo website. Muốn chatbot biết thì tour phải có trên website, hoặc có nguồn dữ liệu riêng.
+- **Thiếu kiến thức** (gặp lại lần nữa): tour có ghé điểm mua sắm không (nhân viên: Hồng Kông có DFS và trung tâm đá quý), khách sạn cách trung tâm bao xa, phụ thu phòng đơn, phụ thu khách nước ngoài, khách từng rớt visa. Dữ liệu tour hiện không có các mục này.
+- **Khách gửi ảnh** hỏi "có tour như này không": lần thử bỏ ảnh nên bot nói "bạn chưa gửi ảnh" (Khách mới 6 lượt 2). Khi chạy thật, bot cũng không xem được ảnh.
+
+## Lần 4: sau khi sửa các lỗi của lần 3 (2026-11-19)
+
+**Đã sửa** (chủ dự án chốt: Zalo/Facebook vẫn tư vấn nhưng chốt tour do sale chủ động nhắn; chỉ gợi ý tour khởi hành từ 3 ngày sau; số điện thoại lên Liên hệ kể cả khi sale đang xử lý, sale tự nhập số vào hồ sơ):
+1. Zalo/Facebook không chạy luồng đặt tour; khách muốn đặt thì báo nhân viên. Không còn nút "Tôi muốn đặt tour này" ở 2 kênh này.
+2. Gemini nhận tên khách trên Zalo/Facebook và biết khách không đặt được trong khung chat.
+3. Chỉ gợi ý tour khởi hành từ 3 ngày sau (`rag.SO_NGAY_BAO_TRUOC_GOI_Y`).
+4. Tin có số điện thoại kèm câu hỏi: báo nhân viên, AI trả lời câu hỏi rồi nối câu "đã báo nhân viên". Số nước ngoài (+61...) được nhận.
+5. Nhân viên vừa hỏi khách, hoặc khách nêu nhiều nơi / nhiều ngày: không dùng câu viết sẵn "chưa có tour…", để AI trả lời.
+
+**Kết quả chạy lại** (Claude chấm lại, cùng người chấm với các lần trước nên có thiên lệch):
+
+| Chấm | Bộ mới 41 lượt: lần 3 → lần 4 | Bộ cũ 58 lượt: lần 2 → lần 4 |
+|---|---|---|
+| ĐÚNG | 13 → **20** | 24 → 24 |
+| AN TOÀN | 10 → 7 | 17 → 18 |
+| TẠM ỔN | 11 → 13 | 8 → 9 |
+| SAI | 7 → **1** | 9 → 7 |
+
+Bộ cũ chỉ chấm lại 5 lượt có đổi cách trả lời; các lượt còn lại giữ điểm cũ dù Gemini có diễn đạt khác đôi chút.
+
+**Còn lại:**
+- ~~**Khách hỏi đúng ngày gần bị ẩn tour**~~ **Đã sửa 2026-11-20** (chủ dự án đồng ý): khách nêu ngày đi dưới 3 ngày nữa ("đi 21/11" khi hôm nay 19/11, "đi ngày mai") thì chatbot báo nhân viên, không gợi ý tour khác. Chưa chạy lại 99 lượt vì sang ngày 20/11 thì mốc 3 ngày đã dịch, kết quả không còn so sánh được; mới kiểm bằng test đơn vị.
+- ~~**Gemini hứa nhân viên sẽ liên hệ** khi chưa có cờ báo~~ **Đã sửa 2026-11-20** một phần: khách nói "đăng ký / book / giữ chỗ / chốt" dù không có chữ "tour" (Bộ mới Khách 3 lượt 3) giờ báo nhân viên thật trên Zalo/Facebook. Lời hứa chung chung của Gemini ở các câu khác vẫn có thể còn.
+- **Khách đáp câu hỏi của nhân viên** ("Đầu tháng 4 e"): vẫn bị trả "chưa có tour Hồng Kông tháng 4" (Bộ mới Khách 7 lượt 4), nhẹ hơn trước nhưng vẫn lệch ý.
+- Thẻ tour lạc đề khi khách chỉ cảm ơn hoặc hỏi tour không có.
 
 ## Phụ lục: toàn bộ 58 lượt (trả lời SAU SỬA)
 
@@ -176,3 +247,91 @@ Gemini **không được huấn luyện lại** trong dự án này, và cũng k
 | 4 | đi Everland cũng ko đảm bảo là sẽ đi Panda World đúng ko ạ | Dạ PANDA nằm trong everland ạ / Đến everland chị có thể để đến Panda world | Hiện BenThanh Tourist chưa có tour đi Everland. Bạn có thể tham khảo các điểm đến khác đang mở bán (ví dụ Nhật Bản, Hàn Quốc, Châu Âu, Đà Lạt, Phú Quốc), hoặc nhắn “gặp nhân viên” để được tư vấn tour theo yêu cầu nhé. | SAI → **SAI** |
 | 5 | nhưng mà bên mình có đảm bảo là đã đăng ký xếp hàng trước ko ạ? | Dạ vé vào everland sẽ vào được khu panda nhưng phải xếp hàng. Nếu chị muốn vé ưu tiên khu panda thì sẽ mất thêm phí khoảng 800.000đ/vé | Chào bạn, về các thông tin vận hành chi tiết như việc xếp hàng hay đặt chỗ ưu tiên tại từng điểm tham quan cụ thể (ví dụ như Panda World), mình hiện chưa có dữ liệu chi tiết để xác nhận với bạn. Mỗi tour sẽ có sự điều phối của hướng dẫn viên để đảm bảo trải nghiệm tốt nhất cho đoàn, tuy nhiên điều này còn phụ thuộc vào chính sách riêng của từng địa điểm và tình hình thực tế lúc… | AN TOÀN → **AN TOÀN** |
 | 6 | à cái này là đóng thêm tự túc đúng ko ạ | Dạ đúng rồi ạ | Đúng như thông tin nhân viên đã chia sẻ trước đó, dịch vụ vé ưu tiên tại khu Panda World là khoản phí bổ sung nếu bạn có nhu cầu sử dụng dịch vụ này. Vì đây là dịch vụ phát sinh ngoài chương trình tour tiêu chuẩn, bạn vui lòng trao đổi trực tiếp với nhân viên đang hỗ trợ mình để được tư vấn rõ hơn về cách đăng ký cũng như xác nhận lại các chi phí liên quan trước khi đặt tour nh… | AN TOÀN → **ĐÚNG** |
+
+## Phụ lục lần 3: 41 lượt của 9 khách mới
+
+### Khách mới 1 (05/11)
+
+| # | Khách nhắn (đã gộp) | Nhân viên trả lời thật | Chatbot | Chấm |
+|---|---|---|---|---|
+| 1 | Hi / 21/11 bên mình có tour (TP.HCM – CEBU, PHILIPPINES – TP.HCM) kg? *(gộp 2 tin)* | Dạ em chào chị / Dạ ngày đó bên em hết chỗ ạ / Em còn 21/11 đi Singapore và Malaysia ạ / [OA gửi tin nhắn qua Zalo, xem trên Zalo OA] | Hiện BenThanh Tourist chưa có tour đi Philippines. Bạn có thể tham khảo các điểm đến khác đang mở bán (ví dụ Nhật Bản, Hàn Quốc, Châu Âu, Đà Lạt, Phú Quốc), hoặc nhắn “gặp nhân viên” để được tư vấn tour theo yêu cầu nhé. | **AN TOÀN** |
+| 2 | tour này mình đi rồi / Cảm ơn! *(gộp 2 tin)* | Dạ vâng ạ / Cần thêm thông tin gì mình nhắn em ạ | Dạ vâng, cảm ơn bạn đã quan tâm đến BenThanh Tourist. Nếu sau này bạn cần tìm kiếm các hành trình mới hoặc có bất kỳ thắc mắc nào về dịch vụ du lịch, hãy cứ liên hệ lại với mình nhé. Chúc bạn một ngày tốt lành! *(kèm 3 thẻ tour)* | **TẠM ỔN** |
+| 3 | em gửi chị tour Cát Bà - Hải phòng (nếu có) / hoặc Nha trang, trừ Vinpearl nha *(gộp 2 tin)* | [OA gửi tin nhắn qua Zalo, xem trên Zalo OA] / Dạ Nha Trang em chỉ còn 24/11 ạ / Cát Bà Hải Phòng bên em hiện chưa có lịch ạ | Chào bạn, hiện tại bên mình có tour đi Nha Trang, nhưng chương trình này có bao gồm tham quan Vinwonders. Rất tiếc hiện tại mình chưa có tour đi Cát Bà - Hải Phòng và cũng chưa có tour Nha Trang nào không đi Vinpearl để gửi tới bạn tham khảo. /  / Bạn có thể cân nhắc các hành trình khác hoặc nhắn "gặp nhân viên" để được hỗ trợ kiểm tra các yêu cầu cụ thể hơn nhé. *(kèm 1 thẻ tour)* | **ĐÚNG** |
+| 4 | tks em! lịch này thì chị lại kg đi đc! | Dạ vâng ạ, nếu chị cần thêm thông tin gì nhắn em ạ / Em cảm ơn chị | Dạ, rất tiếc là các lịch trình hiện tại chưa phù hợp với mong muốn của chị. Hy vọng sẽ sớm có dịp được phục vụ chị trong các chuyến đi sắp tới. Chị cứ lưu lại thông tin hoặc khi nào cần hỗ trợ thêm thông tin du lịch, chị cứ nhắn em nhé. Chúc chị một ngày tốt lành ạ! | **ĐÚNG** |
+
+### Khách mới 2 (15/11)
+
+| # | Khách nhắn (đã gộp) | Nhân viên trả lời thật | Chatbot | Chấm |
+|---|---|---|---|---|
+| 1 | Hi | Dạ em chào Anh/Chị / Dạ em có thể hõ trợ được gì cho Anh/Chị ạ | Chào bạn, mình là trợ lý tư vấn tour của BenThanh Tourist. Rất vui được hỗ trợ bạn lên kế hoạch cho chuyến đi sắp tới. Bạn đang quan tâm đến điểm đến nào hay cần mình tư vấn thông tin về dịch vụ du lịch không ạ? | **ĐÚNG** |
+| 2 | Sau khi xem các tour anh muốn đăng ký 1 chỗ tour hongkong ngày 31.12 | Dạ tour Hong Kong 31/12 bên em hết chỗ rồi ạ | Mình thấy có vài tour phù hợp, bạn muốn đặt tour nào ạ? | **TẠM ỔN** |
+| 3 | Có thêm khách dạng vé lẻ được không em 😅 | Dạ tour do đã đủ chỗ không thêm được ạ :(( / Dạ mình tham khảo qua tour tháng 1 được không ạ | Dạ, về vấn đề bổ sung thêm chỗ cho tour đã hết, mình chưa có thông tin chính xác về việc mở thêm vé lẻ. Bạn vui lòng gọi hotline 1900 6668 hoặc nhắn "gặp nhân viên" để bộ phận phụ trách kiểm tra và hỗ trợ bạn trực tiếp nhé. /  / Bạn vẫn đang đặt tour dở, bạn gõ tên tour/điểm đến muốn đặt để mình hỗ trợ tiếp nhé. | **TẠM ỔN** |
+| 4 | Mấy nay lu bu quên đăng ký / Vậy tour đài loan ngày 30 thì sao em? *(gộp 2 tin)* | Dạ Đài 30/12 thì bên em còn ạ / Dạ nhờ Anh cho em xin số điện thoại em báo bạn phụ trách liên hệ mình ạ | Tour “Du Lịch Đài Loan (Tết Âm Lịch 2027): Đài Trung - Đài Bắc” chỉ có một ngày khởi hành là 07/02/2027, mình chốt ngày này cho bạn nhé (còn 9 chỗ, 22.990.000 đ/người lớn). / Bạn đi mấy người? Bạn bấm chọn hoặc gõ ví dụ “2 người lớn 1 trẻ em”. | **SAI** |
+| 5 | Ok em / [SĐT] *(gộp 2 tin)* | Dạ em nhận thông tin ạ, dạ em báo bạn phụ trách liên hệ ạ | Mình chưa đọc được số người. / Bạn đi mấy người? Bạn bấm chọn hoặc gõ ví dụ “2 người lớn 1 trẻ em”. | **SAI** |
+
+### Khách mới 3 (14/11)
+
+| # | Khách nhắn (đã gộp) | Nhân viên trả lời thật | Chatbot | Chấm |
+|---|---|---|---|---|
+| 1 | Cần tư vấn tour sing- malay 21/11, maldive 22/11. Zalo: [SĐT] / Hoặc srilanka khoảng 20/11 *(gộp 2 tin)* | Dạ em chào chị / Dạ tour Singapore - Malaysia ngày 21.11 hiện em còn 01 vé ah / Còn tour Sri Lanka, Maldives thì em không còn trong tháng 11 này rồi ạ /-showlove | Mình đã ghi nhận số điện thoại của bạn và chuyển cho nhân viên. Nhân viên BenThanh sẽ liên hệ bạn sớm nhé. | **TẠM ỔN** |
+| 2 | Gửi giúp c lịch trình tour nhen. Cụ thể cả Ngày giờ đi & về. | Dạ em chào Chị / Dạ mình đi 1 khách hay sao ạ | Chào bạn, về yêu cầu lịch trình tour, do các chương trình tour Singapore - Malaysia, Maldives hay Sri Lanka hiện không có trong danh sách khởi hành mà hệ thống đang cập nhật, nên mình chưa có thông tin chi tiết về lịch trình cũng như giờ bay cụ thể để gửi đến bạn. /  / Để có thông tin chính xác và kịp thời nhất về các lịch trình này, mời bạn liên hệ trực tiếp hotline 1900 6668 hoặc chờ nhân viên BenThanh Tourist liên… *(kèm 5 thẻ tour)* | **SAI** |
+| 3 | Đúng e / Gửi giúp c nhé, nếu phù hợp thì hum nay c đăng ký lun *(gộp 2 tin)* | Dạ mình đi 1 khách sẽ có phụ phí phòn đơn xuyên suốt tuyến ạ vì bên em không có khách lẻ nữ để ghép với mình ạ / Và do đã gần tới ngày đi nên hiện tour này bên em chỉ nhận khách đến 13h chiều hôm nay ạ / [OA gửi tệp, tin thoại hoặc nội dung Zalo không cho xem … | Dạ, rất xin lỗi chị vì em không có quyền truy cập vào lịch trình chi tiết và giờ bay cụ thể của các tour chị yêu cầu trên hệ thống. Chị yên tâm là khi chị đã để lại số điện thoại, nhân viên BenThanh Tourist sẽ chủ động liên hệ để gửi lịch trình chi tiết và hỗ trợ chị đăng ký ngay ạ. Nếu cần hỗ trợ gấp, chị có thể gọi trực tiếp hotline 1900 6668 để được giải đáp nhanh nhất nhé. | **AN TOÀN** |
+| 4 | Phụ thu phòng đơn bao nhiu e? | (chưa trả lời) | Chào bạn, về thông tin cụ thể về mức phụ thu phòng đơn cho các tour này, mình chưa có số liệu chính xác. Bạn vui lòng liên hệ trực tiếp đến hotline 1900 6668 hoặc nhắn "gặp nhân viên" để được hỗ trợ thông tin chi tiết nhất nhé. | **AN TOÀN** |
+
+### Khách mới 4 (16/11)
+
+| # | Khách nhắn (đã gộp) | Nhân viên trả lời thật | Chatbot | Chấm |
+|---|---|---|---|---|
+| 1 | hi / DU LỊCH TRUNG QUỐC: Thượng Hải - Hàng Châu - Tô Châu - Bắc Kinh (Khách Sạn 4*, Tour Tiêu Chuẩn ) / xin lịch trình tour tphcm tháng 1.27 *(gộp 3 tin)* | [tệp] / [OA gửi tệp, tin thoại hoặc nội dung Zalo không cho xem qua API, xem trên Zalo OA] / Dạ tháng 1 em có 2 chương trình này ạ, mình tham khảo qua ạ | Hiện BenThanh Tourist chưa có tour Thượng Hải nào vào tháng 1. Bên mình có 2 tour tương tự: / - “Du Lịch Trung Quốc: Ô Trấn - Hàng Châu - Thượng Hải - 1 Ngày Tự Do” (7 ngày 6 đêm, khởi hành 15/12/2026, giá 19.990.000 đ) / - “Du Lịch Trung Quốc (Tết Âm Lịch 2027): Thượng Hải - Ô Trấn - Hàng Châu” (5 ngày 4 đêm, khởi hành 07/02/2027, giá 34.990.000 đ) /  / Bạn xem chi tiết ở thẻ tour bên dưới nhé. *(kèm 2 thẻ tour)* | **AN TOÀN** |
+| 2 | ok để chị xem | Dạ nhờ chị cho em xin số điện thoại em báo bạn phụ trách liên hệ ạ | Dạ vâng, bạn cứ thong thả tham khảo thông tin các tour nhé. Nếu cần hỗ trợ thêm thông tin chi tiết về lịch trình hoặc các vấn đề khác, bạn cứ nhắn mình hoặc gọi hotline 1900 6668 để được hỗ trợ nhanh nhất ạ! | **TẠM ỔN** |
+| 3 | [SĐT] | Dạ em nhận thông tin, emn báo bạn phụ trách liên hệ ạ | Mình đã ghi nhận số điện thoại của bạn và chuyển cho nhân viên. Nhân viên BenThanh sẽ liên hệ bạn sớm nhé. | **ĐÚNG** |
+| 4 | ok em | Dạ vâng ạ, em cảm ơn chị ạ | Dạ vâng, cảm ơn bạn đã quan tâm đến dịch vụ của BenThanh Tourist. Chúc bạn một ngày tốt lành và hy vọng sớm được đồng hành cùng bạn trong chuyến đi sắp tới nhé! | **ĐÚNG** |
+
+### Khách mới 5 (11/11)
+
+| # | Khách nhắn (đã gộp) | Nhân viên trả lời thật | Chatbot | Chấm |
+|---|---|---|---|---|
+| 1 | Bên mình có tour đi Hongkong thâm quyến, quảng châu tết âm 2027 kg ạ? | [OA gửi tệp, tin thoại hoặc nội dung Zalo không cho xem qua API, xem trên Zalo OA] / Dạ em chào Anh/Chị / Bên em không có tour kết hợp 3 thành phố ạ | Chào bạn, hiện tại bên mình đang có chương trình du lịch Hong Kong khởi hành vào dịp Tết Âm lịch 2027 rất hấp dẫn. Bạn có thể tham khảo lịch trình chi tiết và thông tin khởi hành cho chương trình này ngay ở thẻ bên dưới nhé. *(kèm 1 thẻ tour)* | **TẠM ỔN** |
+| 2 | Bên em chỉ có tour Hongkong thôi hả em? | Dạ đúng rồi ạ | Hiện tại bên mình đang có các lựa chọn gồm tour chuyên Hong Kong và tour kết hợp tham quan Hong Kong - Thẩm Quyến để bạn thay đổi trải nghiệm. Cả hai chương trình đều là 4 ngày 3 đêm, trong đó tour Hong Kong - Thẩm Quyến sẽ có thêm các điểm tham quan nổi bật như Liên Hoa Sơn và trải nghiệm công nghệ AI tại Thẩm Quyến. Hiện tại bên mình chưa có chương trình bao gồm cả Quảng Châu, bạn có thể xem chi tiết hành trình từn… *(kèm 4 thẻ tour)* | **ĐÚNG** |
+| 3 | Vậy gửi tour Hongkong chị xem nhé! | [OA gửi tệp, tin thoại hoặc nội dung Zalo không cho xem qua API, xem trên Zalo OA] / Dạ em gửi tour Tết Hongkong Mùng 2 ạ | Hiện tại BenThanh Tourist đang có nhiều chương trình tour Hong Kong với các lịch trình khác nhau để bạn lựa chọn, bao gồm các tour khởi hành trong tháng 11/2026, tour dịp Tết Dương lịch và Tết Âm lịch 2027. Mỗi hành trình đều kéo dài 4 ngày 3 đêm với những điểm tham quan đặc trưng như Đỉnh Núi Thái Bình, Vịnh Nước Cạn và Đại Lộ Ngôi Sao, bạn có thể tham khảo chi tiết tại các thẻ bên dưới nhé. *(kèm 4 thẻ tour)* | **TẠM ỔN** |
+| 4 | Tour này có ghé Shop kg em? | Dạ có ạ / Dạ có 2 điểm Trung tâm miễn thuế DFS và Trung tâm đá quý ah / Dạ nhờ chị cho em xin số điện thoại em báo bạn phụ trách liên hệ tư vấn mình ạ | Dạ, hiện tại mình chưa có thông tin chi tiết về các điểm mua sắm cụ thể trong chương trình. Để nắm rõ lịch trình có ghé các điểm mua sắm hay không, bạn vui lòng liên hệ hotline 1900 6668 hoặc nhắn tin "gặp nhân viên" để được hỗ trợ kiểm tra chi tiết chương trình nhé. *(kèm 4 thẻ tour)* | **AN TOÀN** |
+| 5 | [SĐT] | Dạ em nhận thông tin, em báo bạn phụ trách liên hệ ạ | Mình đã ghi nhận số điện thoại của bạn và chuyển cho nhân viên. Nhân viên BenThanh sẽ liên hệ bạn sớm nhé. | **ĐÚNG** |
+| 6 | Kết bạn zalo nhắn giúp chị nhé! | Dạ em nhận thông tin ạ, dạ có bạn Ý nhân viên bên em sẽ liên hệ với mình ạ | Dạ, mình đã chuyển thông tin của bạn đến bộ phận phụ trách. Nhân viên bên mình sẽ chủ động liên hệ qua Zalo để tư vấn chi tiết cho bạn sớm nhất, bạn yên tâm nhé. | **ĐÚNG** |
+
+### Khách mới 6 (05/11)
+
+| # | Khách nhắn (đã gộp) | Nhân viên trả lời thật | Chatbot | Chấm |
+|---|---|---|---|---|
+| 1 | hi | [OA gửi nosupport qua Zalo, xem trên Zalo OA] | Chào bạn, mình là trợ lý tư vấn tour của BenThanh Tourist. Rất vui được hỗ trợ bạn lên kế hoạch cho chuyến đi sắp tới. Bạn đang quan tâm đến tour du lịch tại điểm đến nào hoặc dịp đặc biệt nào không ạ? | **ĐÚNG** |
+| 2 | chào em / bên e có tour như này ko? *(gộp 2 tin)* | Dạ em chào Anh/Chị / Dạ để em kiểm tra ạ | Chào bạn, có vẻ như bạn chưa gửi kèm thông tin hoặc hình ảnh về chương trình tour mà bạn đang quan tâm nên mình chưa rõ ý bạn muốn tìm kiếm cụ thể thế nào. /  / Hiện BenThanh Tourist đang có nhiều chương trình tour trong và ngoài nước đa dạng cho bạn lựa chọn. Bạn có thể chia sẻ thêm về điểm đến mong muốn, ngân sách hoặc thời gian dự kiến để mình hỗ trợ tư vấn chính xác hơn nhé. Bạn xem qua một số gợi ý tour hiện có … *(kèm 5 thẻ tour)* | **TẠM ỔN** |
+| 3 | check giùm anh với / anh công tác ở thượng hải từ ngày 15-19/11 *(gộp 2 tin)* | Dạ sau khi kiểm tra thì tour Trung Quốc tháng 11 bên em hết chỗ rồi ạ, em chỉ còn tháng 12 thô ạ | Chào bạn, hiện tại BenThanh Tourist chưa có chương trình tour khởi hành trong khoảng thời gian từ ngày 15/11 đến 19/11 tại Thượng Hải. /  / Tuy nhiên, bên mình có chương trình tour khác đến Thượng Hải khởi hành vào dịp Tết Âm Lịch 2027, mời bạn tham khảo thông tin chi tiết qua thẻ tour bên dưới để cân nhắc thêm nhé. Nếu cần tư vấn các tour khác hoặc thông tin chi tiết hơn, bạn có thể liên hệ hotline 1900 6668 hoặc nh… *(kèm 1 thẻ tour)* | **TẠM ỔN** |
+| 4 | ok em | Dạ vâng ạ, anh cần thông tin gì thêm anh nhắn em,m em cảm ơn anh ạ | Dạ vâng ạ. Nếu sau này bạn cần hỗ trợ thêm thông tin về các tour du lịch khác hoặc có kế hoạch cho chuyến đi mới, bạn cứ nhắn mình nhé. Chúc bạn có chuyến công tác tại Thượng Hải thật thuận lợi và hiệu quả! | **ĐÚNG** |
+
+### Khách mới 7 (19/11)
+
+| # | Khách nhắn (đã gộp) | Nhân viên trả lời thật | Chatbot | Chấm |
+|---|---|---|---|---|
+| 1 | Mình cần tư vấn tour hongkong | Dạ em chào Anh/Chị / Dạ mình cần tư vấn tour đi thời gian nào ạ | Chào bạn, BenThanh Tourist hiện có 4 chương trình tour Hồng Kông rất hấp dẫn, bao gồm cả các tour thường và tour khởi hành dịp Tết Dương lịch, Tết Âm lịch sắp tới. Các tour đều kéo dài 4 ngày 3 đêm với lịch trình tham quan những điểm đến nổi tiếng như Đỉnh Núi Thái Bình, Vịnh Nước Cạn và Đại Lộ Ngôi Sao. /  / Dưới đây là một số thông tin so sánh để bạn dễ lựa chọn: /  / - Tour Du Lịch Hong Kong - Thẩm Quyến (khởi hàn… *(kèm 4 thẻ tour)* | **TẠM ỔN** |
+| 2 | Dự tính a đi tháng 1 | [tệp] / Dạ em gửi thông tin tour Hong Kong tháng 1 ạ | Hiện BenThanh Tourist chưa có tour Hồng Kông nào vào tháng 1. Bên mình có 3 tour tương tự: / - “Du Lịch Hong Kong - Thẩm Quyến: Đại Lộ Ngôi Sao - Núi Thái Bình - Liên Hoa Sơn - Trải Nghiệm Công Nghệ AI Thẩm Quyến” (4 ngày 3 đêm, khởi hành 19/11/2026, giá 19.590.000 đ) / - “Du Lịch Hong Kong: Đỉnh Núi Thái Bình - Vịnh Nước Cạn - Đại Lộ Ngôi Sao” (4 ngày 3 đêm, khởi hành 21/11/2026, giá 19.990.000 đ) / - “Du Lịch Hong … *(kèm 3 thẻ tour)* | **AN TOÀN** |
+| 3 | Tour này e / Mà a từng xin tự túc bị rớt / Giờ xin đi tour chơi ổn k e *(gộp 3 tin)* | Dạ cho em hỏi mình rớt visa bao lâu rồi ạ | Chào anh, em rất hiểu băn khoăn của mình vì việc từng bị từ chối visa tự túc trước đó có thể khiến anh lo lắng. /  / Về thủ tục visa khi đi tour, em chưa có thông tin chính xác về khả năng xét duyệt hay các quy định xử lý cho từng trường hợp hồ sơ cụ thể. Để được tư vấn kỹ hơn về cách chuẩn bị hồ sơ và các lưu ý cần thiết cho trường hợp của mình, anh vui lòng liên hệ trực tiếp hotline 1900 6668 hoặc nhắn tin "gặp nhâ… *(kèm 4 thẻ tour)* | **AN TOÀN** |
+| 4 | Đầu tháng 4 e | (chưa trả lời) | Hiện BenThanh Tourist chưa có tour Hồng Kông nào vào tháng 4. Bên mình có 3 tour tương tự: / - “Du Lịch Hong Kong - Thẩm Quyến: Đại Lộ Ngôi Sao - Núi Thái Bình - Liên Hoa Sơn - Trải Nghiệm Công Nghệ AI Thẩm Quyến” (4 ngày 3 đêm, khởi hành 19/11/2026, giá 19.590.000 đ) / - “Du Lịch Hong Kong: Đỉnh Núi Thái Bình - Vịnh Nước Cạn - Đại Lộ Ngôi Sao” (4 ngày 3 đêm, khởi hành 21/11/2026, giá 19.990.000 đ) / - “Du Lịch Hong … *(kèm 3 thẻ tour)* | **SAI** |
+
+### Khách mới 8 (08/11)
+
+| # | Khách nhắn (đã gộp) | Nhân viên trả lời thật | Chatbot | Chấm |
+|---|---|---|---|---|
+| 1 | Hi bạn! / Cho mình biết tour Thái Lan ks có gần shop không? | Dạ em chào Anh/Chị / Dạ mình quan tâm tour đi Thái thời gian nào ạ | Chào bạn, hiện tại bên mình có khá nhiều chương trình tour Thái Lan với lịch trình và dịch vụ khách sạn khác nhau. Về vị trí khách sạn, mình chưa có thông tin chi tiết chính xác về khoảng cách đến các khu mua sắm cụ thể của từng tour, bạn vui lòng liên hệ hotline 1900 6668 hoặc nhắn "gặp nhân viên" để được hỗ trợ kiểm tra kỹ hơn nhé. /  / Dưới đây là các tour Thái Lan đang có, bạn có thể tham khảo thêm: *(kèm 6 thẻ tour)* | **AN TOÀN** |
+| 2 | Hi em! / Chị muốn đi 12-2-2027 đi Thái . / Chị muốn biết tour bên em ks ở Thái có gần shop không, tối về đi chơi ấy mà. / 18-2 chị muốn đi Hà Nội, Hạ Long ngủ trên thuyền 1 đêm . / Nếu em có tour những ngày đó gởi chị tiết cho chị nhé. / Cám ơn. | [OA gửi tin nhắn qua Zalo, xem trên Zalo OA] | Hiện BenThanh Tourist chưa có tour Hà Nội nào vào ngày 12/02. Bên mình có 3 tour tương tự: / - “Du Lịch Hà Nội - Tuyệt Tình Cốc - Bái Đính - Tràng An - Hạ Long - Yên Tử - Sapa - Fansipan” (6 ngày 5 đêm, khởi hành 26/11/2026, giá 13.990.000 đ) / - “Du Lịch Hà Nội - Ninh Bình - Tuyệt Tình Cốc - Bái Đính - Tràng An - Hạ Long” (4 ngày 3 đêm, khởi hành 26/11/2026, giá 11.990.000 đ) / - “Du Lịch Hà Nội - Sapa - Fansipan - … *(kèm 3 thẻ tour)* | **SAI** |
+| 3 | Chị muốn biết ks tour Thái có gần shop không? | [tệp] / Dạ trong tour sẽ có đ Big C, Central World... / Xe sẽ đưa đoàn đi ạ / Còn khách sạn sẽ cách trung tâm khoảng 11-13km ạ, còn nếu chị muốn đi mua sắm thì xe đoàn có chở đi Big C, Central World ạ | Chào bạn, về thắc mắc của bạn liên quan đến vị trí khách sạn tại Thái Lan, rất tiếc hiện tại mình chưa có dữ liệu chi tiết về khoảng cách từ khách sạn đến các khu mua sắm hay khu vui chơi cho từng chương trình cụ thể. Các tour của bên mình thường ưu tiên lựa chọn khách sạn có vị trí thuận tiện di chuyển, tuy nhiên để biết chính xác có gần khu vực mua sắm như ý muốn hay không, bạn vui lòng liên hệ hotline 1900 6668 ho… *(kèm 6 thẻ tour)* | **AN TOÀN** |
+| 4 | Hi em ! / Tour bên có phụ thu người nước ngoài không? / Em gởi chương trình tour Hà Nội Hạ Long, ngủ trên du thuyền 1 đêm đi ngày 18-2 cho chị nhé , nếu được chị book tour Thái và Hạ Long . *(gộp 2 tin)* | Dạ em chào chị / Dạ chị cho em xin số điện thoại em báo bạn phụ trách liên hê ạ | Mình thấy có vài tour phù hợp, bạn muốn đặt tour nào ạ? | **SAI** |
+| 5 | [SĐT] | Dạ có bạn Thư sẽ liên hệ yuw vấn chị chương trình tour Thái và bạn Tuyền bên em sẽ tư vấn chị chương trình Hạ Long ạ | Mình thấy có vài tour phù hợp, bạn muốn đặt tour nào ạ? | **SAI** |
+
+### Khách mới 9 (12/11)
+
+| # | Khách nhắn (đã gộp) | Nhân viên trả lời thật | Chatbot | Chấm |
+|---|---|---|---|---|
+| 1 | Tìm tour Đài Loan : phù hợp cao tuổi / - no shopping - thông thả ko chạy show - 6, 7, 8 ngày - ko cần chạy nhiều điểm - KS 4 sao | Dạ em chào Anh/Chị / Dạ bên em tour chỉ có 5 ngày ạ và tour có shop ạ | Hiện BenThanh Tourist chưa có tour Đài Loan nào kéo dài 8 ngày. Bên mình có 3 tour tương tự: / - “Du Lịch Đài Loan: Đài Bắc - Dương Minh Sơn - Đài Trung - Hồ Nhật Nguyệt - Cao Hùng” (5 ngày 4 đêm, khởi hành 02/12/2026, giá 14.990.000 đ) / - “Du Lịch Đài Loan (Tết Dương Lịch 2027): Đài Bắc - Đài Trung - Cao Hùng” (5 ngày 4 đêm, khởi hành 30/12/2026, giá 18.990.000 đ) / - “Du Lịch Đài Loan (Tết Âm Lịch 2027): Đài Trung… *(kèm 3 thẻ tour)* | **TẠM ỔN** |
+| 2 | Phía nam TQ có tour nào ko ? | Dạ Trung Quốc em chỉ có tuyến Thượng Hải  - Ô Trấn - Hàng Châu và có shop ạ | Hiện tại hệ thống bên mình chưa có tour đi khu vực phía Nam Trung Quốc trong danh sách gợi ý này. Bạn có thể tham khảo các tour nước ngoài khác đang có sẵn hoặc liên hệ hotline 1900 6668 để nhân viên kiểm tra thông tin cập nhật mới nhất giúp bạn nhé. *(kèm 5 thẻ tour)* | **AN TOÀN** |
+| 3 | HK ? Thái lan ? / Hong kong *(gộp 2 tin)* | Dạ các tour bên em đều có shop ak / Dạ và đi 5 ngày ạ chứ không có đi 6,7,8 ngày ạ / Từ 6 ngày trở lên em có Nhật Bản, Châu Âu ạ / [OA gửi tệp, tin thoại hoặc nội dung Zalo không cho xem qua API, xem trên Zalo OA] / Dạ em gửi mình tham khảo ạ / [OA gửi tệp, ti… | Hiện tại mình đang có 4 tour Hồng Kông và 6 tour Thái Lan với lịch trình đa dạng để bạn lựa chọn: /  / Về các tour Hồng Kông: / - Các chương trình thường kéo dài 4 ngày 3 đêm, tập trung vào những điểm đến nổi tiếng như Đỉnh núi Thái Bình, Vịnh Nước Cạn và Đại Lộ Ngôi Sao. / - Có tour kết hợp đi Thẩm Quyến để trải nghiệm công nghệ AI và tham quan Liên Hoa Sơn. / - Mức giá dao động từ 19.590.000đ đến 26.990.000đ tùy th… *(kèm 10 thẻ tour)* | **ĐÚNG** |
+| 4 | Đài Loan có tour nào 5 ngày ? | [OA gửi tệp, tin thoại hoặc nội dung Zalo không cho xem qua API, xem trên Zalo OA] / Dạ em gửi chương trinh tour Đài Loan tháng 12 5 ngày ạ | Chào bạn, hiện tại mình có 2 chương trình tour Đài Loan 5 ngày 4 đêm phù hợp với yêu cầu của bạn: /  / - Tour Đài Bắc - Dương Minh Sơn - Đài Trung - Hồ Nhật Nguyệt - Cao Hùng: Khởi hành ngày 02/12/2026 với giá 14.990.000đ. Theo dữ liệu hiện có, tour này còn 20 chỗ. / - Tour Đài Bắc - Đài Trung - Cao Hùng (Tết Dương Lịch 2027): Khởi hành ngày 30/12/2026 với giá 18.990.000đ. Tour này hiện còn khoảng 9 chỗ, bạn nên cân … *(kèm 2 thẻ tour)* | **ĐÚNG** |
+| 5 | Có ngày khoảng 16/12 ko ? | Dạ bên em không có ngày 16/12 ạ | Rất tiếc, hiện tại mình chưa tìm thấy tour Đài Loan nào khởi hành vào ngày 16/12. Bạn có thể tham khảo lại các ngày 02/12 hoặc 30/12 mình đã giới thiệu trước đó, hoặc liên hệ hotline 1900 6668 để nhân viên hỗ trợ kiểm tra thông tin cập nhật mới nhất nhé. | **ĐÚNG** |

@@ -39,6 +39,8 @@ Hai cột dưới đây do trigger trong database tính (migration `search_and_s
 
 Migration `20261119090627_sticker_library` thêm bảng `stickers`: tên, đường dẫn WebP/GIF riêng tư, kích thước GIF, chiều rộng/cao, cờ ảnh động, trạng thái hoạt động và thời gian tạo. Chỉ admin được thêm/ẩn. Không sửa cấu trúc `messages`: mỗi lần gửi lưu một bản đính kèm độc lập, nên ẩn sticker không làm hỏng lịch sử. Không cần sửa SQL chatbot.
 
+Migration `20261120023150_sticker_packs` (2026-11-20) thêm bảng `sticker_packs` (tệp sticker: tên duy nhất, `active`) và cột `stickers.packId` (cho phép trống, xoá tệp thì sticker về "chưa xếp tệp"). Ẩn tệp thì mọi sticker trong tệp không hiện ở bảng chọn và không gửi được, nhưng vẫn giữ nguyên để hiện lại.
+
 ## Chỉ mục và dung lượng
 
 Đo trên database thử 1 triệu tin, 20.000 khách (ngày 2026-11-06):
