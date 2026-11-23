@@ -18,7 +18,7 @@ export class StickersService {
 
   async list() {
     const rows = await this.prisma.sticker.findMany({ where: DUNG_DUOC, orderBy: { createdAt: 'desc' },
-      select: { id: true, name: true, animated: true, width: true, height: true, packId: true } });
+      select: { id: true, name: true, animated: true, width: true, height: true, packId: true, zaloStickerId: true } });
     return rows.map((s) => ({ ...s, url: `/stickers/${s.id}/image` }));
   }
 
@@ -67,6 +67,13 @@ export class StickersService {
     }
   }
 
+  /** Gắn (hoặc gỡ, null) mã sticker có sẵn của Zalo. */
+  async datMaZalo(id: string, ma: string | null) {
+    await this.get(id);
+    await this.prisma.sticker.update({ where: { id }, data: { zaloStickerId: ma?.trim() || null } });
+    return { ok: true };
+  }
+
   /** Chuyển sticker sang tệp khác (null = bỏ khỏi tệp). */
   async move(id: string, packId: string | null) {
     await this.prisma.sticker.findFirstOrThrow({ where: { id, active: true } }).catch(() => { throw new NotFoundException('Sticker không còn trong kho'); });
@@ -88,7 +95,7 @@ export class StickersService {
   async prepare(id: string): Promise<TepChuanBi> {
     const s = await this.get(id);
     return { data: await this.storage.doc(s.gifPath, MAX_STICKER_BYTES), type: 'image/gif', ext: 'gif',
-      name: `${s.name}.gif`, anh: true, linkGif: this.kyLinkGif(id) };
+      name: `${s.name}.gif`, anh: true, linkGif: this.kyLinkGif(id), ...(s.zaloStickerId ? { zaloStickerId: s.zaloStickerId } : {}) };
   }
 
   /** Đường dẫn (sau /api/v1) tới GIF của sticker, ký HMAC bằng JWT_SECRET, tự hết hạn. Dùng tiền tố `sticker:` để không trùng chữ ký link file tin nhắn. */

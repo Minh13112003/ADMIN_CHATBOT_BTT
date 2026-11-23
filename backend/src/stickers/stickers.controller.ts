@@ -22,6 +22,10 @@ class UploadDto {
   @IsOptional() @ValidateIf((_, v) => v !== '') @IsUUID('4', { message: 'Tệp sticker không hợp lệ' }) packId?: string;
 }
 
+class ZaloIdDto {
+  @ValidateIf((_, v) => v !== null) @IsString({ message: 'Mã sticker Zalo không hợp lệ' }) @MaxLength(100, { message: 'Mã sticker Zalo tối đa 100 ký tự' }) zaloStickerId: string | null;
+}
+
 class MoveDto {
   @ValidateIf((_, v) => v !== null) @IsUUID('4', { message: 'Tệp sticker không hợp lệ' }) packId: string | null;
 }
@@ -74,6 +78,10 @@ export class StickersController {
   @Patch(':id/pack')
   @Roles(Role.ADMIN)
   move(@Param('id', ParseUUIDPipe) id: string, @Body() dto: MoveDto) { return this.svc.move(id, dto.packId); }
+
+  @Patch(':id/zalo')
+  @Roles(Role.ADMIN)
+  datMaZalo(@Param('id', ParseUUIDPipe) id: string, @Body() dto: ZaloIdDto) { return this.svc.datMaZalo(id, dto.zaloStickerId); }
 
   @Patch(':id/hide')
   @Roles(Role.ADMIN)

@@ -61,7 +61,7 @@ export function phanTichSuKien(body: unknown): SuKienZalo | null {
   return { userId, msgId, text: `${kem}[Khách gửi ${loai} qua Zalo, xem trên Zalo OA]`.slice(0, 4000), laText: false, tenSuKien: ten, timestamp };
 }
 
-export type DinhKemZalo = { loai: string; url: string; ten: string | null };
+export type DinhKemZalo = { loai: string; url: string; ten: string | null; maSticker?: string };
 
 const https = (x: unknown): x is string => typeof x === 'string' && /^https:\/\//.test(x) && x.length <= 2000;
 
@@ -78,7 +78,9 @@ export function layDinhKem(body: unknown): DinhKemZalo[] {
     const p = (a.payload ?? {}) as Record<string, any>;
     const url = [p.url, p.thumbnail, p.href].find(https);
     if (!url) continue;
-    ra.push({ loai: typeof a.type === 'string' ? a.type : 'file', url, ten: typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 200) : null });
+    const ma = [p.id, p.sticker_id].find((x) => (typeof x === 'string' || typeof x === 'number') && String(x).length <= 100);
+    ra.push({ loai: typeof a.type === 'string' ? a.type : 'file', url, ten: typeof p.name === 'string' && p.name.trim() ? p.name.trim().slice(0, 200) : null,
+      ...(a.type === 'sticker' && ma !== undefined ? { maSticker: String(ma) } : {}) });
   }
   return ra;
 }

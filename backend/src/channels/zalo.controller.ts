@@ -57,7 +57,9 @@ export class ZaloWebhookController {
   private async dinhKemThanhTin(dk: DinhKemZalo[], caption: string, ai: 'Khách' | 'OA'): Promise<{ text: string; file?: TepDaLuu }[]> {
     const ra: { text: string; file?: TepDaLuu }[] = [];
     for (const [i, d] of dk.entries()) {
-      const chu = i === 0 ? caption : '';
+      // Sticker có sẵn của Zalo: ghi mã vào tin để admin chép vào Kho sticker (gắn mã thì gửi sang Zalo được ảnh động).
+      if (d.maSticker) this.log.log(`Sticker Zalo, mã: ${d.maSticker}`);
+      const chu = `${i === 0 ? caption : ''}${d.maSticker ? ` [Mã sticker Zalo: ${d.maSticker}]` : ''}`.trim();
       const duocLuu = /^(image|photo|sticker|gif|file)$/i.test(d.loai) ? await this.zalo.taiTep(d.url, d.ten) : null;
       if (duocLuu) ra.push({ text: chu, file: duocLuu });
       else ra.push({ text: `${chu ? `${chu} ` : ''}[${ai} gửi ${TEN_DINH_KEM[d.loai] ?? 'tệp'}${d.ten ? ` "${d.ten}"` : ''}: ${d.url}]`.slice(0, 4000) });

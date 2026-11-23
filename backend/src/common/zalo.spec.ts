@@ -93,6 +93,7 @@ describe('zalo', () => {
   });
   it('tệp đính kèm và trích dẫn: đọc đúng, thiếu dữ liệu thì rỗng', () => {
     expect(layDinhKem({ message: { attachments: [{ type: 'image', payload: { url: 'https://z/a.jpg' } }, { type: 'file', payload: { url: 'http://x', name: 'a.pdf' } }, null] } })).toEqual([{ loai: 'image', url: 'https://z/a.jpg', ten: null }]);
+    expect(layDinhKem({ message: { attachments: [{ type: 'sticker', payload: { url: 'https://z/s.png', id: 'st123' } }] } })).toEqual([{ loai: 'sticker', url: 'https://z/s.png', ten: null, maSticker: 'st123' }]);
     expect(layDinhKem({})).toEqual([]);
     expect(layTrich({ message: { quote_msg_id: 'q1' } })).toEqual({ msgId: 'q1', text: null });
     expect(layTrich({ message: {} })).toEqual({ msgId: null, text: null });

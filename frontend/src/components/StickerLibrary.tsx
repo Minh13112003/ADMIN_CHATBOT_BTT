@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import { fetcher, linkTep, loiCua, patch, post, postForm } from '@/lib/api';
 import { Dialog, ErrorText, Field, inputClass, primaryClass, secondaryClass } from './ui';
 
-export type Sticker = { id: string; name: string; url: string; animated: boolean; width: number; height: number; packId: string | null };
+export type Sticker = { id: string; name: string; url: string; animated: boolean; width: number; height: number; packId: string | null; zaloStickerId?: string | null };
 export type StickerPack = { id: string; name: string; active: boolean; count: number };
 
 /** Nhóm sticker theo tệp, giữ thứ tự tệp; sticker chưa xếp tệp (hoặc tệp không còn trong danh sách) vào nhóm "Khác" ở cuối. */
@@ -74,6 +74,13 @@ export function StickerLibrary({ manage = false, onSelect }: { manage?: boolean;
     try { await patch(`/stickers/${s.id}/pack`, { packId: packId || null }); await mutate(); await mutatePacks(); } catch (e) { setErrorText(loiCua(e)); } finally { setBusy(false); }
   };
 
+  const luuMaZalo = async (s: Sticker, ma: string) => {
+    const moi = ma.trim();
+    if (moi === (s.zaloStickerId ?? '')) return;
+    setBusy(true); setErrorText(''); setMessage('');
+    try { await patch(`/stickers/${s.id}/zalo`, { zaloStickerId: moi || null }); await mutate(); setMessage(moi ? `Đã gắn mã sticker Zalo cho ${s.name}.` : `Đã gỡ mã sticker Zalo của ${s.name}.`); } catch (e) { setErrorText(loiCua(e)); } finally { setBusy(false); }
+  };
+
   const tim = search.toLocaleLowerCase('vi');
   const rows = (data ?? []).filter((s) => s.name.toLocaleLowerCase('vi').includes(tim));
   const dsTep = packs ?? [];
@@ -92,7 +99,7 @@ export function StickerLibrary({ manage = false, onSelect }: { manage?: boolean;
       <button type="button" disabled={busy} className={secondaryClass} onClick={() => setPackDialog({ pack: null, name: '' })}>Tạo tệp mới</button>
       <input ref={input} type="file" multiple hidden accept=".webp,image/webp,.gif,image/gif" onChange={(e) => { void upload(e.target.files); e.target.value = ''; }} />
       <button type="button" disabled={busy} className={primaryClass} onClick={() => input.current?.click()}>{busy ? 'Đang xử lý…' : 'Tải sticker lên'}</button>
-      <p className="basis-full text-sm text-muted">File WebP hoặc GIF tối đa 5 MB, chọn được nhiều file một lần. Giữ chuyển động nếu ảnh gốc là ảnh động. File GIF được giữ nguyên bản gốc để gửi sang Zalo.</p>
+      <p className="basis-full text-sm text-muted">File WebP hoặc GIF tối đa 5 MB, chọn được nhiều file một lần. Giữ chuyển động nếu ảnh gốc là ảnh động. File GIF được giữ nguyên bản gốc để gửi sang Zalo. Ô "Mã sticker Zalo" dưới mỗi sticker: điền mã thì khách Zalo nhận sticker có sẵn của Zalo (chuyển động được); lấy mã bằng cách gửi sticker đó vào Zalo OA, mã hiện ở tin của khách.</p>
     </div>}
     <input type="search" aria-label="Tìm sticker" placeholder="Tìm sticker theo tên…" value={search} onChange={(e) => setSearch(e.target.value)} className="min-h-11 w-full rounded-xl border border-field bg-surface px-3 text-sm" />
     {message && <p role="status" className="text-sm text-brand-text">{message}</p>}
@@ -125,6 +132,8 @@ export function StickerLibrary({ manage = false, onSelect }: { manage?: boolean;
                 <option value="">Chưa xếp tệp</option>
                 {dsTep.filter((p) => p.active || p.id === s.packId).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
+              <input key={`${s.id}-${s.zaloStickerId ?? ''}`} defaultValue={s.zaloStickerId ?? ''} maxLength={100} disabled={busy} placeholder="Mã sticker Zalo" aria-label={`Mã sticker Zalo của ${s.name}`}
+                onBlur={(e) => void luuMaZalo(s, e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} className="mt-1 min-h-11 w-full rounded-lg border border-field bg-surface px-2 text-xs" />
               <button type="button" disabled={busy} className="min-h-11 w-full text-xs text-muted underline hover:text-ink" onClick={() => setHide(s)}>Ẩn khỏi kho</button>
             </>}
           </div>)}

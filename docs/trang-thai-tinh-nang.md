@@ -146,3 +146,4 @@ docker compose -f docker-compose.yml -f docker-compose.test.yml up -d --build ba
 docker compose run --rm backend ./node_modules/.bin/prisma migrate deploy
 docker compose restart backend
 ```
+- 2026-11-20: Sticker sang Zalo, hướng sticker có sẵn của Zalo: bảng `stickers` thêm cột `zaloStickerId` (**migration `20261120070202_sticker_zalo_id`**, chỉ thêm cột); tin khách gửi sticker vào OA hiện kèm "[Mã sticker Zalo: …]"; Kho sticker có ô "Mã sticker Zalo" cho mỗi sticker (admin); gửi sang Zalo bằng mã, lỗi thì rơi về GIF. **Chưa thử trên Zalo thật.** Chi tiết ở `docs/stickers.md`.

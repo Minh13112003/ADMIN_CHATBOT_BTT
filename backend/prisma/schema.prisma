@@ -545,6 +545,7 @@ model Sticker {
   active    Boolean      @default(true)
   createdAt DateTime     @default(now())
   packId    String? // Trống = sticker chưa xếp vào tệp nào (hiện ở tab "Khác")
+  zaloStickerId String? // Mã sticker có sẵn của Zalo; có thì gửi sang Zalo bằng sticker Zalo (động) thay cho ảnh GIF tự tải lên
   pack      StickerPack? @relation(fields: [packId], references: [id], onDelete: SetNull)
 
   @@index([active, createdAt])

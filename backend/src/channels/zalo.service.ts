@@ -237,7 +237,19 @@ export class ZaloService {
    * Gửi ảnh (JPG/PNG tối đa 1 MB) hoặc PDF (tối đa 5 MB) cho khách qua tin tư vấn. Giới hạn theo tài liệu Zalo, chưa kiểm chứng.
    * Ảnh có chữ kèm thì gửi chung một tin; PDF có chữ kèm thì gửi chữ thành tin riêng sau tệp.
    */
-  async guiTep(zaloUserId: string, tep: { data: Buffer; type: string; name: string; anh: boolean; linkGif?: string }, chu: string): Promise<void> {
+  async guiTep(zaloUserId: string, tep: { data: Buffer; type: string; name: string; anh: boolean; linkGif?: string; zaloStickerId?: string }, chu: string): Promise<void> {
+    // Sticker có sẵn của Zalo (admin gắn mã ở Kho sticker): gửi bằng mã, Zalo hiện ảnh động. Lỗi thì rơi xuống cách gửi GIF bên dưới.
+    if (tep.zaloStickerId) {
+      try {
+        await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: { recipient: { user_id: zaloUserId }, message: { attachment: {
+          type: 'template', payload: { template_type: 'media', elements: [{ media_type: 'sticker', attachment_id: tep.zaloStickerId }] } } } } });
+        this.log.log(`Zalo nhận sticker Zalo (mã ${tep.zaloStickerId})`);
+        if (chu) await this.guiTin(zaloUserId, chu);
+        return;
+      } catch (e) {
+        this.log.warn(`Zalo không nhận sticker mã ${tep.zaloStickerId}: ${(e as Error).message}; thử gửi GIF`);
+      }
+    }
     if (tep.type === 'image/gif') {
       if (tep.data.length > 5 * 1024 * 1024) throw new BadRequestException('Ảnh động gửi sang Zalo tối đa 5 MB');
       const meta = await sharp(tep.data, { animated: true, limitInputPixels: 40_000_000 }).metadata();
