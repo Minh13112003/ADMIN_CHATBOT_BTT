@@ -10,6 +10,7 @@ import { AssignmentService } from '../conversations/assignment.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { AttachmentsService, HAN_LINK_KHACH_GIAY, TepDaLuu } from '../storage/attachments.service';
 import { tomTatDinhKem } from '../common/attachments';
+import { laTinSticker } from '../common/zalo';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { BookingStatusDto, BotReplyDto, DealDto, HistoryDto, IdentifyDto, InboundDto, UsageDto } from './ingest.dto';
 
@@ -160,7 +161,7 @@ export class IngestService {
         } else if (truoc.status === 'READ' || truoc.status === 'CLOSED') data.status = 'PENDING';
       } else if (canNguoi) {
         action = 'CONTACT';
-        reply = DA_BAO_NHAN_VIEN;
+        reply = dto.contactReply?.trim() || DA_BAO_NHAN_VIEN;
         vuaLienHe = true;
         nguoi = truoc.status === 'CONTACT' && truoc.assigneeId ? null : await this.assignment.chia(tx, truoc.lastHandlerId);
         data.status = 'CONTACT';
@@ -172,7 +173,7 @@ export class IngestService {
         }
         const ai = nguoi ? `Hệ thống chia cho ${nguoi.fullName}` : truoc.assigneeId ? 'Khách nhắc lại yêu cầu' : 'Chưa có ai đang trực để chia';
         thongBao.push({ conversationId: truoc.id, senderType: 'SYSTEM', internal: true, text: `Khách yêu cầu gặp nhân viên, chuyển sang Liên hệ. ${ai}` });
-        thongBao.push({ conversationId: truoc.id, senderType: 'BOT', text: DA_BAO_NHAN_VIEN });
+        thongBao.push({ conversationId: truoc.id, senderType: 'BOT', text: reply });
       } else {
         if (truoc.status === 'READ' || truoc.status === 'CLOSED') data.status = 'UNREAD';
         if (truoc.autoReplyOn) {
@@ -238,7 +239,8 @@ export class IngestService {
       where: {
         conversationId: conv.id, internal: false, senderType: { in: ['STAFF', 'AUTO', 'BOT'] }, createdAt: { gte: new Date(now.getTime() - 2 * 60_000) },
         // Thẻ xin số điện thoại vừa gửi từ trang này: Zalo báo lại dạng không có chữ, không ghi thêm dòng "xem trên Zalo OA".
-        OR: [{ text: a.text }, ...(!a.file && a.text.includes('xem trên Zalo OA') ? [{ text: { startsWith: '[Thẻ xin thông tin]' } }] : [])],
+        // Tin Zalo báo lại sticker OA vừa gửi từ trang này (đã lưu bản ảnh động không có chữ): bỏ qua, không ghi thành tin thứ hai.
+        OR: [{ text: a.text }, ...(kenh === 'ZALO' && laTinSticker(a.text) ? [{ staffId: { not: null }, attachmentType: 'image/gif' }] : []), ...(!a.file && a.text.includes('xem trên Zalo OA') ? [{ text: { startsWith: '[Thẻ xin thông tin]' } }] : [])],
       },
       select: { id: true },
     });

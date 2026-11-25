@@ -46,6 +46,8 @@ Gọi khi khách nhập tên và số, trước khi chat.
 
 `wantsHuman`: chatbot tự nhận ra khách cần người, ví dụ việc hoàn tiền của chính khách (`rag.hoi_muon_gap_nhan_vien`).
 
+`contactReply` (tuỳ chọn, tối đa 500 ký tự, từ 2026-11-25): khi hội thoại chuyển sang Liên hệ, backend lưu và trả câu này thay câu mặc định "Mình đã báo nhân viên...". Chatbot dùng cho mục chưa có dữ liệu (lý do `TU_VAN`). Hội thoại đang `STAFF` thì bỏ qua.
+
 ## POST /inbound-file (khách gửi ảnh hoặc PDF)
 `multipart/form-data`: `channel`, `externalUserId`, `file` (bắt buộc); `text` (chữ kèm, không bắt buộc), `externalMessageId` (chống ghi trùng), `customer` (chuỗi JSON `{"name":...,"phone":...}`). Trả cùng dạng với `/inbound` (`action`: BOT, AUTO_REPLY, CONTACT, STAFF). Tin có thể không có chữ.
 

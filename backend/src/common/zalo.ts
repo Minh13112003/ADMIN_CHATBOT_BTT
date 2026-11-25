@@ -61,6 +61,10 @@ export function phanTichSuKien(body: unknown): SuKienZalo | null {
   return { userId, msgId, text: `${kem}[Khách gửi ${loai} qua Zalo, xem trên Zalo OA]`.slice(0, 4000), laText: false, tenSuKien: ten, timestamp };
 }
 
+/** Tin Zalo báo lại một sticker (có dòng "[Mã sticker Zalo: …]" do webhook thêm). */
+export const MA_STICKER_ZALO = '[Mã sticker Zalo:';
+export const laTinSticker = (text: string) => text.includes(MA_STICKER_ZALO);
+
 export type DinhKemZalo = { loai: string; url: string; ten: string | null; maSticker?: string };
 
 const https = (x: unknown): x is string => typeof x === 'string' && /^https:\/\//.test(x) && x.length <= 2000;

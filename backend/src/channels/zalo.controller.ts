@@ -1,7 +1,7 @@
 import { Controller, Get, Headers, HttpCode, Logger, Post, Query, Req, Res, ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { Public, Roles } from '../auth/auth.decorators';
-import { chuKyHopLe, layDinhKem, layTrich, phanTichChiaSe, phanTichOa, phanTichPhanUng, phanTichSuKien, thuCongThuc, truongLa, type DinhKemZalo } from '../common/zalo';
+import { chuKyHopLe, MA_STICKER_ZALO, layDinhKem, layTrich, phanTichChiaSe, phanTichOa, phanTichPhanUng, phanTichSuKien, thuCongThuc, truongLa, type DinhKemZalo } from '../common/zalo';
 import type { TepDaLuu } from '../storage/attachments.service';
 import { Role } from '../generated/prisma/client';
 import { IngestService } from '../ingest/ingest.service';
@@ -59,7 +59,7 @@ export class ZaloWebhookController {
     for (const [i, d] of dk.entries()) {
       // Sticker có sẵn của Zalo: ghi mã vào tin để admin chép vào Kho sticker (gắn mã thì gửi sang Zalo được ảnh động).
       if (d.maSticker) this.log.log(`Sticker Zalo, mã: ${d.maSticker}`);
-      const chu = `${i === 0 ? caption : ''}${d.maSticker ? ` [Mã sticker Zalo: ${d.maSticker}]` : ''}`.trim();
+      const chu = `${i === 0 ? caption : ''}${d.maSticker ? ` ${MA_STICKER_ZALO} ${d.maSticker}]` : ''}`.trim();
       const duocLuu = /^(image|photo|sticker|gif|file)$/i.test(d.loai) ? await this.zalo.taiTep(d.url, d.ten) : null;
       if (duocLuu) ra.push({ text: chu, file: duocLuu });
       else ra.push({ text: `${chu ? `${chu} ` : ''}[${ai} gửi ${TEN_DINH_KEM[d.loai] ?? 'tệp'}${d.ten ? ` "${d.ten}"` : ''}: ${d.url}]`.slice(0, 4000) });

@@ -50,7 +50,7 @@ export class StickersService {
     return this.prisma.stickerPack.update({ where: { id }, data, select: { id: true, name: true, active: true } });
   }
 
-  async upload(file: { buffer: Buffer; originalname?: string }, packId?: string) {
+  async upload(file: { buffer: Buffer; originalname?: string }, packId?: string, zaloStickerId?: string) {
     if (packId) await this.layTep(packId);
     const s = await chuanBiSticker(file.buffer, file.originalname);
     const id = randomUUID();
@@ -59,7 +59,7 @@ export class StickersService {
     try {
       await this.storage.upload(webpPath, s.webp, 'image/webp');
       await this.storage.upload(gifPath, s.gif, 'image/gif');
-      return await this.prisma.sticker.create({ data: { id, name: s.name, webpPath, gifPath, packId: packId || null,
+      return await this.prisma.sticker.create({ data: { id, name: s.name, webpPath, gifPath, packId: packId || null, zaloStickerId: zaloStickerId || null,
         gifSize: s.gif.length, width: s.width, height: s.height, animated: s.animated }, select: { id: true, name: true, packId: true } });
     } catch (err) {
       await Promise.all([this.storage.xoa(webpPath), this.storage.xoa(gifPath)]);

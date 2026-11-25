@@ -20,6 +20,8 @@ class UpdatePackDto {
 /** Tải lên là multipart nên `packId` đến dưới dạng chữ; chuỗi rỗng = không xếp vào tệp nào. */
 class UploadDto {
   @IsOptional() @ValidateIf((_, v) => v !== '') @IsUUID('4', { message: 'Tệp sticker không hợp lệ' }) packId?: string;
+  /** Mã sticker có sẵn của Zalo (tuỳ chọn); chuỗi rỗng = không gắn. */
+  @IsOptional() @IsString({ message: 'Mã sticker Zalo không hợp lệ' }) @MaxLength(100, { message: 'Mã sticker Zalo tối đa 100 ký tự' }) zaloStickerId?: string;
 }
 
 class ZaloIdDto {
@@ -72,7 +74,7 @@ export class StickersController {
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: MAX_STICKER_BYTES, files: 1 } }))
   upload(@Body() dto: UploadDto, @UploadedFile() file?: Express.Multer.File) {
     if (!file) throw new BadRequestException('Chưa chọn sticker');
-    return this.svc.upload(file, dto.packId || undefined);
+    return this.svc.upload(file, dto.packId || undefined, dto.zaloStickerId?.trim() || undefined);
   }
 
   @Patch(':id/pack')

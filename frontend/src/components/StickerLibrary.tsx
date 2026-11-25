@@ -29,25 +29,46 @@ export function StickerLibrary({ manage = false, onSelect }: { manage?: boolean;
   const input = useRef<HTMLInputElement>(null);
   const lamMoi = async () => { await Promise.all([mutate(), mutatePacks()]); };
 
-  const upload = async (files: FileList | null) => {
+  // Chọn file xong thì mở hộp thoại để điền mã Zalo từng sticker (hoặc dán cả danh sách mã), rồi mới tải lên.
+  const [moi, setMoi] = useState<{ file: File; xem: string; ma: string }[] | null>(null);
+  const [dsMa, setDsMa] = useState('');
+
+  const chonFile = (files: FileList | null) => {
     if (!files?.length) return;
+    const ds = Array.from(files).sort((a, b) => a.name.localeCompare(b.name, 'vi', { numeric: true }));
+    const loi = ds.find((f) => !/\.(webp|gif)$/i.test(f.name) || f.size > 5 * 1024 * 1024);
+    if (loi) { setErrorText(`${loi.name}: cần file .webp hoặc .gif tối đa 5 MB`); return; }
+    setErrorText(''); setMessage(''); setDsMa('');
+    setMoi(ds.map((file) => ({ file, xem: URL.createObjectURL(file), ma: '' })));
+  };
+  const dongMoi = () => { moi?.forEach((r) => URL.revokeObjectURL(r.xem)); setMoi(null); setDsMa(''); };
+  // Mỗi dòng của danh sách mã điền vào một sticker theo thứ tự tên file (dòng trống bỏ qua ô đó).
+  const apDungDsMa = () => {
+    const dong = dsMa.split(/\r?\n/).map((x) => x.trim());
+    setMoi((cu) => cu && cu.map((r, i) => ({ ...r, ma: dong[i] ?? r.ma })));
+  };
+
+  const upload = async () => {
+    if (!moi?.length) return;
     setBusy(true); setErrorText(''); setMessage('');
     let count = 0;
+    const hong: string[] = [];
     try {
-      const batch = Array.from(files);
-      for (const [index, file] of batch.entries()) {
+      for (const [index, r] of moi.entries()) {
         // Backend giới hạn 20 upload/phút; giãn lượt khi chọn cả bộ sticker.
         if (index) await new Promise((resolve) => setTimeout(resolve, 3200));
-        setMessage(`Đang tải ${index + 1}/${batch.length}: ${file.name}`);
-        if (!/\.(webp|gif)$/i.test(file.name) || file.size > 5 * 1024 * 1024) throw new Error(`${file.name}: cần file .webp hoặc .gif tối đa 5 MB`);
+        setMessage(`Đang tải ${index + 1}/${moi.length}: ${r.file.name}`);
         const form = new FormData();
-        form.append('file', file);
+        form.append('file', r.file);
         if (uploadPack) form.append('packId', uploadPack);
-        await postForm('/stickers', form);
-        count++;
+        if (r.ma.trim()) form.append('zaloStickerId', r.ma.trim());
+        try { await postForm('/stickers', form); count++; } catch (e) { hong.push(`${r.file.name}: ${loiCua(e)}`); }
       }
-    } catch (e) { setErrorText(loiCua(e)); }
-    finally { setMessage(count ? `Đã thêm ${count} sticker.` : ''); await lamMoi(); setBusy(false); }
+    } finally {
+      setMessage(count ? `Đã thêm ${count} sticker.` : '');
+      if (hong.length) setErrorText(`Chưa tải được ${hong.length} sticker. ${hong.join(' · ')}`);
+      dongMoi(); await lamMoi(); setBusy(false);
+    }
   };
 
   const luuTep = async () => {
@@ -97,9 +118,9 @@ export function StickerLibrary({ manage = false, onSelect }: { manage?: boolean;
         </select>
       </label>
       <button type="button" disabled={busy} className={secondaryClass} onClick={() => setPackDialog({ pack: null, name: '' })}>Tạo tệp mới</button>
-      <input ref={input} type="file" multiple hidden accept=".webp,image/webp,.gif,image/gif" onChange={(e) => { void upload(e.target.files); e.target.value = ''; }} />
+      <input ref={input} type="file" multiple hidden accept=".webp,image/webp,.gif,image/gif" onChange={(e) => { chonFile(e.target.files); e.target.value = ''; }} />
       <button type="button" disabled={busy} className={primaryClass} onClick={() => input.current?.click()}>{busy ? 'Đang xử lý…' : 'Tải sticker lên'}</button>
-      <p className="basis-full text-sm text-muted">File WebP hoặc GIF tối đa 5 MB, chọn được nhiều file một lần. Giữ chuyển động nếu ảnh gốc là ảnh động. File GIF được giữ nguyên bản gốc để gửi sang Zalo. Ô "Mã sticker Zalo" dưới mỗi sticker: điền mã thì khách Zalo nhận sticker có sẵn của Zalo (chuyển động được); lấy mã bằng cách gửi sticker đó vào Zalo OA, mã hiện ở tin của khách.</p>
+      <p className="basis-full text-sm text-muted">File WebP hoặc GIF tối đa 5 MB. Chọn nhiều file một lần thì hộp thoại hiện ra để điền mã Zalo cho từng sticker, hoặc dán cả danh sách mã. Giữ chuyển động nếu ảnh gốc là ảnh động. File GIF được giữ nguyên bản gốc để gửi sang Zalo. Ô "Mã sticker Zalo" dưới mỗi sticker: điền mã thì khách Zalo nhận sticker có sẵn của Zalo (chuyển động được); lấy mã bằng cách gửi sticker đó vào Zalo OA, mã hiện ở tin của khách.</p>
     </div>}
     <input type="search" aria-label="Tìm sticker" placeholder="Tìm sticker theo tên…" value={search} onChange={(e) => setSearch(e.target.value)} className="min-h-11 w-full rounded-xl border border-field bg-surface px-3 text-sm" />
     {message && <p role="status" className="text-sm text-brand-text">{message}</p>}
@@ -139,6 +160,41 @@ export function StickerLibrary({ manage = false, onSelect }: { manage?: boolean;
           </div>)}
         </div>}
     </section>)}
+
+    {moi && <Dialog title={`Thêm ${moi.length} sticker`} onClose={() => { if (!busy) dongMoi(); }}>
+      <div className="flex flex-col gap-4">
+        <label className="flex flex-col gap-1 text-sm font-medium">
+          Tải vào tệp
+          <select value={uploadPack} disabled={busy} onChange={(e) => setUploadPack(e.target.value)} className={inputClass}>
+            <option value="">Chưa xếp tệp</option>
+            {dsTep.filter((p) => p.active).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </label>
+        <details className="rounded-xl border border-line bg-page p-3 text-sm">
+          <summary className="min-h-11 cursor-pointer py-2 font-medium">Dán một lần danh sách mã sticker Zalo</summary>
+          <p className="mb-2 text-muted">Mỗi dòng một mã, điền lần lượt cho các sticker bên dưới theo thứ tự tên file (dòng trống thì bỏ qua sticker đó).</p>
+          <textarea value={dsMa} onChange={(e) => setDsMa(e.target.value)} rows={5} aria-label="Danh sách mã sticker Zalo" className={`${inputClass} font-mono text-xs`} placeholder={'fe341d6f212ac874913b\nccc330980cdde583bccc'} />
+          <button type="button" disabled={!dsMa.trim() || busy} onClick={apDungDsMa} className={`${secondaryClass} mt-2`}>Điền mã vào danh sách</button>
+        </details>
+        <ul className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto">
+          {moi.map((r, i) => <li key={r.xem} className="flex items-center gap-3 rounded-xl border border-line bg-page p-2">
+            <img src={r.xem} alt="" className="size-14 shrink-0 rounded-lg object-contain" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="truncate text-xs font-medium" title={r.file.name}>{r.file.name}</span>
+              <input value={r.ma} maxLength={100} disabled={busy} placeholder="Mã sticker Zalo (không bắt buộc)" aria-label={`Mã sticker Zalo của ${r.file.name}`}
+                onChange={(e) => setMoi((cu) => cu && cu.map((x, j) => (j === i ? { ...x, ma: e.target.value } : x)))} className="min-h-11 w-full rounded-lg border border-field bg-surface px-2 text-xs" />
+            </div>
+            <button type="button" disabled={busy} aria-label={`Bỏ ${r.file.name}`} className="grid size-11 shrink-0 place-items-center text-muted hover:text-ink"
+              onClick={() => { URL.revokeObjectURL(r.xem); setMoi((cu) => { const con = cu ? cu.filter((_, j) => j !== i) : null; return con?.length ? con : null; }); }}>×</button>
+          </li>)}
+        </ul>
+        {message && <p role="status" className="text-sm text-brand-text">{message}</p>}
+        <div className="flex justify-end gap-2">
+          <button type="button" disabled={busy} className={secondaryClass} onClick={dongMoi}>Huỷ</button>
+          <button type="button" disabled={busy} className={primaryClass} onClick={() => void upload()}>{busy ? 'Đang tải…' : `Tải lên ${moi.length} sticker`}</button>
+        </div>
+      </div>
+    </Dialog>}
 
     {packDialog && <Dialog title={packDialog.pack ? 'Đổi tên tệp sticker' : 'Tạo tệp sticker'} onClose={() => { if (!busy) setPackDialog(null); }}>
       <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); void luuTep(); }}>

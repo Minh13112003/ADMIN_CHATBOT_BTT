@@ -23,6 +23,8 @@ export class InboundDto {
   @IsOptional() @IsString() @MaxLength(128) externalMessageId?: string;
   /** Chatbot tự nhận ra khách cần nhân viên (ví dụ việc hoàn tiền của chính khách). */
   @IsOptional() @IsBoolean() wantsHuman?: boolean;
+  /** Câu báo khách thay cho câu mặc định "Mình đã báo nhân viên..." khi chuyển sang Liên hệ (chatbot chọn theo lý do, ví dụ mục chưa có dữ liệu). */
+  @IsOptional() @IsString() @MaxLength(500) contactReply?: string;
   @IsOptional() @IsString() @MaxLength(200) interest?: string;
 }
 

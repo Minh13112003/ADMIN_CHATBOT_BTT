@@ -1,4 +1,4 @@
-import { phanTichChiaSe, layDinhKem, layTrich, phanTichOa, phanTichPhanUng, chuanHoaChatGanDay, chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc, daQuaMoc, mocNgayGanDay } from './zalo';
+import { laTinSticker, phanTichChiaSe, layDinhKem, layTrich, phanTichOa, phanTichPhanUng, chuanHoaChatGanDay, chuanHoaLichSu, chuKyHopLe, chuKyZalo, phanTichSuKien, taoPkce, thuCongThuc, daQuaMoc, mocNgayGanDay } from './zalo';
 import { createHash } from 'crypto';
 
 describe('zalo', () => {
@@ -97,6 +97,10 @@ describe('zalo', () => {
     expect(layDinhKem({})).toEqual([]);
     expect(layTrich({ message: { quote_msg_id: 'q1' } })).toEqual({ msgId: 'q1', text: null });
     expect(layTrich({ message: {} })).toEqual({ msgId: null, text: null });
+  });
+  it('nhận ra tin báo lại sticker Zalo để không ghi trùng với sticker vừa gửi từ trang', () => {
+    expect(laTinSticker('[Mã sticker Zalo: abc123]')).toBe(true);
+    expect(laTinSticker('Xin chào')).toBe(false);
   });
   it('khách thả cảm xúc', () => {
     expect(phanTichPhanUng({ event_name: 'user_reacted_message', sender: { id: 'u1' }, message: { msg_id: 'm1', react_icon: '/-heart' } })).toEqual({ userId: 'u1', msgId: 'm1', camXuc: 'thả tim' });
