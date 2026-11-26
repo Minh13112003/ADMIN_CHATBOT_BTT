@@ -32,6 +32,15 @@ describe('timDiaDiem', () => {
       expect(timDiaDiem(c)).toEqual([]);
     }
   });
+  it('viết tắt ghép chữ khi chat (TLan, HQuoc, PQuoc...) đứng sau "tour", "đi"', () => {
+    expect(timDiaDiem('tôi muốn tour TLan')).toEqual(['Thái Lan']);
+    expect(timDiaDiem('đi HQuoc tháng 12')).toEqual(['Hàn Quốc']);
+    expect(timDiaDiem('tour PQuoc 3 ngày')).toEqual(['Phú Quốc']);
+    expect(timDiaDiem('du lịch ĐNang')).toEqual(['Đà Nẵng']);
+    // "dnang" chỉ là tên ngắn nên không bắt nhầm chữ "đang" (bỏ dấu "dang") như tên dài cho sai 1 ký tự
+    expect(timDiaDiem('mình đang hỏi giá')).toEqual([]);
+  });
+
   it('rỗng thì không có gì', () => {
     expect(timDiaDiem('')).toEqual([]);
     expect(timDiaDiem('Cho mình xin giá')).toEqual([]);
