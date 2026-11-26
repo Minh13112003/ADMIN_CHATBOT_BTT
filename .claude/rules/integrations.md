@@ -4,11 +4,12 @@ Trạng thái ngày 2026-11-06. Cập nhật file này mỗi khi trạng thái �
 
 | Kênh | Trạng thái | Ghi chú |
 |---|---|---|
-| bttAI App, Web, Zalo Mini App | **Đã nối** (chạy trên máy, chưa triển khai server) | Hợp đồng ở `docs/ingest-api.md`. Mini App đi chung kênh `APP` vì dùng cùng tài khoản |
+| bttAI App, Web, Zalo Mini App | **Đã nối** (chạy trên máy; cấu hình Docker cho VPS ở `chatbot.benthanhtourist.com` đã viết 2026-11-26, chưa chạy thật) | Hợp đồng ở `docs/ingest-api.md`. Mini App đi chung kênh `APP` vì dùng cùng tài khoản |
 | Zalo OA | Đã viết, **chưa chạy thật** (2026-11-12) | Webhook `POST /webhooks/zalo` (kiểm tra chữ ký bằng OA Secret Key), OAuth qua `channel-settings/zalo/*`, gửi trả lời từ `ConversationsService.send`. Chỉ test bằng tin giả; tên API, header chữ ký, PKCE chưa đối chiếu tài liệu Zalo. Xem mục Zalo OA bên dưới |
 | Facebook Messenger | Đã viết, **chưa chạy thật** (2026-11-18) | Webhook `/webhooks/facebook`, tự kiểm tra và tự đăng ký webhook khi admin lưu. Xem mục Facebook bên dưới |
 
 ## Phía chatbot đã nối thế nào (`D:\ChatBot`)
+- **Trên VPS** (2026-11-26, chưa chạy thật): repo chatbot có `Dockerfile` và `deploy/` (compose project `bttbot`, container `bttbot-chatbot-1:8000`, mạng `btt_internal` + `vinhsang_vinhsang`, volume `/data`). nginx VinhSang chuyển `chatbot.benthanhtourist.com` vào (đoạn `deploy/nginx-chatbot.conf` bên chatbot, dùng lại map `$btt_client_ip` của đoạn chatadmin). Trong Docker: `ADMIN_CHAT_URL=http://btt-backend-1:4000/api/v1`, `ADMIN_DATABASE_URL` trỏ `btt-postgres-1`, `TRUST_PROXY=1` (IP khách từ X-Forwarded-For), `TU_DONG_BO_TOUR=1` (đồng bộ tour 3 giờ sáng, `sync_tours` không xoá kho nữa mà upsert + xoá lượt không còn). Website nhúng bằng `<script src="https://chatbot.benthanhtourist.com/static/widget.js" async>`.
 - `admin_chat.py` gọi `/ingest`. Cấu hình `ADMIN_CHAT_URL`, `INGEST_API_KEY` trong `.env` chatbot; khoá phải trùng bên này.
 - Backend trang quản trị ngừng chạy thì chatbot vẫn trả lời khách (đòi gặp người thì quay về link Zalo) và **ghi thẳng vào database ngay lúc đó** bằng `lich_su_db.py`, qua `ADMIN_DATABASE_URL` trong `.env` chatbot. Không có hàng chờ gửi bù. Khách đòi gặp người thì hội thoại thành `CONTACT` chưa có người, `chiaLai` tự chia khi backend chạy lại. Sau một lần không kết nối được, 15 giây tiếp theo đi thẳng database. Chỉ mất tin khi cả backend lẫn database đều hỏng.
 - Tin nhạy cảm bị chặn và nút bấm đặt tour được lưu qua `POST /ingest/history` (chỉ ghi lại, không chạy quy tắc), hỏng thì cũng ghi thẳng. Tin rỗng, quá dài, quá giới hạn tốc độ khi đang chat với bot thì không lưu.

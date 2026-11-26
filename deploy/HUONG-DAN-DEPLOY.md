@@ -67,6 +67,10 @@ grep -q '^ENCRYPTION_KEY=.' .env || echo "ENCRYPTION_KEY=$(openssl rand -hex 32)
 ```
 Khoá này giữ nguyên về sau (đổi khoá thì phải nhập lại thông tin Zalo/Facebook) và nên sao lưu cùng file `.env`.
 
+## Chatbot bttAI (chatbot.benthanhtourist.com)
+
+Chatbot nằm ở repo riêng (`ChatBOT-BTT`), chạy trên cùng server ở `/opt/btt-chatbot`, container `bttbot-chatbot-1`. Nó nối vào mạng `btt_internal` để gọi `btt-backend-1` (ingest) và `btt-postgres-1` (ghi thẳng khi backend tắt), nên **trang quản trị phải chạy trước**. Hướng dẫn đầy đủ ở `deploy/HUONG-DAN-DEPLOY.md` của repo chatbot. Cập nhật trang quản trị trước, chatbot sau (chatbot gửi thêm trường `contactReply`).
+
 ## Phương án dự phòng khi tên miền chưa chạy được
 
 Dùng `docker-compose.test.yml` (cổng 8081 chỉ mở trong server) và đường hầm SSH từ máy bạn:
