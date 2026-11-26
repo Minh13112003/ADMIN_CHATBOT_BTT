@@ -656,11 +656,6 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
         {data?.items.length === 0 && <p className="p-8 text-center text-sm text-muted">{q ? 'Không tìm thấy tour phù hợp.' : 'Chưa có khách quan tâm tour trong phạm vi và khoảng thời gian này.'}</p>}
         {!!tours.length && <BangTour rows={tours} top={top} onOpen={setChon} />}
         {!!places.length && <BangDiaDiem rows={places} onOpen={setNoiChon} />}
-        <p className="border-t border-line bg-fill px-5 py-3 text-xs text-muted">
-          {view === 'place'
-            ? 'Lượt hỏi = số ngày khách nhắc địa điểm trong tin nhắn (mỗi khách mỗi địa điểm tối đa 1 lượt/ngày; hỏi 2 nơi trong một ngày thì mỗi nơi 1 lượt), cộng lượt sale ghim tour thuộc địa điểm đó.'
-            : 'Khách đếm một lần cho mỗi tour. Lượt = số lần sale ghim tour. Doanh thu, đơn chốt chỉ tính đơn Đã chốt.'}
-        </p>
         {(full || (view === 'place' && soTrang > 1)) && (
           <div className="flex items-center justify-between border-t border-line px-5 py-3">
             <button type="button" disabled={trang === 0} onClick={() => setTrang(trang - 1)} className="min-h-11 rounded-lg border border-field px-4 text-sm font-semibold disabled:opacity-40">← Trước</button>

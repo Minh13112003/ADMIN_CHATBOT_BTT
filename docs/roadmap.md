@@ -7,6 +7,9 @@
 - Chọn nơi triển khai và tên miền, đặt `COOKIE_DOMAIN`.
 - Xác nhận với công ty: giờ làm việc (`WORK_HOUR_*`), tỷ giá, nội dung quy tắc mặc định.
 
+- **Sửa / thu hồi tin, biểu cảm ở App Mobile** (2026-11-26): `/chat/updates` đã trả `changes` (`id` tin nhân viên, `ma_tin` câu khách, `deleted`, `text` + `edited`, `reactions`). Còn: app lưu `id` tin nhân viên, áp `changes` (thay chữ + "Đã chỉnh sửa", đổi thành "Tin nhắn đã được thu hồi", hiện emoji). Muốn gắn biểu cảm vào câu khách thì `/chat` cũng cần trả `ma_tin` như `/web/chat`.
+- **Zalo: kiểm chứng API thả biểu cảm** (`sender_action.react_icon`, mã `/-strong`, `/-heart`, `:>`, `:o`, `:-((`, `:-h`) khi chạy thật; nếu Zalo báo lỗi, sale sẽ thấy cảnh báo "chưa gửi được sang Zalo".
+
 ## Việc còn nợ: thanh toán (chủ dự án ghi 2026-11-16)
 - Tích hợp API thanh toán: khách chốt tour xong chuyển khoản cọc 50%. Hiện sale tự bấm "Đã cọc" / "Đã thanh toán" ở đơn đặt từ app (cột Đơn tour). Khi có API thì đơn tự chuyển Đã cọc khi nhận tiền cọc, Đã thanh toán khi đủ tiền.
 - Thông báo đẩy Firebase cho app (chủ dự án để sau): backend đã lưu `app_accounts.fcmToken`, chưa gửi.

@@ -31,7 +31,7 @@ const lamMoi = (id?: string) => {
   void mutate(
     (k) =>
       typeof k === 'string' &&
-      (k.startsWith('/conversations?') || k === '/auth/me' || k.startsWith('/customers/') || k.startsWith('/stats/') || k.startsWith('/deals') || (!!id && (k === `/conversations/${id}` || k === `/conversations/${id}/tour-tags`))),
+      (k.startsWith('/conversations?') || k === '/auth/me' || k.startsWith('/customers/') || k.startsWith('/stats/') || k.startsWith('/deals') || k.startsWith('/trash/') || (!!id && (k === `/conversations/${id}` || k === `/conversations/${id}/tour-tags`))),
   );
 };
 
@@ -65,6 +65,10 @@ export function RealtimeProvider({ children }: { children: ReactNode }) {
         const { [p.conversationId]: _, ...rest } = t;
         return rest;
       });
+    });
+    // Tin bị sửa, xoá, khôi phục hoặc được thả biểu cảm: tải lại tin của hội thoại đó (kể cả khi đang mở thẳng tới một tin).
+    s.on('message:update', (p: { conversationId: string }) => {
+      void mutate((k) => typeof k === 'string' && k.startsWith(`/conversations/${p.conversationId}/messages`));
     });
     s.on('contact:new', (p: Omit<Ping, 'kind'> & { kind?: 'BOOKING' }) => {
       setPing({ ...p, kind: p.kind ?? 'CONTACT' });

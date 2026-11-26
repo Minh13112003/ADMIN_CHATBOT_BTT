@@ -1,3 +1,4 @@
+import { tuMaZalo, type BieuCam } from './reactions';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
 
 /**
@@ -139,18 +140,22 @@ const CAM_XUC: Record<string, string> = {
   '/-heart': 'thả tim', '/-strong': 'thích', ':>': 'haha', ':o': 'wow', ':-((': 'buồn', ':-h': 'phẫn nộ', ':-*': 'hôn', '/-shit': 'không thích', '/-rose': 'tặng hoa', '/-break': 'tan vỡ',
 };
 
-/** Khách thả cảm xúc vào một tin (sự kiện chứa "react", tên trường chưa kiểm chứng). Không phải thì null. */
-export function phanTichPhanUng(body: unknown): { userId: string; msgId: string | null; camXuc: string } | null {
+/**
+ * Khách thả cảm xúc vào một tin (sự kiện `user_reacted_message`, tên trường chưa kiểm chứng). Không phải thì null.
+ * Sự kiện OA tự thả (`oa_reacted_message`, khi nhân viên thả từ trang này) không tính là của khách.
+ */
+export function phanTichPhanUng(body: unknown): { userId: string; msgId: string | null; camXuc: string; bieuCam: BieuCam | null; go: boolean } | null {
   if (!body || typeof body !== 'object') return null;
   const b = body as Record<string, any>;
   const ten = typeof b.event_name === 'string' ? b.event_name : '';
-  if (!/react/i.test(ten)) return null;
+  if (!/react/i.test(ten) || /^oa_/i.test(ten)) return null;
   const userId = b.sender?.id;
   if (typeof userId !== 'string' || !userId) return null;
   const m = (b.message ?? {}) as Record<string, any>;
   const ma = [m.react_icon, m.reaction, m.icon, b.react_icon].find((x) => typeof x === 'string' && x);
   const msgId = [m.msg_id, m.react_msg_id, m.message_id].find((x) => typeof x === 'string' && x);
-  return { userId, msgId: typeof msgId === 'string' ? msgId : null, camXuc: (typeof ma === 'string' && CAM_XUC[ma]) || 'thả cảm xúc' };
+  const go = ma === '/-remove';
+  return { userId, msgId: typeof msgId === 'string' ? msgId : null, camXuc: (typeof ma === 'string' && CAM_XUC[ma]) || 'thả cảm xúc', bieuCam: typeof ma === 'string' ? tuMaZalo(ma) : null, go };
 }
 
 /** Mọi cách xếp thứ tự của các tập con khác rỗng. */

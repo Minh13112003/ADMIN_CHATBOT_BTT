@@ -2,7 +2,13 @@ import { Module } from '@nestjs/common';
 import { StickersController } from './stickers/stickers.controller';
 import { StickersService } from './stickers/stickers.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ActivityController } from './activity/activity.controller';
+import { ActivityInterceptor } from './activity/activity.interceptor';
+import { ActivityService } from './activity/activity.service';
+import { MessageActionsController, TrashController } from './conversations/message-actions.controller';
+import { MessageActionsService } from './conversations/message-actions.service';
+import { TrashService } from './conversations/trash.service';
 import { JwtModule } from '@nestjs/jwt';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
@@ -92,6 +98,9 @@ import { AppNotificationsService } from './app-mobile/app-notifications.service'
     AppFavoritesController,
     AppMiscController,
     ProfileController,
+    MessageActionsController,
+    TrashController,
+    ActivityController,
     ConversationsController,
     CustomersController,
     DealsController,
@@ -105,6 +114,10 @@ import { AppNotificationsService } from './app-mobile/app-notifications.service'
     StickersService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: ActivityInterceptor },
+    ActivityService,
+    MessageActionsService,
+    TrashService,
     IngestKeyGuard,
     ZaloService,
     ZaloSyncService,

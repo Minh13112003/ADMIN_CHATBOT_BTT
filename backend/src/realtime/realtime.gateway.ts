@@ -99,7 +99,7 @@ export class RealtimeGateway implements OnGatewayConnection, OnModuleDestroy {
     }
   }
 
-  emit(event: 'conversation:update' | 'message:new' | 'contact:new' | 'support:new' | 'followup:due', payload: unknown) {
+  emit(event: 'conversation:update' | 'message:new' | 'message:update' | 'contact:new' | 'support:new' | 'followup:due', payload: unknown) {
     this.server?.to(ROOM).emit(event, payload);
   }
 

@@ -137,7 +137,6 @@ export default function StatsPage({ forcedView }: { forcedView?: View } = {}) {
           {view === 'sales' && <SalesTab b={b} base={query} onSelect={setSaleId} />}
           {view === 'revenue' && <RevenueTab b={b} base={query} />}
           {view === 'channels' && <ChannelsTab b={b} base={query} status={owner && kenh ? <ChannelStatusCard rows={kenh} /> : null} />}
-          <p className="text-center text-xs text-muted">Doanh thu chỉ tính đơn đã chốt (không tính đơn chờ xác nhận, đơn huỷ). Đây không phải tiền thực thu.</p>
         </div>
       )}
 

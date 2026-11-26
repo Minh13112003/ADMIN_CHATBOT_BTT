@@ -44,8 +44,13 @@
 - **Đợt 3** (2026-11-16): thông báo trong app khi đơn đổi trạng thái (chưa có thông báo đẩy), tour yêu thích, góp ý (ghi log nội bộ vào hội thoại app), ảnh đại diện. **Bỏ thân nhân.**
 - **Điểm thưởng** chỉ xét bậc, không trừ tiền: 1.000 đ = 1 điểm, cộng một lần khi Hoàn thành. 6 bậc Đồng 0, Bạc 10.000, Vàng 50.000, Bạch Kim 100.000, Kim Cương 200.000, Ruby 500.000. Bỏ mã giới thiệu. Thông báo đẩy để sau.
 
-## Xoá hội thoại (chốt ngày 2026-11-12)
-- Chỉ `ADMIN` toàn quyền, menu ⋯ trong khung chat, dùng dọn dữ liệu thử. Xoá hẳn hội thoại, tin nhắn, đơn, nhãn tour, file đính kèm; khách không còn hội thoại nào khác thì xoá luôn khách. Hội thoại có đơn đã chốt (đang tính doanh thu) phải xác nhận thêm vì doanh thu thống kê giảm theo. Có ghi log server.
+## Xoá hội thoại, xoá tin, tab Khôi phục (chốt 2026-11-12, đổi 2026-11-26)
+- **Xoá mềm** (chủ dự án yêu cầu 2026-11-26): xoá hội thoại / tin chỉ đặt `isAvailable = false`. Chỉ `ADMIN` toàn quyền vào tab **Khôi phục** (`/trash`) thấy lại, khôi phục, hoặc **xoá hẳn** khỏi database. Xoá hẳn hội thoại: tin nhắn, đơn, nhãn tour, file đính kèm; khách không còn hội thoại nào thì xoá luôn khách; có đơn đã chốt thì xác nhận thêm vì doanh thu giảm.
+- Xoá hội thoại: chỉ `ADMIN` toàn quyền (menu ⋯ khung chat). Khách nhắn tin mới thì hội thoại tự hiện lại với tin mới.
+- Xoá tin: **ai cũng xoá được mọi tin** (sale, admin, admin phòng trong phạm vi; Digital chỉ xem), menu "⋯" cạnh tin. Không xoá dòng nhật ký nội bộ. Khách web/app thấy "Tin nhắn đã được thu hồi"; **Zalo OA không có API thu hồi tin** (đã tra danh sách tài liệu Zalo 2026-11-26), Facebook cũng không, nên khách 2 kênh này vẫn thấy tin, giao diện báo trước.
+- Sửa tin: chỉ người gửi, chỉ tin nhân viên có chữ, chỉ kênh WEB/APP (khách thấy bản sửa kèm "Đã chỉnh sửa"). Zalo/Facebook không cho sửa nên ẩn nút.
+- **Biểu cảm** (2026-11-26): nút mặt cười cạnh tin (tin khách: bên phải bong bóng; tin mình: bên trái), rê chuột hiện 6 biểu cảm (thích, tim, haha, wow, buồn, phẫn nộ); mỗi nhân viên một biểu cảm mỗi tin, bấm lại để gỡ. Khách web/app thấy biểu cảm nhân viên thả. Zalo: gửi `sender_action.react_icon` qua `/v3.0/oa/message/cs` (theo diễn đàn Zalo, chưa chạy thật; lỗi thì vẫn lưu và báo sale). Khách Zalo thả 6 loại này thì hiện dưới tin thay cho dòng nhật ký.
+- **Nhật ký thao tác** (2026-11-26, `/activity`, chỉ `ADMIN` toàn quyền): mọi thao tác ghi thành công của nhân viên (nhắn gì, sửa/xoá tin, chốt tour, tạo tài khoản, voucher, cài đặt, đăng nhập, khôi phục...) ghi tự động bằng `ActivityInterceptor`; mô tả từng route ở `common/activity.ts`. Xem theo **từng ngày** (giờ VN), lọc theo người, nhóm, tìm chữ. Không ghi mật khẩu/token/khoá bí mật. Route ghi mới chưa có mô tả vẫn được ghi là "Thao tác khác".
 - Đây là ngoại lệ của quy tắc "Lưu vĩnh viễn" bên dưới, chỉ do admin chủ động.
 
 ## Chia việc

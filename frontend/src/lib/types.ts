@@ -69,7 +69,15 @@ export type Message = {
   replyTo: { id: string; text: string; senderType: Message['senderType'] } | null;
   attachment: Attachment | null;
   createdAt: string;
+  staffId?: string | null;
+  /** Nhân viên đã sửa chữ của tin (2026-11-26). */
+  editedAt?: string | null;
+  /** Biểu cảm thả vào tin: mỗi nhân viên một cái, khách một cái (`actorKey` = "customer"). */
+  reactions?: Reaction[];
 };
+
+export type ReactionKey = 'like' | 'heart' | 'haha' | 'wow' | 'sad' | 'angry';
+export type Reaction = { emoji: ReactionKey; actorKey: string; by: string };
 
 export type DealStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED';
 

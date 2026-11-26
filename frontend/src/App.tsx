@@ -21,6 +21,8 @@ import ChannelsPage from '@/pages/ChannelsPage';
 import TourInterestPage from '@/pages/TourInterestPage';
 import VouchersPage from '@/pages/VouchersPage';
 import StickersPage from '@/pages/StickersPage';
+import ActivityLogPage from '@/pages/ActivityLogPage';
+import TrashPage from '@/pages/TrashPage';
 
 /** Sale không thấy trang này. Chỉ để dễ dùng, quyền thật do backend kiểm tra. */
 function AdminOnly({ children }: { children: ReactNode }) {
@@ -81,6 +83,8 @@ export function App() {
         <Route path="/performance" element={<Navigate to="/stats?view=sales" replace />} />
         <Route path="/channels" element={<AdminOnly><ChannelsPage /></AdminOnly>} />
         <Route path="/stickers" element={<AdminOnly><StickersPage /></AdminOnly>} />
+        <Route path="/activity" element={<AdminOnly><ActivityLogPage /></AdminOnly>} />
+        <Route path="/trash" element={<AdminOnly><TrashPage /></AdminOnly>} />
         <Route path="/accounts" element={<AdminOrDept><AccountsPage /></AdminOrDept>} />
         <Route path="/vouchers" element={<AdminOrDept><VouchersPage /></AdminOrDept>} />
       </Route>

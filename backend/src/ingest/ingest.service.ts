@@ -1,3 +1,4 @@
+import { KHOA_KHACH, type BieuCam } from '../common/reactions';
 import { thongKeDoi } from '../common/stats-cache';
 import { ngayVN, timDiaDiem } from '../common/dia-diem';
 import { BadRequestException, ConflictException, Injectable, NotFoundException, Logger } from '@nestjs/common';
@@ -301,13 +302,29 @@ export class IngestService {
     return { saved: luu };
   }
 
-  /** Khách thả cảm xúc vào một tin: ghi dòng nhật ký nội bộ (chỉ nhân viên thấy), không đổi trạng thái hay xem trước của danh sách. */
-  async khachThaCamXuc(a: { userId: string; msgId: string | null; camXuc: string }): Promise<{ saved: boolean }> {
+  /**
+   * Khách thả cảm xúc vào một tin. Từ 2026-11-26: 6 loại chính (thích, tim, haha, wow, buồn, phẫn nộ) hiện ngay dưới tin như Zalo;
+   * khách gỡ (`/-remove`, chưa kiểm chứng) thì bỏ. Loại khác hoặc không tìm thấy tin gốc: ghi dòng nhật ký nội bộ như cũ.
+   * Không đổi trạng thái hay xem trước của danh sách.
+   */
+  async khachThaCamXuc(a: { userId: string; msgId: string | null; camXuc: string; bieuCam?: BieuCam | null; go?: boolean }): Promise<{ saved: boolean }> {
     const dt = await this.prisma.customerIdentity.findUnique({ where: { channel_externalId: { channel: 'ZALO', externalId: a.userId } }, select: { customerId: true } });
     if (!dt) return { saved: false };
     const conv = await this.prisma.conversation.findUnique({ where: { customerId_channel: { customerId: dt.customerId, channel: 'ZALO' } }, select: { id: true } });
     if (!conv) return { saved: false };
-    const goc = a.msgId ? await this.prisma.message.findUnique({ where: { externalMessageId: `zalo:${a.msgId}` }, select: { text: true } }) : null;
+    const goc = a.msgId ? await this.prisma.message.findUnique({ where: { externalMessageId: `zalo:${a.msgId}` }, select: { id: true, text: true, conversationId: true } }) : null;
+    if (goc && goc.conversationId === conv.id && (a.bieuCam || a.go)) {
+      const luc = new Date();
+      await this.prisma.$transaction([
+        a.bieuCam
+          ? this.prisma.messageReaction.upsert({ where: { messageId_actorKey: { messageId: goc.id, actorKey: KHOA_KHACH } }, create: { messageId: goc.id, actorKey: KHOA_KHACH, emoji: a.bieuCam }, update: { emoji: a.bieuCam, createdAt: luc } })
+          : this.prisma.messageReaction.deleteMany({ where: { messageId: goc.id, actorKey: KHOA_KHACH } }),
+        this.prisma.message.update({ where: { id: goc.id }, data: { changedAt: luc } }),
+      ]);
+      this.realtime.emit('message:update', { conversationId: conv.id, messageId: goc.id });
+      return { saved: true };
+    }
+    if (a.go) return { saved: false };
     const message = await this.prisma.message.create({
       data: { conversationId: conv.id, senderType: 'SYSTEM', internal: true, text: `Khách ${a.camXuc}${goc ? ` vào tin: "${tomTat(goc.text).slice(0, 60)}"` : ' vào một tin nhắn'}` },
     });
@@ -507,18 +524,40 @@ export class IngestService {
     const moc = after ? new Date(after) : new Date();
     if (Number.isNaN(moc.getTime())) throw new BadRequestException('Mốc thời gian không hợp lệ');
     const rows = await this.prisma.message.findMany({
-      where: { conversationId: conv.id, internal: false, senderType: 'STAFF', createdAt: { gt: moc } },
+      where: { conversationId: conv.id, internal: false, isAvailable: true, senderType: 'STAFF', createdAt: { gt: moc } },
       orderBy: { createdAt: 'asc' },
-      select: { id: true, text: true, createdAt: true, attachmentPath: true, attachmentType: true, attachmentName: true, attachmentSize: true, replyTo: { select: { text: true } } },
+      select: { id: true, text: true, createdAt: true, editedAt: true, attachmentPath: true, attachmentType: true, attachmentName: true, attachmentSize: true, replyTo: { select: { text: true, isAvailable: true } } },
       take: 50,
+    });
+    // Tin đã có phía khách nhưng vừa bị sửa, xoá, khôi phục hoặc được thả biểu cảm (2026-11-26). Khung chat web/app tìm tin theo
+    // `id` (tin nhân viên) hoặc `externalMessageId` (tin khách do chatbot tạo mã) rồi cập nhật. Chỉ biểu cảm của nhân viên.
+    const doi = await this.prisma.message.findMany({
+      where: { conversationId: conv.id, internal: false, changedAt: { gt: moc } },
+      orderBy: { changedAt: 'asc' },
+      select: { id: true, externalMessageId: true, senderType: true, text: true, isAvailable: true, editedAt: true, changedAt: true, reactions: { where: { actorKey: { not: 'customer' } }, select: { emoji: true } } },
+      take: 100,
     });
     const now = new Date();
     if (conv.mode === 'STAFF' && (!conv.customerSeenAt || now.getTime() - conv.customerSeenAt.getTime() > 20_000)) {
       await this.prisma.conversation.update({ where: { id: conv.id }, data: { customerSeenAt: now } });
       this.realtime.emit('conversation:update', { id: conv.id });
     }
-    const items = rows.map((m) => ({ id: m.id, createdAt: m.createdAt, text: m.replyTo ? `“${tomTat(m.replyTo.text, 80)}”\n${m.text}` : m.text, attachment: this.tep.dinhKem(m, HAN_LINK_KHACH_GIAY) }));
-    return { mode: conv.mode, items };
+    const items = rows.map((m) => ({
+      id: m.id,
+      createdAt: m.createdAt,
+      edited: !!m.editedAt,
+      text: m.replyTo ? `“${m.replyTo.isAvailable ? tomTat(m.replyTo.text, 80) : 'Tin nhắn đã bị xoá'}”\n${m.text}` : m.text,
+      attachment: this.tep.dinhKem(m, HAN_LINK_KHACH_GIAY),
+    }));
+    const changes = doi.map((m) => ({
+      id: m.id,
+      externalMessageId: m.externalMessageId,
+      deleted: !m.isAvailable,
+      ...(m.isAvailable && m.senderType === 'STAFF' ? { text: m.text, edited: !!m.editedAt } : {}),
+      reactions: m.isAvailable ? m.reactions.map((r) => r.emoji) : [],
+      changedAt: m.changedAt,
+    }));
+    return { mode: conv.mode, items, changes, changedUntil: doi.length ? doi[doi.length - 1].changedAt : null };
   }
 
   /**
@@ -534,7 +573,7 @@ export class IngestService {
     const moc = after ? new Date(after) : new Date(Date.now() - 2 * 24 * 3600_000);
     if (Number.isNaN(moc.getTime())) throw new BadRequestException('Mốc thời gian không hợp lệ');
     const rows = await this.prisma.message.findMany({
-      where: { conversationId: conv.id, internal: false, senderType: 'STAFF', createdAt: { gt: moc } },
+      where: { conversationId: conv.id, internal: false, isAvailable: true, senderType: 'STAFF', createdAt: { gt: moc } },
       orderBy: { createdAt: 'desc' },
       take: 20,
       select: { text: true, createdAt: true, attachmentType: true, attachmentName: true },

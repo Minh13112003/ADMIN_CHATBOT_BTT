@@ -1,7 +1,26 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { linkTep } from '@/lib/api';
 import { CHANNEL } from '@/lib/labels';
-import type { Attachment, Channel, Message, TourCard } from '@/lib/types';
+import type { Attachment, Channel, Message, ReactionKey, TourCard } from '@/lib/types';
+
+/** 6 biểu cảm như Zalo / Messenger (chủ dự án yêu cầu 2026-11-26). */
+export const BIEU_CAM: { key: ReactionKey; emoji: string; ten: string }[] = [
+  { key: 'like', emoji: '👍', ten: 'Thích' },
+  { key: 'heart', emoji: '❤️', ten: 'Thả tim' },
+  { key: 'haha', emoji: '😆', ten: 'Haha' },
+  { key: 'wow', emoji: '😮', ten: 'Wow' },
+  { key: 'sad', emoji: '😢', ten: 'Buồn' },
+  { key: 'angry', emoji: '😡', ten: 'Phẫn nộ' },
+];
+const EMOJI = Object.fromEntries(BIEU_CAM.map((b) => [b.key, b.emoji])) as Record<ReactionKey, string>;
+
+/** Thao tác trên từng tin, do khung chat truyền vào (Digital chỉ xem thì không có). */
+export type ThaoTacTin = {
+  meId: string;
+  onReact: (m: Message, emoji: ReactionKey) => void;
+  onEdit: (m: Message) => void;
+  onDelete: (m: Message) => void;
+};
 
 // Thẻ tour do chatbot gửi, tên trường theo chuan_hoa_the_tour trong D:\ChatBot\main.py.
 function thongTinThe(t: TourCard) {
@@ -113,6 +132,123 @@ function NutGhim({ onClick, daGhim }: { onClick: () => void; daGhim: boolean }) 
 }
 
 
+/** Đóng bảng nổi khi bấm ra ngoài hoặc nhấn Esc. */
+function useDongKhiBamNgoai(mo: boolean, dong: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!mo) return;
+    const bam = (e: MouseEvent | TouchEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) dong(); };
+    const phim = (e: KeyboardEvent) => { if (e.key === 'Escape') dong(); };
+    document.addEventListener('mousedown', bam);
+    document.addEventListener('touchstart', bam);
+    document.addEventListener('keydown', phim);
+    return () => {
+      document.removeEventListener('mousedown', bam);
+      document.removeEventListener('touchstart', bam);
+      document.removeEventListener('keydown', phim);
+    };
+  }, [mo, dong]);
+  return ref;
+}
+
+/**
+ * Nút mặt cười: rê chuột vào thì hiện 6 biểu cảm để chọn (màn hình cảm ứng: bấm để mở). Bảng nằm phía trên nút,
+ * canh theo phía của tin (tin khách: mở sang phải; tin mình: mở sang trái) để không tràn khỏi khung chat.
+ */
+function NutBieuCam({ ben, dangChon, onChon }: { ben: 'trai' | 'phai'; dangChon: ReactionKey | null; onChon: (k: ReactionKey) => void }) {
+  const [mo, setMo] = useState(false);
+  const dong = useCallback(() => setMo(false), []);
+  const ref = useDongKhiBamNgoai(mo, dong);
+  return (
+    <div ref={ref} className="group/bc sm:relative">
+      <button
+        type="button"
+        onClick={() => setMo((x) => !x)}
+        title="Thả biểu cảm"
+        aria-label="Thả biểu cảm"
+        aria-expanded={mo}
+        className={`grid size-8 place-items-center rounded-md hover:bg-fill hover:text-ink ${dangChon ? 'text-brand-text' : 'text-muted'}`}
+      >
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M8.5 14.5s1.3 2 3.5 2 3.5-2 3.5-2M9 9.5h.01M15 9.5h.01" />
+        </svg>
+      </button>
+      {/* pb-2 nối vùng rê chuột từ nút lên bảng, rê lên không bị tắt giữa chừng */}
+      <div className={`absolute bottom-full z-30 pb-2 ${ben === 'trai' ? 'left-0' : 'right-0'} ${mo ? 'block' : 'hidden group-hover/bc:block'}`}>
+        <div role="menu" aria-label="Chọn biểu cảm" className="flex items-center gap-0.5 rounded-full border border-line bg-surface p-1 shadow-lg">
+          {BIEU_CAM.map((b) => (
+            <button
+              key={b.key}
+              type="button"
+              role="menuitemradio"
+              aria-checked={dangChon === b.key}
+              title={b.ten}
+              aria-label={dangChon === b.key ? `Gỡ ${b.ten}` : b.ten}
+              onClick={() => { onChon(b.key); setMo(false); }}
+              className={`grid size-9 place-items-center rounded-full text-xl leading-none transition-transform duration-150 hover:scale-125 hover:bg-fill ${dangChon === b.key ? 'bg-brand-faint ring-1 ring-alert-line' : ''}`}
+            >
+              {b.emoji}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Nút "⋯": chỉnh sửa (tin mình gửi), sao chép, xoá. */
+function NutThem({ ben, coSua, coChu, onSua, onChep, onXoa }: { ben: 'trai' | 'phai'; coSua: boolean; coChu: boolean; onSua: () => void; onChep: () => void; onXoa: () => void }) {
+  const [mo, setMo] = useState(false);
+  const dong = useCallback(() => setMo(false), []);
+  const ref = useDongKhiBamNgoai(mo, dong);
+  const muc = 'flex min-h-11 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-fill';
+  return (
+    // Màn hình hẹp: bảng bám theo cả hàng tin (không bám nút) để không tràn khỏi mép màn hình.
+    <div ref={ref} className="sm:relative">
+      <button type="button" onClick={() => setMo((x) => !x)} title="Thêm" aria-label="Thêm thao tác cho tin này" aria-expanded={mo} className="grid size-8 place-items-center rounded-md text-lg leading-none text-muted hover:bg-fill hover:text-ink">
+        ⋯
+      </button>
+      {mo && (
+        <div role="menu" className={`absolute top-full z-30 mt-1 w-44 rounded-xl border border-line bg-surface p-1 shadow-lg ${ben === 'trai' ? 'right-0' : 'left-0'}`}>
+          {coSua && (
+            <button type="button" role="menuitem" className={muc} onClick={() => { setMo(false); onSua(); }}>
+              <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+              Chỉnh sửa
+            </button>
+          )}
+          {coChu && (
+            <button type="button" role="menuitem" className={muc} onClick={() => { setMo(false); onChep(); }}>
+              <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="12" height="12" rx="2" /><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" /></svg>
+              Sao chép
+            </button>
+          )}
+          <button type="button" role="menuitem" className={`${muc} text-brand-text hover:bg-brand-faint`} onClick={() => { setMo(false); onXoa(); }}>
+            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>
+            Xoá tin nhắn
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Biểu cảm đã thả, gắn ở góc dưới bong bóng như Zalo: các emoji khác nhau + tổng số; rê chuột xem ai thả. */
+function DaThaBieuCam({ m, ben }: { m: Message; ben: 'trai' | 'phai' }) {
+  const ds = m.reactions ?? [];
+  if (!ds.length) return null;
+  const loai = [...new Set(ds.map((r) => r.emoji))].filter((k) => EMOJI[k]);
+  const ai = ds.map((r) => `${r.by}: ${BIEU_CAM.find((b) => b.key === r.emoji)?.ten ?? r.emoji}`).join('\n');
+  return (
+    <div className={`-mt-2 flex ${ben === 'phai' ? 'justify-end pr-2' : 'justify-start pl-2'}`}>
+      <span title={ai} aria-label={`Biểu cảm: ${ai.replaceAll('\n', ', ')}`} className="relative z-[1] inline-flex items-center gap-0.5 rounded-full border border-line bg-surface px-1.5 py-px text-[0.8125rem] leading-5 shadow-sm">
+        {loai.map((k) => <span key={k}>{EMOJI[k]}</span>)}
+        {ds.length > 1 && <span className="ml-0.5 text-xs font-semibold text-body">{ds.length}</span>}
+      </span>
+    </div>
+  );
+}
+
 /** Bỏ dấu từng ký tự nhưng giữ nguyên độ dài chuỗi, để vị trí tìm thấy khớp với chữ gốc. */
 function boDau(t: string) {
   return Array.from(t, (c) => (c === 'đ' ? 'd' : c === 'Đ' ? 'D' : c.normalize('NFD').charAt(0))).join('').toLowerCase();
@@ -153,23 +289,12 @@ const ngayGioDayDu = (iso: string) => {
 };
 
 /**
- * Khung một tin (như Zalo): bình thường chỉ có bong bóng. Rê chuột thì hiện ngay nút ghim, trả lời ở cạnh tin
- * (tin mình gửi: bên trái; tin khách: bên phải; rê ở bất kỳ đâu trên cùng hàng cũng được), sau 1 giây hiện dòng gợi ý. Bấm vào tin thì hiện người gửi, nền tảng, ngày giờ.
+ * Khung một tin (như Zalo): bình thường chỉ có bong bóng. Rê chuột thì hiện các nút biểu cảm, ghim, trả lời, "⋯" ở cạnh tin
+ * (tin mình gửi: bên trái; tin khách: bên phải; rê ở bất kỳ đâu trên cùng hàng cũng được). Bấm vào tin thì hiện người gửi, nền tảng, ngày giờ.
  * Màn hình cảm ứng không rê chuột được: bấm vào tin là hiện cả nút lẫn chi tiết.
  */
-function KhungTin({ ben, children, nut, chiTiet, duoi, tren }: { ben: 'trai' | 'phai'; children: ReactNode; nut: ReactNode; chiTiet: string; duoi?: ReactNode; tren?: ReactNode }) {
+function KhungTin({ ben, children, nut, chiTiet, duoi, tren, phanUng, daSua }: { ben: 'trai' | 'phai'; children: ReactNode; nut: ReactNode; chiTiet: string; duoi?: ReactNode; tren?: ReactNode; phanUng?: ReactNode; daSua?: boolean }) {
   const [mo, setMo] = useState(false);
-  const [goiY, setGoiY] = useState(false);
-  const hen = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => { if (hen.current) clearTimeout(hen.current); }, []);
-  const vao = () => {
-    if (hen.current) clearTimeout(hen.current);
-    hen.current = setTimeout(() => setGoiY(true), 1000);
-  };
-  const ra = () => {
-    if (hen.current) clearTimeout(hen.current);
-    setGoiY(false);
-  };
   const bam = (e: React.MouseEvent) => {
     // Bấm vào link, ảnh, nút bên trong thì để chúng tự xử lý.
     if ((e.target as HTMLElement).closest('a,button')) return;
@@ -177,10 +302,10 @@ function KhungTin({ ben, children, nut, chiTiet, duoi, tren }: { ben: 'trai' | '
   };
   return (
     // Vùng rê chuột là cả hàng ngang của tin: chuột rời bong bóng nhưng vẫn cùng hàng thì nút vẫn hiện và bấm được.
-    <div className="group flex w-full min-w-0 flex-col" onMouseEnter={vao} onMouseLeave={ra}>
+    <div className="group flex w-full min-w-0 flex-col">
     <div className={`min-w-0 max-w-[88%] sm:max-w-[72%] ${ben === 'phai' ? 'self-end' : 'self-start'}`}>
       {tren}
-      <div className={`flex min-w-0 items-center gap-1 ${ben === 'phai' ? 'flex-row-reverse' : ''}`}>
+      <div className={`relative flex min-w-0 items-center gap-1 ${ben === 'phai' ? 'flex-row-reverse' : ''}`}>
         <div
           role="button"
           tabIndex={0}
@@ -193,24 +318,31 @@ function KhungTin({ ben, children, nut, chiTiet, duoi, tren }: { ben: 'trai' | '
           {children}
         </div>
         {nut && (
-          <div className={`flex shrink-0 items-center transition-opacity group-hover:opacity-100 group-focus-within:opacity-100 ${mo ? 'opacity-100' : 'opacity-0'}`}>{nut}</div>
+          <div className={`flex shrink-0 items-center transition-opacity ${ben === 'phai' ? 'flex-row-reverse' : ''} group-hover:opacity-100 group-focus-within:opacity-100 ${mo ? 'opacity-100' : 'opacity-0'}`}>{nut}</div>
         )}
       </div>
-      {mo ? (
-        <div className={`mt-0.5 text-[0.6875rem] text-muted ${ben === 'phai' ? 'text-right' : ''}`}>{chiTiet}</div>
-      ) : (
-        goiY && <div className={`mt-0.5 text-[0.6875rem] italic text-muted ${ben === 'phai' ? 'text-right' : ''}`}>Click vào để xem ngày chi tiết</div>
-      )}
+      {phanUng}
+      {daSua && !mo && <div className={`mt-0.5 text-[0.6875rem] text-muted ${ben === 'phai' ? 'text-right' : ''}`}>Đã chỉnh sửa</div>}
+      {mo && <div className={`mt-0.5 text-[0.6875rem] text-muted ${ben === 'phai' ? 'text-right' : ''}`}>{[chiTiet, daSua ? 'Đã chỉnh sửa' : null].filter(Boolean).join(' · ')}</div>}
       {duoi}
     </div>
     </div>
   );
 }
 
-export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen, tuKhoa, kenh }: { message: Message; onReply?: (m: Message) => void; onPin?: (m: Message) => void; pinned?: boolean; seen?: boolean; tuKhoa?: string; kenh?: Channel }) {
+export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen, tuKhoa, kenh, thaoTac, onCopied }: { message: Message; onReply?: (m: Message) => void; onPin?: (m: Message) => void; pinned?: boolean; seen?: boolean; tuKhoa?: string; kenh?: Channel; thaoTac?: ThaoTacTin; onCopied?: () => void }) {
+  const ben: 'trai' | 'phai' = m.senderType === 'CUSTOMER' ? 'trai' : 'phai';
+  const cuaToi = thaoTac ? (m.reactions ?? []).find((r) => r.actorKey === thaoTac.meId)?.emoji ?? null : null;
+  const bieuCam = thaoTac && !m.internal ? <NutBieuCam ben={ben} dangChon={cuaToi} onChon={(k) => thaoTac.onReact(m, k)} /> : null;
   const ghim = onPin && !m.internal ? <NutGhim daGhim={pinned} onClick={() => onPin(m)} /> : null;
   const traLoi = onReply && !m.internal ? <NutTraLoi onClick={() => onReply(m)} /> : null;
-  const nut = ghim || traLoi ? <>{ghim}{traLoi}</> : null;
+  // Zalo / Facebook không cho sửa tin đã gửi (khách vẫn thấy tin cũ) nên không hiện "Chỉnh sửa" ở 2 kênh này.
+  const coSua = !!thaoTac && m.senderType === 'STAFF' && m.staffId === thaoTac.meId && !!m.text.trim() && kenh !== 'ZALO' && kenh !== 'FACEBOOK';
+  const chep = () => void navigator.clipboard?.writeText(m.text).then(() => onCopied?.(), () => undefined);
+  const them = thaoTac && !m.internal ? <NutThem ben={ben} coSua={coSua} coChu={!!m.text.trim()} onSua={() => thaoTac.onEdit(m)} onChep={chep} onXoa={() => thaoTac.onDelete(m)} /> : null;
+  // Thứ tự từ bong bóng ra ngoài: biểu cảm, trả lời, ghim, "⋯". Tin mình (bên phải) xếp ngược nên cũng gần bong bóng trước.
+  const nut = bieuCam || ghim || traLoi || them ? <>{bieuCam}{traLoi}{ghim}{them}</> : null;
+  const phanUng = <DaThaBieuCam m={m} ben={ben} />;
   const nenTang = kenh ? CHANNEL[kenh].label : null;
   // Ảnh, sticker gửi riêng (không chữ, không trích dẫn): hiện trơn như Zalo, không khung màu, không nền.
   const tron = !!m.attachment?.type.startsWith('image/') && !m.text?.trim() && !m.replyTo && !m.tours?.length;
@@ -229,6 +361,7 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
         ben="trai"
         nut={nut}
         chiTiet={['Khách', nenTang, ngayGioDayDu(m.createdAt)].filter(Boolean).join(' · ')}
+        phanUng={phanUng}
         tren={m.isTrigger && <div className="mb-[3px] text-xs font-semibold text-brand-text">Yêu cầu gặp nhân viên</div>}
       >
         <div
@@ -274,6 +407,8 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
       ben="phai"
       nut={nut}
       chiTiet={[ai, nenTang, ngayGioDayDu(m.createdAt)].filter(Boolean).join(' · ')}
+      phanUng={phanUng}
+      daSua={!!m.editedAt}
       duoi={seen && <div className="mt-0.5 text-right text-[0.6875rem] font-medium text-green-ink">Khách đã xem</div>}
     >
       <div className={tron ? 'rounded-lg' : `whitespace-pre-line break-words rounded-[14px_14px_4px_14px] px-3 py-2 text-sm leading-normal ${mau}`}>

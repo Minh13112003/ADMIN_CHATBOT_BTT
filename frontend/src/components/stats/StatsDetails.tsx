@@ -146,7 +146,6 @@ export function OrdersTable({ base, fixed = {}, title = 'Chi tiết đơn đặt
     <section className="min-w-0 rounded-2xl border border-line bg-surface p-4 shadow-sm sm:p-6">
       <header className="mb-4">
         <h2 className="text-base font-bold text-ink">{title}</h2>
-        <p className="mt-0.5 text-xs text-muted">Chỉ đơn đã xác nhận mới tính doanh thu. Bấm mã đơn để mở hội thoại.</p>
       </header>
       {body}
     </section>

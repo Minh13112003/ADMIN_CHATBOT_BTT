@@ -35,14 +35,13 @@ export function StatsCharts({ period, departmentId = '', showCost = true, compac
       </section>
       <section className="min-w-0 rounded-2xl border border-line bg-surface shadow-sm p-3.5" aria-label="Biểu đồ khách nhắn tin và yêu cầu gặp nhân viên">
         <h4 className="font-semibold">Khách nhắn tin và yêu cầu gặp nhân viên</h4>
-        <p className="mb-2 text-xs text-muted">Đơn vị: khách và yêu cầu. Mỗi điểm ứng với một mốc thời gian.</p>
         <div className="mb-2 flex flex-wrap gap-4 text-xs"><Legend color="var(--color-brand-button)" label="Khách nhắn tin" /><Legend color="var(--color-series-contact)" label="Yêu cầu gặp nhân viên" /></div>
         {series.data.every((point) => point.customers === 0 && point.contacts === 0) ? <p className="py-8 text-center text-sm text-muted">Chưa có dữ liệu trong kỳ này.</p> : <LineChart key={granularity} data={series.data} />}
         <SeriesTable data={series.data} columns={[{ key: 'customers', label: 'Khách nhắn tin' }, { key: 'contacts', label: 'Yêu cầu gặp nhân viên' }]} />
       </section>
     </div>}
     {showCost && !departmentId && <section className="min-w-0 rounded-2xl border border-line bg-surface shadow-sm p-3.5" aria-label="Chi phí theo nguồn">
-      <h4 className="font-semibold">Tỷ lệ chi phí theo nguồn</h4><p className="mt-1 text-xs text-muted">Theo kỳ thống kê đang chọn. Chi phí AI là ước tính từ token đã gắn với hội thoại.</p>
+      <h4 className="font-semibold">Tỷ lệ chi phí theo nguồn</h4>
       {cost.error ? <p role="alert" className="mt-3 text-sm text-brand-text">Không tải được chi phí theo nguồn.</p> : !cost.data ? <p className="mt-3 text-sm text-muted">Đang tải chi phí...</p> : <CostDonut data={cost.data} />}
     </section>}
   </div>;

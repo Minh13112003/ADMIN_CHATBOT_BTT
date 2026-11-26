@@ -107,17 +107,19 @@ model User {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  department Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  assigned  Conversation[]    @relation("Assignee")
-  helping   Conversation[]    @relation("Helper")
-  followUps Conversation[]    @relation("FollowUpBy")
-  responses ContactResponse[]
-  messages  Message[]
-  deals     Deal[]
-  templates QuickTemplate[]
-  tourTags  TourInterestTag[]
-  vouchers  Voucher[]
+  department         Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  assigned           Conversation[]    @relation("Assignee")
+  helping            Conversation[]    @relation("Helper")
+  followUps          Conversation[]    @relation("FollowUpBy")
+  responses          ContactResponse[]
+  messages           Message[]
+  deals              Deal[]
+  templates          QuickTemplate[]
+  tourTags           TourInterestTag[]
+  vouchers           Voucher[]
   appAccountsCreated AppAccount[]
+  reactions          MessageReaction[]
+  activities         ActivityLog[]
 
   @@index([departmentId])
   @@map("users")
@@ -187,17 +189,22 @@ model Conversation {
   followUpById          String?
   followUpNotifiedAt    DateTime? // Đã nhắc người hẹn, để không nhắc lặp
   customerSeenAt        DateTime? // Lần cuối khung chat phía khách mở và lấy tin nhân viên
+  // Xoá mềm (2026-11-26): false = đã xoá, chỉ admin toàn quyền thấy ở tab Khôi phục, xoá hẳn mới mất khỏi database.
+  // Khách nhắn tin mới thì trigger messages_revive_conversation tự hiện lại hội thoại (tin cũ đã xoá vẫn ẩn).
+  isAvailable           Boolean            @default(true)
+  deletedAt             DateTime?
+  deletedById           String?
   createdAt             DateTime           @default(now())
   updatedAt             DateTime           @updatedAt
 
-  customer   Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  assignee   User?             @relation("Assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  helper     User?             @relation("Helper", fields: [helperId], references: [id], onDelete: SetNull)
-  followUpBy User?             @relation("FollowUpBy", fields: [followUpById], references: [id], onDelete: SetNull)
-  responses  ContactResponse[]
-  messages   Message[]
-  deals      Deal[]
-  tourTags   TourInterestTag[]
+  customer       Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  assignee       User?             @relation("Assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  helper         User?             @relation("Helper", fields: [helperId], references: [id], onDelete: SetNull)
+  followUpBy     User?             @relation("FollowUpBy", fields: [followUpById], references: [id], onDelete: SetNull)
+  responses      ContactResponse[]
+  messages       Message[]
+  deals          Deal[]
+  tourTags       TourInterestTag[]
   placeInterests PlaceInterest[]
 
   @@unique([customerId, channel])
@@ -207,6 +214,7 @@ model Conversation {
   @@index([assigneeId, status])
   @@index([followUpAt])
   @@index([tags], type: Gin) // Lọc theo nhãn
+  @@index([isAvailable, deletedAt]) // Tab Khôi phục
   @@map("conversations")
 }
 
@@ -227,17 +235,65 @@ model Message {
   attachmentType    String? // image/jpeg, image/png, image/webp, application/pdf
   attachmentName    String?
   attachmentSize    Int? // byte, sau khi đã thu nhỏ
+  // Xoá mềm (2026-11-26): false = đã xoá (ẩn khỏi khung chat và phía khách web/app), xoá hẳn ở tab Khôi phục.
+  isAvailable       Boolean    @default(true)
+  deletedAt         DateTime?
+  deletedById       String?
+  editedAt          DateTime? // Nhân viên sửa chữ của tin
+  // Lần cuối tin bị sửa, xoá, khôi phục hoặc thả biểu cảm: chatbot web/app hỏi "có gì đổi từ mốc X" để cập nhật phía khách.
+  changedAt         DateTime?
   createdAt         DateTime   @default(now())
 
-  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  staff        User?        @relation(fields: [staffId], references: [id], onDelete: SetNull)
-  replyTo      Message?     @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies      Message[]    @relation("ReplyTo")
-  tourTags     TourInterestTag[]
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  staff          User?             @relation(fields: [staffId], references: [id], onDelete: SetNull)
+  replyTo        Message?          @relation("ReplyTo", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies        Message[]         @relation("ReplyTo")
+  tourTags       TourInterestTag[]
   placeInterests PlaceInterest[]
+  reactions      MessageReaction[]
 
   @@index([conversationId, createdAt])
+  @@index([conversationId, changedAt])
+  @@index([isAvailable, deletedAt]) // Tab Khôi phục
   @@map("messages")
+}
+
+/// Biểu cảm thả vào một tin (2026-11-26). Mỗi người một biểu cảm mỗi tin: nhân viên (`actorKey` = id nhân viên) hoặc khách (`actorKey` = "customer").
+model MessageReaction {
+  id        String   @id @default(uuid())
+  messageId String
+  actorKey  String
+  staffId   String?
+  emoji     String // like, heart, haha, wow, sad, angry
+  createdAt DateTime @default(now())
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  staff   User?   @relation(fields: [staffId], references: [id], onDelete: SetNull)
+
+  @@unique([messageId, actorKey])
+  @@map("message_reactions")
+}
+
+/// Nhật ký thao tác của nhân viên (2026-11-26), chỉ admin toàn quyền xem, xem theo từng ngày.
+/// Không bao giờ ghi mật khẩu, token hay khoá bí mật; nội dung tin chỉ giữ bản rút gọn.
+model ActivityLog {
+  id             String   @id @default(uuid())
+  actorId        String?
+  actorName      String // Giữ tên lúc làm, tài khoản đổi tên sau vẫn đúng
+  actorRole      Role?
+  group          String // MESSAGE, CONVERSATION, DEAL, ACCOUNT, VOUCHER, SETTINGS, AUTH, RESTORE
+  action         String // Mã thao tác, ví dụ message.send
+  summary        String
+  conversationId String?
+  targetId       String?
+  ip             String?
+  createdAt      DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@map("activity_logs")
 }
 
 model QuickTemplate {
@@ -285,7 +341,7 @@ model Deal {
   guests           Int
   amount           BigInt // VND
   tourKey          String? // id tour trên benthanhtourist.com (chung mọi ngày khởi hành)
-  departureDate    DateTime? @db.Date
+  departureDate    DateTime?  @db.Date
   unitPrice        BigInt? // Giá/người của ngày khởi hành, lấy từ API tour, sale không sửa
   subtotal         BigInt? // unitPrice × guests, trước voucher
   voucherId        String?
@@ -302,7 +358,7 @@ model Deal {
   infants          Int? // dưới 2 tuổi, 40% giá
   notice           String? // Ghi chú của khách
   departureKey     String? // id đợt khởi hành trên benthanhtourist.com (tour_days[].id)
-  returnDate       DateTime? @db.Date // Ngày về, để tự chuyển Hoàn thành
+  returnDate       DateTime?  @db.Date // Ngày về, để tự chuyển Hoàn thành
   tourImage        String?
   pointsAwarded    Int? // Điểm đã cộng khi Hoàn thành; có giá trị thì không cộng lần nữa
 
@@ -387,29 +443,29 @@ model ChannelSecret {
 
 // Voucher do admin phòng ban (admin chi nhánh) hoặc admin toàn quyền tạo. Số lần đã dùng đếm từ đơn đã chốt, không lưu bộ đếm.
 model Voucher {
-  id           String       @id @default(uuid())
-  code         String       @unique // Viết hoa, không dấu
-  type         VoucherType
-  value        Int // AMOUNT: số đồng; PERCENT: 1-100
-  maxDiscount  BigInt? // PERCENT: giảm tối đa
-  scope        VoucherScope
-  tourKey      String?
-  tourName     String?
-  categoryId   Int?
-  categoryName String?
-  startsAt     DateTime
-  endsAt       DateTime
-  maxUses      Int? // null = không giới hạn
+  id                      String       @id @default(uuid())
+  code                    String       @unique // Viết hoa, không dấu
+  type                    VoucherType
+  value                   Int // AMOUNT: số đồng; PERCENT: 1-100
+  maxDiscount             BigInt? // PERCENT: giảm tối đa
+  scope                   VoucherScope
+  tourKey                 String?
+  tourName                String?
+  categoryId              Int?
+  categoryName            String?
+  startsAt                DateTime
+  endsAt                  DateTime
+  maxUses                 Int? // null = không giới hạn
   /// Chỉ khách đúng bậc thành viên này dùng được (DONG, BAC, VANG, BACH_KIM, KIM_CUONG, RUBY). null = mọi khách. Chốt 2026-11-16.
-  tier         String?
+  tier                    String?
   /// Mỗi khách dùng tối đa bấy nhiêu lần trong một tháng (giờ Việt Nam). null = không giới hạn.
   maxUsesPerCustomerMonth Int?
-  note         String?
-  isActive     Boolean      @default(true) // false = tạm khoá
-  departmentId String? // Phòng tạo voucher; admin toàn quyền tạo thì để trống
-  createdById  String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  note                    String?
+  isActive                Boolean      @default(true) // false = tạm khoá
+  departmentId            String? // Phòng tạo voucher; admin toàn quyền tạo thì để trống
+  createdById             String?
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime     @updatedAt
 
   createdBy User?  @relation(fields: [createdById], references: [id], onDelete: SetNull)
   deals     Deal[]
@@ -534,19 +590,19 @@ model StickerPack {
 
 /// Kho sticker dùng chung; giữ bản WebP xem trước và GIF để gửi qua các kênh.
 model Sticker {
-  id        String       @id @default(uuid())
-  name      String
-  webpPath  String
-  gifPath   String
-  gifSize   Int
-  width     Int
-  height    Int
-  animated  Boolean
-  active    Boolean      @default(true)
-  createdAt DateTime     @default(now())
-  packId    String? // Trống = sticker chưa xếp vào tệp nào (hiện ở tab "Khác")
+  id            String       @id @default(uuid())
+  name          String
+  webpPath      String
+  gifPath       String
+  gifSize       Int
+  width         Int
+  height        Int
+  animated      Boolean
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  packId        String? // Trống = sticker chưa xếp vào tệp nào (hiện ở tab "Khác")
   zaloStickerId String? // Mã sticker có sẵn của Zalo; có thì gửi sang Zalo bằng sticker Zalo (động) thay cho ảnh GIF tự tải lên
-  pack      StickerPack? @relation(fields: [packId], references: [id], onDelete: SetNull)
+  pack          StickerPack? @relation(fields: [packId], references: [id], onDelete: SetNull)
 
   @@index([active, createdAt])
   @@index([packId])

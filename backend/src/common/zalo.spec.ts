@@ -103,7 +103,7 @@ describe('zalo', () => {
     expect(laTinSticker('Xin chào')).toBe(false);
   });
   it('khách thả cảm xúc', () => {
-    expect(phanTichPhanUng({ event_name: 'user_reacted_message', sender: { id: 'u1' }, message: { msg_id: 'm1', react_icon: '/-heart' } })).toEqual({ userId: 'u1', msgId: 'm1', camXuc: 'thả tim' });
+    expect(phanTichPhanUng({ event_name: 'user_reacted_message', sender: { id: 'u1' }, message: { msg_id: 'm1', react_icon: '/-heart' } })).toEqual({ userId: 'u1', msgId: 'm1', camXuc: 'thả tim', bieuCam: 'heart', go: false });
     expect(phanTichPhanUng({ event_name: 'user_send_text', sender: { id: 'u1' } })).toBeNull();
   });
   it('lịch sử: đọc mã tin được trích dẫn và link ảnh', () => {

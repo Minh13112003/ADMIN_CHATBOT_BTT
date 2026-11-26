@@ -45,8 +45,17 @@ const MESSAGE_SELECT = {
   attachmentType: true,
   attachmentName: true,
   attachmentSize: true,
-  replyTo: { select: { id: true, text: true, senderType: true } },
+  staffId: true,
+  editedAt: true,
+  replyTo: { select: { id: true, text: true, senderType: true, isAvailable: true } },
+  reactions: { select: { emoji: true, actorKey: true, staff: { select: { fullName: true } } }, orderBy: { createdAt: 'asc' } },
 } satisfies Prisma.MessageSelect;
+
+/** Tin đã xoá không hiện (xoá mềm, xem ở tab Khôi phục). */
+const CON_HIEN = { isAvailable: true } as const;
+
+type BieuCamRow = { emoji: string; actorKey: string; staff: { fullName: string } | null };
+type TrichRow = { id: string; text: string; senderType: string; isAvailable: boolean } | null;
 
 /** `adults`, `children`, `infants`: số người lớn, trẻ em (80%), em bé (40%) sale nhập (chốt 2026-11-16). Không có thì tính `guests` người lớn. */
 export type CloseInput = { dealId?: string; tourKey?: string; dayCode: string; guests: number; adults?: number; children?: number; infants?: number; voucherCode?: string; orderCode?: string };
@@ -59,9 +68,14 @@ export class ConversationsService {
   constructor(private prisma: PrismaService, private config: ConfigService, private realtime: RealtimeGateway, private tep: AttachmentsService, private pricing: PricingService, private zalo: ZaloService, private appThongBao?: AppNotificationsService, private fb?: FacebookService, private stickers?: StickersService) {}
 
   /** Bỏ đường dẫn lưu trữ, thêm `attachment` (link xem có hạn) trước khi gửi ra ngoài. */
-  private ra<T extends { id: string; attachmentPath: string | null; attachmentType: string | null; attachmentName: string | null; attachmentSize: number | null }>(m: T) {
-    const { attachmentPath, attachmentType, attachmentName, attachmentSize, ...con } = m;
-    return { ...con, attachment: this.tep.dinhKem(m) };
+  ra<T extends { id: string; attachmentPath: string | null; attachmentType: string | null; attachmentName: string | null; attachmentSize: number | null; reactions?: BieuCamRow[]; replyTo?: TrichRow }>(m: T) {
+    const { attachmentPath, attachmentType, attachmentName, attachmentSize, reactions, replyTo, ...con } = m;
+    return {
+      ...con,
+      ...(replyTo !== undefined ? { replyTo: replyTo && { id: replyTo.id, senderType: replyTo.senderType, text: replyTo.isAvailable ? replyTo.text : 'Tin nhắn đã bị xoá' } } : {}),
+      ...(reactions ? { reactions: reactions.map((r) => ({ emoji: r.emoji, actorKey: r.actorKey, by: r.actorKey === 'customer' ? 'Khách' : (r.staff?.fullName ?? 'Nhân viên') })) } : {}),
+      attachment: this.tep.dinhKem(m),
+    };
   }
 
   /** Đồng nghiệp gửi tin trong khoảng này thì người khác bấm gửi sẽ được hỏi xác nhận. */
@@ -111,6 +125,7 @@ export class ConversationsService {
     const tim = timKhach(q.search);
     const where: Prisma.ConversationWhereInput = {
       ...this.pham(user),
+      isAvailable: true,
       ...(q.channel ? { channel: q.channel } : {}),
       ...(tim ? { customer: tim } : {}),
       ...(q.tag ? { tags: { has: q.tag } } : {}),
@@ -162,7 +177,7 @@ export class ConversationsService {
       FROM unnest(${ids}::text[]) AS c(id)
       CROSS JOIN LATERAL (
         SELECT "senderType", "staffLabel", "staffId" FROM messages
-        WHERE "conversationId" = c.id AND internal = false
+        WHERE "conversationId" = c.id AND internal = false AND "isAvailable" = true
         ORDER BY "createdAt" DESC LIMIT 1
       ) m`;
     return new Map(rows.map((r) => [r.id, { type: r.type, staffLabel: r.label, staffId: r.staff_id }]));
@@ -175,7 +190,7 @@ export class ConversationsService {
 
   private async lay(id: string): Promise<ConvRow> {
     const c = await this.prisma.conversation.findUnique({ where: { id }, include: INCLUDE });
-    if (!c) throw new NotFoundException('Không tìm thấy hội thoại');
+    if (!c || !c.isAvailable) throw new NotFoundException('Không tìm thấy hội thoại');
     return c;
   }
 
@@ -188,16 +203,16 @@ export class ConversationsService {
     const n = Math.min(take, 200);
     if (around) {
       // Mở thẳng tới một tin: 20 tin trước nó, chính nó và các tin sau.
-      const dich = await this.prisma.message.findFirst({ where: { id: around, conversationId: id }, select: { createdAt: true } });
+      const dich = await this.prisma.message.findFirst({ where: { id: around, conversationId: id, ...CON_HIEN }, select: { createdAt: true } });
       if (!dich) throw new NotFoundException('Không tìm thấy tin nhắn này');
       const [truoc, sau] = await Promise.all([
-        this.prisma.message.findMany({ where: { conversationId: id, createdAt: { lt: dich.createdAt } }, orderBy: { createdAt: 'desc' }, take: 21, select: MESSAGE_SELECT }),
-        this.prisma.message.findMany({ where: { conversationId: id, createdAt: { gte: dich.createdAt } }, orderBy: { createdAt: 'asc' }, take: n, select: MESSAGE_SELECT }),
+        this.prisma.message.findMany({ where: { conversationId: id, ...CON_HIEN, createdAt: { lt: dich.createdAt } }, orderBy: { createdAt: 'desc' }, take: 21, select: MESSAGE_SELECT }),
+        this.prisma.message.findMany({ where: { conversationId: id, ...CON_HIEN, createdAt: { gte: dich.createdAt } }, orderBy: { createdAt: 'asc' }, take: n, select: MESSAGE_SELECT }),
       ]);
       return { items: [...truoc.slice(0, 20).reverse(), ...sau].map((m) => this.ra(m)), hasMore: truoc.length > 20 };
     }
     const rows = await this.prisma.message.findMany({
-      where: { conversationId: id, ...(before ? { createdAt: { lt: new Date(before) } } : {}) },
+      where: { conversationId: id, ...CON_HIEN, ...(before ? { createdAt: { lt: new Date(before) } } : {}) },
       orderBy: { createdAt: 'desc' },
       take: n + 1,
       select: MESSAGE_SELECT,
@@ -240,7 +255,7 @@ export class ConversationsService {
       throw new ConflictException({ code: 'OTHER_ACTIVE', by: khac.fullName, message: `${khac.fullName} ${viec}. Bạn vẫn muốn gửi?` });
     }
     if (dto.replyToId) {
-      const goc = await this.prisma.message.findFirst({ where: { id: dto.replyToId, conversationId: id, internal: false }, select: { id: true } });
+      const goc = await this.prisma.message.findFirst({ where: { id: dto.replyToId, conversationId: id, internal: false, ...CON_HIEN }, select: { id: true } });
       if (!goc) throw new BadRequestException('Không tìm thấy tin được trích');
     }
     // Kênh Zalo: gửi sang Zalo trước khi lưu, lỗi thì báo ngay và không lưu tin giả vờ đã gửi.
@@ -483,7 +498,7 @@ export class ConversationsService {
   @Cron('0 * * * * *')
   async nhacHen() {
     const den = await this.prisma.conversation.findMany({
-      where: { followUpAt: { lte: new Date() }, followUpNotifiedAt: null },
+      where: { followUpAt: { lte: new Date() }, followUpNotifiedAt: null, isAvailable: true },
       select: { id: true, followUpNote: true, followUpById: true, customer: { select: { name: true } } },
       take: 100,
     });
@@ -502,10 +517,10 @@ export class ConversationsService {
   }
 
   async customers(user: AuthUser, search?: string, take = 200) {
-    const pham = this.pham(user);
-    const coPham = Object.keys(pham).length > 0;
+    const pham = { ...this.pham(user), isAvailable: true };
     return this.prisma.customer.findMany({
-      where: { ...(timKhach(search) ?? {}), ...(coPham ? { conversations: { some: pham } } : {}) },
+      // Khách chỉ còn hội thoại đã xoá (đang ở tab Khôi phục) thì không hiện.
+      where: { ...(timKhach(search) ?? {}), conversations: { some: pham } },
       include: {
         conversations: {
           where: pham,
@@ -568,17 +583,38 @@ export class ConversationsService {
       FROM messages m
       JOIN conversations c ON c.id = m."conversationId"
       JOIN customers cu ON cu.id = c."customerId"
-      WHERE to_tsvector('simple'::regconfig, btt_bo_dau(m.text)) @@ to_tsquery('simple'::regconfig, ${tsq}) AND ${pham}
+      WHERE to_tsvector('simple'::regconfig, btt_bo_dau(m.text)) @@ to_tsquery('simple'::regconfig, ${tsq}) AND ${pham} AND m."isAvailable" = true AND c."isAvailable" = true
       ORDER BY m."createdAt" DESC
       LIMIT ${Math.min(take, 200)}`;
   }
 
   /**
-   * Chỉ ADMIN (controller kiểm tra). Xoá hẳn hội thoại cùng tin nhắn, đơn, nhãn tour; file đính kèm xoá khỏi nơi lưu.
+   * Xoá mềm (2026-11-26, chỉ ADMIN, controller kiểm tra): hội thoại và các tin còn hiện chuyển sang `isAvailable = false`
+   * cùng một mốc `deletedAt`, để khôi phục hội thoại thì trả lại đúng các tin đó (tin đã xoá lẻ trước đó vẫn ẩn).
+   * Không đụng `changedAt`: phía khách web/app không bị mất tin. Đơn vẫn còn nên doanh thu chưa đổi; xoá hẳn ở tab Khôi phục mới mất.
+   */
+  async xoaMem(user: AuthUser, id: string) {
+    const c = await this.lay(id);
+    const luc = new Date();
+    await this.prisma.$transaction([
+      this.prisma.message.updateMany({ where: { conversationId: id, isAvailable: true }, data: { isAvailable: false, deletedAt: luc, deletedById: user.id } }),
+      this.prisma.conversation.update({
+        where: { id },
+        // Bỏ người phụ trách để không còn tính vào số khách đang giữ khi chia việc.
+        data: { isAvailable: false, deletedAt: luc, deletedById: user.id, ...(c.status === 'CONTACT' || c.status === 'PENDING' ? { assigneeId: null, contactAssignedAt: null } : {}) },
+      }),
+    ]);
+    this.log.warn(`${user.fullName} (${user.id}) xoá mềm hội thoại ${id} của khách "${c.customer.name}"`);
+    this.realtime.emit('conversation:update', { id });
+    return { ok: true, deleted: id };
+  }
+
+  /**
+   * Chỉ ADMIN (controller kiểm tra, gọi từ tab Khôi phục). Xoá hẳn hội thoại cùng tin nhắn, đơn, nhãn tour; file đính kèm xoá khỏi nơi lưu.
    * Khách không còn hội thoại nào khác thì xoá luôn khách (và mã nhận diện), để tin nhắn mới tạo khách mới sạch.
    * Hội thoại có đơn ĐÃ CHỐT (đang tính doanh thu) thì phải gửi `force`, vì xoá sẽ làm doanh thu thống kê giảm.
    */
-  async xoaHoiThoai(user: AuthUser, id: string, force: boolean) {
+  async xoaHan(user: AuthUser, id: string, force: boolean) {
     const c = await this.prisma.conversation.findUnique({ where: { id }, select: { id: true, customerId: true, customer: { select: { name: true } } } });
     if (!c) throw new NotFoundException('Không tìm thấy hội thoại');
     const donChot = await this.prisma.deal.aggregate({ where: { conversationId: id, status: 'CONFIRMED', voidedAt: null }, _count: { _all: true }, _sum: { amount: true } });
@@ -599,7 +635,7 @@ export class ConversationsService {
     for (const f of files) if (f.attachmentPath) await this.tep.xoaTep(f.attachmentPath);
     this.log.warn(`${user.fullName} (${user.id}) xoá hội thoại ${id} của khách "${c.customer.name}"${xoaKhach ? ', đã xoá luôn khách' : ''}, ${files.length} file`);
     this.realtime.emit('conversation:update', { id });
-    return { ok: true, deleted: id, customerDeleted: xoaKhach };
+    return { ok: true, deleted: id, customerDeleted: xoaKhach, name: c.customer.name };
   }
 
   /** Sale xin được số của khách thì nhập ở đây. Số đã thuộc khách khác thì từ chối (không tự gộp hai khách). */

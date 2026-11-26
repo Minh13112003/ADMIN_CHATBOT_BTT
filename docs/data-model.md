@@ -23,6 +23,8 @@ Nguồn chuẩn: `backend/prisma/schema.prisma`.
 | `app_notifications` | Thông báo trong app (tab chuông), tạo khi đơn app đổi trạng thái, `refType = BOOKING` + `refId` id đơn |
 | `app_favorites` | Tour yêu thích của tài khoản app, giữ tên, ảnh, giá lúc thêm. Một tour một dòng mỗi tài khoản |
 | `app_feedbacks` | Góp ý khách gửi trong app |
+| `message_reactions` | Biểu cảm thả vào tin (2026-11-26): `like`, `heart`, `haha`, `wow`, `sad`, `angry`. Mỗi người một biểu cảm mỗi tin, khoá `(messageId, actorKey)`: `actorKey` = id nhân viên, hoặc `customer` khi khách Zalo thả |
+| `activity_logs` | Nhật ký thao tác nhân viên (2026-11-26), chỉ admin toàn quyền xem theo từng ngày. Giữ tên, vai trò lúc làm; `group` (MESSAGE, CONVERSATION, DEAL, ACCOUNT, VOUCHER, SETTINGS, AUTH, RESTORE), `action`, `summary` dễ đọc, `conversationId`. Không bao giờ chứa mật khẩu, token, khoá bí mật |
 
 Quan hệ chính: một khách có nhiều mã kênh và nhiều hội thoại (mỗi kênh một), một hội thoại có nhiều tin và nhiều đơn.
 
@@ -34,6 +36,14 @@ Hai cột dưới đây do trigger trong database tính (migration `search_and_s
 |---|---|---|
 | `customers.searchText` | `customers_search_text`, chạy khi đổi `name`, `aliases`, `phone` | Ô tìm kiếm: tên, tên khác, SĐT viết thường, bỏ dấu. Hàm SQL `btt_bo_dau` phải khớp `khoaTimKiem` trong `common/text.ts` |
 | `conversations.lastCustomerMessageAt` | `messages_last_customer`, chạy khi thêm tin `CUSTOMER` | Thống kê "khách nhắn tin trong kỳ" mà không quét bảng tin nhắn |
+
+## Xoá mềm (2026-11-26, migration `20261126090000_soft_delete_reactions_activity`)
+
+- `conversations.isAvailable`, `messages.isAvailable` (mặc định `true`), kèm `deletedAt`, `deletedById`. `false` = đã xoá: không hiện ở hộp thư, khung chat, tìm kiếm, Khách hàng, không được chia việc; chỉ admin toàn quyền thấy ở tab Khôi phục. Xoá hẳn ở đó mới xoá dòng khỏi database.
+- Xoá hội thoại ẩn luôn các tin còn hiện với **cùng một** `deletedAt`; khôi phục hội thoại chỉ trả lại các tin có đúng mốc đó (tin đã xoá lẻ trước đó vẫn ẩn).
+- Trigger `messages_revive_conversation`: khách nhắn tin mới (`senderType = CUSTOMER`) vào hội thoại đã xoá thì hội thoại hiện lại, tin cũ vẫn ẩn. Đúng cả khi chatbot ghi thẳng bằng `lich_su_db.py` (không cần sửa file đó: cột mới đều có mặc định).
+- `messages.editedAt`: nhân viên đã sửa chữ. `messages.changedAt`: lần cuối tin bị sửa / xoá / khôi phục / thả biểu cảm; chatbot web/app đọc qua `/ingest/updates` (`changes`) để cập nhật phía khách. Chỉ mục `(conversationId, changedAt)`.
+- Thống kê doanh thu vẫn tính đơn của hội thoại đã xoá mềm; chỉ xoá hẳn mới làm doanh thu giảm.
 
 ## Kho sticker
 

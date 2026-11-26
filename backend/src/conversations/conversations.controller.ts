@@ -118,11 +118,11 @@ export class ConversationsController {
     return this.svc.get(me, id);
   }
 
-  /** Xoá hội thoại (dùng dọn dữ liệu thử): chỉ admin toàn quyền. Có đơn đã chốt thì cần `?force=1`. */
+  /** Xoá hội thoại (xoá mềm, chuyển vào tab Khôi phục): chỉ admin toàn quyền. Xoá hẳn ở /trash. */
   @Delete(':id')
   @Roles(Role.ADMIN)
-  xoa(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Query('force') force?: string) {
-    return this.svc.xoaHoiThoai(me, id, force === '1');
+  xoa(@CurrentUser() me: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.svc.xoaMem(me, id);
   }
 
   @Get(':id/messages')

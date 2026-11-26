@@ -340,6 +340,14 @@ export class ZaloService {
     await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: { recipient: { user_id: zaloUserId }, message: { text } } });
   }
 
+  /**
+   * OA thả biểu cảm vào một tin (2026-11-26). Theo diễn đàn Zalo for Developers: gửi `sender_action` qua API tin tư vấn,
+   * `react_icon` là mã cảm xúc Zalo, `react_message_id` là msg_id của tin. Chưa kiểm chứng khi chạy thật.
+   */
+  async thaCamXuc(zaloUserId: string, msgId: string, maZalo: string) {
+    await this.goiApi(`${OPENAPI}/v3.0/oa/message/cs`, { method: 'POST', body: { recipient: { user_id: zaloUserId }, sender_action: { react_icon: maZalo, react_message_id: msgId } } });
+  }
+
   /** Tên và ảnh đại diện của khách; lỗi thì trả rỗng (không chặn việc nhận tin). Thử API v3.0 trước, rồi v2.0. */
   async hoSoKhach(zaloUserId: string): Promise<{ ten: string | null; anh: string | null }> {
     const data = encodeURIComponent(JSON.stringify({ user_id: zaloUserId }));

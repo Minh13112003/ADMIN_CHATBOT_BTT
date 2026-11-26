@@ -57,6 +57,8 @@ const NAV = [
   },
   { href: '/vouchers', label: 'Voucher', admin: true, dept: true, icon: <><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z" /><circle cx="7.5" cy="7.5" r="1.5" /></> },
   { href: '/tour-interest', label: 'Nhu cầu tour', admin: true, dept: true, icon: <><path d="M3 20h18" /><path d="M6 20V10M12 20V4M18 20v-8" /></> },
+  { href: '/activity', label: 'Nhật ký thao tác', admin: true, icon: <><path d="M12 8v4l3 2" /><circle cx="12" cy="12" r="9" /></> },
+  { href: '/trash', label: 'Khôi phục', admin: true, icon: <><path d="M3 12a9 9 0 1 0 3-6.7L3 8" /><path d="M3 3v5h5" /></> },
 ] as { href: string; label: string; icon: ReactNode; admin?: boolean; dept?: boolean }[];
 
 type NavItem = (typeof NAV)[number];

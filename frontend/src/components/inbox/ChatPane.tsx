@@ -6,13 +6,13 @@ import type { Sticker } from '../StickerLibrary';
 import { rememberSticker, StickerPicker } from './StickerPicker';
 import { CHANNEL, dinhDangSo, STATUS, trieu } from '@/lib/labels';
 import { useRealtime } from '@/lib/realtime';
-import type { Channel, Conversation, Deal, Me, Message, MessageHit, Person, Template, TourTag } from '@/lib/types';
+import type { Channel, Conversation, Deal, Me, Message, MessageHit, Person, ReactionKey, Template, TourTag } from '@/lib/types';
 import { TagTourDialog, xemTinTrongChat } from './TourTags';
 import { insertAtCursor, prepareQuickReply } from '@/lib/quick-reply';
 import { AnhKhach, chipClass, Dialog, ErrorText, Field, inputClass, primaryClass, secondaryClass, Switch } from '../ui';
 import { InfoPanel } from './InfoPanel';
 import { CloseDealDialog } from './CloseDealDialog';
-import { dungLuong, MessageBubble } from './MessageBubble';
+import { dungLuong, MessageBubble, type ThaoTacTin } from './MessageBubble';
 import { QuickReplyPicker } from './QuickReplyPicker';
 import { SoDienThoaiDialog } from './SoDienThoai';
 
@@ -123,7 +123,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
         {(choNhanVien || donCho) && <div className="flex min-h-12 items-center gap-2 border-b border-amber-line bg-auto-soft px-3 py-1.5 text-sm text-amber-ink"><strong className="shrink-0">Cần làm:</strong><span className="min-w-0 flex-1 truncate">{donCho ? `Gọi khách xác nhận đơn ${donCho.tourName} (${trieu(donCho.amount)})` : conv.assignee ? `Khách chờ nhân viên ${conv.assignee.fullName}` : 'Khách đang chờ nhân viên'}</span>{conv.customer.phone && <a className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" href={`tel:${conv.customer.phone}`}>Gọi khách</a>}{donCho && <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => setXacNhan(donCho)}>Xác nhận đơn</button>}</div>}
 
         {timTin && <TimTinTrongChat id={id} onClose={() => setTimTin(false)} />}
-        <MessageList id={id} kenh={conv.channel} seenAt={conv.customerSeenAt} onReply={setReplyTo} onPin={chiXem ? undefined : setGhimTin} focusId={focusId} />
+        <MessageList id={id} kenh={conv.channel} seenAt={conv.customerSeenAt} onReply={setReplyTo} onPin={chiXem ? undefined : setGhimTin} focusId={focusId} meId={chiXem ? undefined : me?.id} />
         {chiXem ? <p className="border-t border-line bg-fill px-4 py-3 text-center text-sm text-muted">Bạn chỉ được xem hội thoại này.</p> : <Composer conv={conv} onChange={refresh} replyTo={replyTo} clearReply={() => setReplyTo(null)} />}
       </section>
       {panelOpen && <InfoPanel conv={conv} deals={deals} onChange={refresh} onClose={() => setPanelOpen(false)} />}
@@ -247,9 +247,35 @@ function MocNgay({ iso }: { iso: string }) {
   );
 }
 
-function MessageList({ id, kenh, seenAt, onReply, onPin, focusId }: { id: string; kenh: Channel; seenAt: string | null; onReply: (m: Message) => void; onPin?: (m: Message) => void; focusId?: string | null }) {
+function MessageList({ id, kenh, seenAt, onReply, onPin, focusId, meId }: { id: string; kenh: Channel; seenAt: string | null; onReply: (m: Message) => void; onPin?: (m: Message) => void; focusId?: string | null; meId?: string }) {
   // Mở từ báo cáo nhu cầu tour: tải quanh đúng tin được trỏ tới, rồi cuộn tới và làm nổi bật.
-  const { data, error } = useSWR<{ items: Message[]; hasMore: boolean }>(focusId ? `/conversations/${id}/messages?around=${focusId}` : `/conversations/${id}/messages`, fetcher, { refreshInterval: 20_000 });
+  const { data, error, mutate: taiLai } = useSWR<{ items: Message[]; hasMore: boolean }>(focusId ? `/conversations/${id}/messages?around=${focusId}` : `/conversations/${id}/messages`, fetcher, { refreshInterval: 20_000 });
+  const [suaTin, setSuaTin] = useState<Message | null>(null);
+  const [xoaTin, setXoaTin] = useState<Message | null>(null);
+  const [thongBao, setThongBao] = useState<{ chu: string; loi?: boolean } | null>(null);
+  useEffect(() => {
+    if (!thongBao) return;
+    const h = setTimeout(() => setThongBao(null), thongBao.loi ? 8000 : 2500);
+    return () => clearTimeout(h);
+  }, [thongBao]);
+  // Tin cũ đã tải thêm nằm ngoài SWR: thay đúng tin vừa đổi, hoặc bỏ tin vừa xoá.
+  const doiTinCu = (moi: Message | null, idTin: string) => setOlder((o) => (moi ? o.map((x) => (x.id === idTin ? moi : x)) : o.filter((x) => x.id !== idTin)));
+  const thaoTac: ThaoTacTin | undefined = meId
+    ? {
+        meId,
+        onReact: (m: Message, emoji: ReactionKey) => {
+          void post<{ warning?: string; message: Message }>(`/conversations/${id}/messages/${m.id}/reaction`, { emoji })
+            .then((r) => {
+              doiTinCu(r.message, m.id);
+              void taiLai();
+              if (r.warning) setThongBao({ chu: r.warning, loi: true });
+            })
+            .catch((e) => setThongBao({ chu: loiCua(e), loi: true }));
+        },
+        onEdit: setSuaTin,
+        onDelete: setXoaTin,
+      }
+    : undefined;
   const daCuon = useRef<string | null>(null);
   const [, setSp] = useSearchParams();
   const { data: tags } = useSWR<TourTag[]>(`/conversations/${id}/tour-tags`, fetcher);
@@ -318,7 +344,8 @@ function MessageList({ id, kenh, seenAt, onReply, onPin, focusId }: { id: string
   const daXem = !!(seenAt && tinNhanVienCuoi && new Date(seenAt) >= new Date(tinNhanVienCuoi.createdAt));
 
   return (
-    // column-reverse giữ khung cuộn ở tin mới nhất mà không cần tự cuộn bằng JS.
+    <div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+    {/* column-reverse giữ khung cuộn ở tin mới nhất mà không cần tự cuộn bằng JS. */}
     <div className="flex min-h-0 min-w-0 flex-1 flex-col-reverse overflow-x-hidden overflow-y-auto p-3 sm:p-4">
       <div className="mx-auto flex w-full min-w-0 max-w-5xl flex-col gap-2">
         {coThem && (
@@ -330,7 +357,7 @@ function MessageList({ id, kenh, seenAt, onReply, onPin, focusId }: { id: string
           <Fragment key={m.id}>
           {(i === 0 || ngayVN(tatCa[i - 1].createdAt) !== ngayVN(m.createdAt)) && <MocNgay iso={m.createdAt} />}
           <div id={`msg-${m.id}`} className={`flex min-w-0 flex-col transition-colors duration-500 ${focusId === m.id || noiBat === m.id ? 'rounded-xl bg-amber-soft/60 p-1.5 ring-2 ring-amber-line' : ''}`}>
-            <MessageBubble message={m} kenh={kenh} onReply={onReply} onPin={onPin} pinned={ghim.has(m.id)} tuKhoa={danhDau?.id === m.id ? danhDau.q : undefined} seen={daXem && m.id === tinNhanVienCuoi?.id} />
+            <MessageBubble message={m} kenh={kenh} onReply={onReply} onPin={onPin} pinned={ghim.has(m.id)} tuKhoa={danhDau?.id === m.id ? danhDau.q : undefined} seen={daXem && m.id === tinNhanVienCuoi?.id} thaoTac={thaoTac} onCopied={() => setThongBao({ chu: 'Đã sao chép tin nhắn' })} />
             {ghim.get(m.id)?.map((ten, i) => (
               <span key={i} className={`mt-1 inline-flex max-w-full items-center gap-1.5 self-start rounded-lg border border-alert-line bg-brand-faint px-2 py-1 text-xs font-semibold text-brand-text ${m.senderType === 'CUSTOMER' ? '' : 'self-end'}`}>
                 <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="shrink-0"><path d="M12 17v5M9 3h6l-1 6 3 3H7l3-3-1-6Z" /></svg>
@@ -345,6 +372,93 @@ function MessageList({ id, kenh, seenAt, onReply, onPin, focusId }: { id: string
         {data && data.items.length === 0 && <p className="text-center text-sm text-muted">Chưa có tin nhắn nào.</p>}
       </div>
     </div>
+      {thongBao && (
+        <div role={thongBao.loi ? 'alert' : 'status'} className="pointer-events-none absolute inset-x-0 bottom-3 z-40 mx-auto w-fit max-w-[92%] rounded-xl bg-ink px-4 py-2.5 text-center text-sm text-surface shadow-lg">
+          {thongBao.chu}
+        </div>
+      )}
+      {suaTin && <SuaTinDialog id={id} m={suaTin} onClose={() => setSuaTin(null)} onXong={(moi) => { setSuaTin(null); doiTinCu(moi, moi.id); void taiLai(); }} />}
+      {xoaTin && (
+        <XoaTinDialog
+          id={id}
+          m={xoaTin}
+          kenh={kenh}
+          onClose={() => setXoaTin(null)}
+          onXong={(canhBao) => { const idTin = xoaTin.id; setXoaTin(null); doiTinCu(null, idTin); void taiLai(); setThongBao({ chu: canhBao ?? 'Đã xoá tin nhắn', loi: !!canhBao }); }}
+        />
+      )}
+    </div>
+  );
+}
+
+/** Sửa chữ của tin mình đã gửi (web, app). Khách web/app thấy bản sửa kèm chữ "Đã chỉnh sửa". */
+function SuaTinDialog({ id, m, onClose, onXong }: { id: string; m: Message; onClose: () => void; onXong: (moi: Message) => void }) {
+  const [chu, setChu] = useState(m.text);
+  const [dang, setDang] = useState(false);
+  const [loi, setLoi] = useState('');
+  const luu = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!chu.trim()) return setLoi('Tin nhắn đang trống');
+    setDang(true);
+    setLoi('');
+    try {
+      const r = await patch<{ message: Message }>(`/conversations/${id}/messages/${m.id}`, { text: chu });
+      onXong(r.message);
+    } catch (err) {
+      setLoi(loiCua(err));
+      setDang(false);
+    }
+  };
+  return (
+    <Dialog title="Chỉnh sửa tin nhắn" onClose={onClose}>
+      <form onSubmit={luu} className="flex flex-col gap-4">
+        <textarea aria-label="Nội dung tin nhắn" value={chu} onChange={(e) => setChu(e.target.value)} maxLength={4000} rows={5} autoFocus className={`${inputClass} min-h-28 resize-y py-2.5 leading-normal`} />
+        <p className="text-xs text-muted">Khách thấy tin đã sửa kèm chữ "Đã chỉnh sửa".</p>
+        <ErrorText>{loi}</ErrorText>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className={secondaryClass}>Huỷ</button>
+          <button type="submit" disabled={dang || chu.trim() === m.text.trim()} className={primaryClass}>{dang ? 'Đang lưu...' : 'Lưu'}</button>
+        </div>
+      </form>
+    </Dialog>
+  );
+}
+
+/** Xoá một tin (xoá mềm): ẩn khỏi khung chat và khung chat web/app của khách, admin toàn quyền khôi phục được ở mục Khôi phục. */
+function XoaTinDialog({ id, m, kenh, onClose, onXong }: { id: string; m: Message; kenh: Channel; onClose: () => void; onXong: (canhBao?: string) => void }) {
+  const [dang, setDang] = useState(false);
+  const [loi, setLoi] = useState('');
+  const khachKhongThuHoi = (kenh === 'ZALO' || kenh === 'FACEBOOK') && m.senderType !== 'CUSTOMER';
+  const xoa = async () => {
+    setDang(true);
+    setLoi('');
+    try {
+      const r = await del(`/conversations/${id}/messages/${m.id}`) as { warning?: string };
+      onXong(r?.warning);
+    } catch (e) {
+      setLoi(loiCua(e));
+      setDang(false);
+    }
+  };
+  return (
+    <Dialog title="Xoá tin nhắn" onClose={onClose}>
+      <div className="flex flex-col gap-4">
+        <blockquote className="line-clamp-4 whitespace-pre-line break-words rounded-lg border-l-[3px] border-field bg-fill px-3 py-2 text-sm">{m.text || (m.attachment ? `[${m.attachment.name}]` : '')}</blockquote>
+        <p className="text-sm">
+          Tin sẽ ẩn khỏi khung chat{kenh === 'WEB' || kenh === 'APP' ? ' và khỏi khung chat của khách' : ''}. Admin toàn quyền vẫn khôi phục được ở mục <strong>Khôi phục</strong>.
+        </p>
+        {khachKhongThuHoi && (
+          <p role="note" className="rounded-lg border border-amber-line bg-amber-soft px-3 py-2 text-sm">
+            {kenh === 'ZALO' ? 'Zalo' : 'Facebook'} không cho thu hồi tin đã gửi, khách vẫn thấy tin này trên {kenh === 'ZALO' ? 'Zalo' : 'Messenger'}.
+          </p>
+        )}
+        <ErrorText>{loi}</ErrorText>
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onClose} className={secondaryClass}>Huỷ</button>
+          <button type="button" disabled={dang} onClick={() => void xoa()} className={primaryClass}>{dang ? 'Đang xoá...' : 'Xoá tin nhắn'}</button>
+        </div>
+      </div>
+    </Dialog>
   );
 }
 
@@ -715,22 +829,18 @@ function HandoverDialog({ conv, onClose, onDone }: { conv: Conversation; onClose
   );
 }
 
-/** Admin toàn quyền xoá hẳn hội thoại (dọn dữ liệu thử). Hai bước: xác nhận, rồi nếu có đơn đã chốt thì cảnh báo thêm. */
+/** Admin toàn quyền xoá hội thoại: chuyển vào tab Khôi phục (xoá mềm). Xoá hẳn khỏi database ở tab Khôi phục. */
 function XoaHoiThoaiDialog({ id, ten, onClose, onXong }: { id: string; ten: string; onClose: () => void; onXong: () => void }) {
-  const [donChot, setDonChot] = useState<{ count: number; amount: number } | null>(null);
   const [dang, setDang] = useState(false);
   const [loi, setLoi] = useState('');
-  const xoa = async (force: boolean) => {
+  const xoa = async () => {
     setDang(true);
     setLoi('');
     try {
-      await del(`/conversations/${id}${force ? '?force=1' : ''}`);
+      await del(`/conversations/${id}`);
       onXong();
     } catch (e) {
-      if (e instanceof ApiError && e.code === 'HAS_DEALS') {
-        const m = /(\d+) đơn/.exec(e.message);
-        setDonChot({ count: Number(m?.[1] ?? 1), amount: 0 });
-      } else setLoi(loiCua(e));
+      setLoi(loiCua(e));
       setDang(false);
     }
   };
@@ -738,18 +848,13 @@ function XoaHoiThoaiDialog({ id, ten, onClose, onXong }: { id: string; ten: stri
     <Dialog title="Xoá hội thoại" onClose={onClose}>
       <div className="flex flex-col gap-4">
         <p className="text-sm">
-          Xoá hẳn hội thoại với <strong>{ten}</strong>? Toàn bộ tin nhắn, đơn, nhãn tour quan tâm và file đính kèm sẽ mất, <strong>không khôi phục được</strong>. Nếu khách không còn hội thoại nào khác thì khách cũng bị xoá.
+          Xoá hội thoại với <strong>{ten}</strong>? Hội thoại sẽ chuyển vào mục <strong>Khôi phục</strong>, chỉ admin toàn quyền thấy. Bạn có thể khôi phục lại hoặc xoá hẳn ở đó. Nếu khách nhắn tin mới, hội thoại sẽ hiện lại với các tin mới.
         </p>
-        {donChot && (
-          <p role="alert" className="rounded-lg border border-alert-line bg-brand-faint px-3 py-2 text-sm text-brand-text">
-            Hội thoại này có <strong>{donChot.count} đơn đã chốt</strong> đang tính vào doanh thu. Xoá sẽ làm số liệu thống kê doanh thu giảm theo. Bạn vẫn muốn xoá?
-          </p>
-        )}
         <ErrorText>{loi}</ErrorText>
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className={secondaryClass}>Huỷ</button>
-          <button type="button" disabled={dang} onClick={() => void xoa(!!donChot)} className={primaryClass}>
-            {dang ? 'Đang xoá...' : donChot ? 'Vẫn xoá' : 'Xoá hội thoại'}
+          <button type="button" disabled={dang} onClick={() => void xoa()} className={primaryClass}>
+            {dang ? 'Đang xoá...' : 'Xoá hội thoại'}
           </button>
         </div>
       </div>

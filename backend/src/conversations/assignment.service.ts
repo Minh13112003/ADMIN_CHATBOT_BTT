@@ -47,6 +47,7 @@ export class AssignmentService {
     const han = new Date(Date.now() - phut * 60_000);
     const convs = await this.prisma.conversation.findMany({
       where: {
+        isAvailable: true, // Hội thoại đã xoá (tab Khôi phục) thì không chia.
         OR: [
           { status: 'CONTACT', assigneeId: null },
           { status: 'CONTACT', mode: 'BOT', contactAssignedAt: { lt: han } },

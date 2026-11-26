@@ -2,7 +2,7 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { ConversationsService } from './conversations.service';
 
 /** Xoá hội thoại (admin): kiểm tra luồng bằng database giả, không chạm database thật. */
-describe('ConversationsService.xoaHoiThoai', () => {
+describe('ConversationsService.xoaHan', () => {
   const admin = { id: 'a1', role: 'ADMIN', fullName: 'Admin', departmentId: null, scopeIds: [] } as never;
   const tao = (opt: { daCo?: boolean; donChot?: number; conLai?: number; files?: string[] } = {}) => {
     const tx = {
@@ -23,29 +23,29 @@ describe('ConversationsService.xoaHoiThoai', () => {
 
   it('hội thoại không tồn tại: 404', async () => {
     const { svc } = tao({ daCo: false });
-    await expect(svc.xoaHoiThoai(admin, 'c1', false)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(svc.xoaHan(admin, 'c1', false)).rejects.toBeInstanceOf(NotFoundException);
   });
   it('có đơn đã chốt mà không force: 409 HAS_DEALS, chưa xoá gì', async () => {
     const { svc, tx } = tao({ donChot: 2 });
-    await expect(svc.xoaHoiThoai(admin, 'c1', false)).rejects.toBeInstanceOf(ConflictException);
+    await expect(svc.xoaHan(admin, 'c1', false)).rejects.toBeInstanceOf(ConflictException);
     expect(tx.conversation.delete).not.toHaveBeenCalled();
   });
   it('có đơn đã chốt và force: xoá', async () => {
     const { svc, tx } = tao({ donChot: 2 });
-    await expect(svc.xoaHoiThoai(admin, 'c1', true)).resolves.toMatchObject({ ok: true });
+    await expect(svc.xoaHan(admin, 'c1', true)).resolves.toMatchObject({ ok: true });
     expect(tx.conversation.delete).toHaveBeenCalledWith({ where: { id: 'c1' } });
   });
   it('khách không còn hội thoại nào: xoá luôn khách; còn thì giữ khách', async () => {
     const a = tao({ conLai: 0 });
-    await expect(a.svc.xoaHoiThoai(admin, 'c1', false)).resolves.toMatchObject({ customerDeleted: true });
+    await expect(a.svc.xoaHan(admin, 'c1', false)).resolves.toMatchObject({ customerDeleted: true });
     expect(a.tx.customer.delete).toHaveBeenCalledWith({ where: { id: 'k1' } });
     const b = tao({ conLai: 1 });
-    await expect(b.svc.xoaHoiThoai(admin, 'c1', false)).resolves.toMatchObject({ customerDeleted: false });
+    await expect(b.svc.xoaHan(admin, 'c1', false)).resolves.toMatchObject({ customerDeleted: false });
     expect(b.tx.customer.delete).not.toHaveBeenCalled();
   });
   it('xoá file đính kèm và báo giao diện làm mới', async () => {
     const { svc, tep, realtime } = tao({ files: ['a/1.jpg', 'a/2.pdf'] });
-    await svc.xoaHoiThoai(admin, 'c1', false);
+    await svc.xoaHan(admin, 'c1', false);
     expect(tep.xoaTep).toHaveBeenCalledTimes(2);
     expect(realtime.emit).toHaveBeenCalledWith('conversation:update', { id: 'c1' });
   });
