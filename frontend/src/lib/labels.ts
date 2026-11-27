@@ -16,7 +16,8 @@ export const CHANNEL: Record<Channel, { label: string; short: string; bot: strin
   ZALO: { label: 'Zalo OA', short: 'Zalo', bot: 'Bot Zalo', className: 'bg-blue-soft text-blue-ink', connected: true },
   FACEBOOK: { label: 'Facebook', short: 'Facebook', bot: 'Bot Facebook', className: 'bg-purple-soft text-purple-ink', connected: true },
 };
-export const CHANNEL_LIST: Channel[] = ['WEB', 'APP', 'ZALO', 'FACEBOOK'];
+// Thứ tự chủ dự án chốt 2026-11-27: Zalo, Facebook trước, rồi Web, App.
+export const CHANNEL_LIST: Channel[] = ['ZALO', 'FACEBOOK', 'WEB', 'APP'];
 
 export const RULE_TYPE: Record<RuleType, string> = { FIRST_MESSAGE: 'Tin nhắn đầu tiên', KEYWORD: 'Theo từ khoá', OFF_HOURS: 'Ngoài giờ làm việc' };
 

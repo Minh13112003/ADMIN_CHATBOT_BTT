@@ -92,7 +92,7 @@ export default function StatsPage({ forcedView }: { forcedView?: View } = {}) {
           <div className="flex flex-wrap items-center gap-2">
             <div role="group" aria-label="Kỳ thống kê" className="flex gap-1 rounded-xl bg-fill p-1">
               {RANGES.map((r) => (
-                <button key={r.key} type="button" aria-pressed={range === r.key} onClick={() => set('range', r.key)} className={`min-h-9 whitespace-nowrap rounded-[9px] px-3 text-xs font-semibold sm:text-sm ${range === r.key ? 'bg-surface text-brand-text shadow-sm' : 'text-body'}`}>
+                <button key={r.key} type="button" aria-pressed={range === r.key} onClick={() => set('range', r.key)} className={`min-h-9 whitespace-nowrap rounded-lg px-3 text-xs font-semibold sm:text-sm ${range === r.key ? 'bg-surface text-brand-text shadow-sm' : 'text-body'}`}>
                   {r.label}
                 </button>
               ))}
@@ -106,7 +106,7 @@ export default function StatsPage({ forcedView }: { forcedView?: View } = {}) {
             <button type="button" onClick={() => void mutate()} disabled={isValidating} aria-label="Làm mới số liệu" className="flex size-11 items-center justify-center rounded-xl border border-line bg-surface text-body hover:bg-fill disabled:opacity-50">
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className={isValidating ? 'animate-spin' : ''}><path d="M20 7a9 9 0 1 0 1 8M20 3v5h-5" /></svg>
             </button>
-            <button type="button" onClick={exportReport} disabled={!b} className="flex min-h-11 items-center gap-2 rounded-xl bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">
+            <button type="button" onClick={exportReport} disabled={!b} className="flex min-h-11 items-center gap-2 rounded-lg bg-brand-button px-4 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50">
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" /></svg>
               Xuất file Excel (.csv)
             </button>

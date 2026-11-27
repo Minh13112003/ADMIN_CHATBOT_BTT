@@ -118,7 +118,7 @@ export function ChartCard({ title, description, legend, action, children, classN
             <>
               <span className="flex-1 text-[0.8125rem] text-muted">{picked ? `Đang xem: ${picked.label}` : (hint ?? 'Bấm vào cột, điểm, ô hoặc dòng để xem chi tiết.')}</span>
               {nutXuat}
-              <button type="button" onClick={() => setBig(false)} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
+              <button type="button" onClick={() => setBig(false)} className="min-h-11 rounded-lg border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
             </>
           }
         >

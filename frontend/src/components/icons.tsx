@@ -38,7 +38,7 @@ export function IconTile({ name, tone = 'brand' }: { name: IconName; tone?: 'bra
     neutral: 'bg-neutral-soft text-neutral-ink',
   }[tone];
   return (
-    <span className={`grid size-9 shrink-0 place-items-center rounded-[10px] ${cls}`}>
+    <span className={`grid size-9 shrink-0 place-items-center rounded-lg ${cls}`}>
       <Icon name={name} size={18} />
     </span>
   );

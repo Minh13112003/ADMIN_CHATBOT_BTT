@@ -198,7 +198,7 @@ function AutoReplies() {
             placeholder="Nội dung tự gửi cho khách"
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            className="w-full resize-y rounded-[10px] border border-field px-3 py-2.5 text-sm"
+            className="w-full resize-y rounded-lg border border-field px-3 py-2.5 text-sm"
           />
           <ErrorText>{loi}</ErrorText>
           <button type="submit" disabled={saving} className={`${primaryClass} self-start`}>
@@ -215,7 +215,7 @@ function AutoReplies() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[0.9375rem] font-semibold">{r.name}</span>
-              <span className="rounded-[10px] bg-auto px-2 py-0.5 text-xs font-medium text-auto-ink">{RULE_TYPE[r.type]}</span>
+              <span className="rounded-lg bg-auto px-2 py-0.5 text-xs font-medium text-auto-ink">{RULE_TYPE[r.type]}</span>
             </div>
             {!!r.keywords.length && <div className="mt-1 text-[0.8125rem] text-muted">Từ khoá: {r.keywords.join(', ')}</div>}
             <div className="mt-1 text-sm leading-[1.45] text-body">{r.body}</div>
@@ -294,7 +294,7 @@ function RuleTester() {
         className={inputClass}
       />
       {kq && (
-        <div role="status" className="rounded-[10px] bg-fill px-2.5 py-2 text-sm">
+        <div role="status" className="rounded-lg bg-fill px-2.5 py-2 text-sm">
           {kq}
         </div>
       )}

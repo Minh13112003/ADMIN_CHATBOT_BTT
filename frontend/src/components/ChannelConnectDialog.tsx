@@ -186,7 +186,7 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
       footer={
         <div className="flex w-full flex-wrap items-center gap-2">
           {data?.fields.some((f) => f.set) && (
-            <button type="button" disabled={dang} onClick={() => (hoiXoa ? void xoa() : setHoiXoa(true))} className="min-h-11 rounded-[10px] px-3 text-sm font-semibold text-brand-text hover:bg-brand-soft">
+            <button type="button" disabled={dang} onClick={() => (hoiXoa ? void xoa() : setHoiXoa(true))} className="min-h-11 rounded-lg px-3 text-sm font-semibold text-brand-text hover:bg-brand-soft">
               {hoiXoa ? 'Bấm lần nữa để xoá hết thông tin' : 'Xoá thông tin đã lưu'}
             </button>
           )}
@@ -237,7 +237,7 @@ export function ChannelConnectDialog({ channel, title, onClose, onSaved }: { cha
                       setSua((x) => ({ ...x, [f.name]: !x[f.name] }));
                       setValues((v) => ({ ...v, [f.name]: '' }));
                     }}
-                    className="min-h-11 shrink-0 rounded-[10px] border border-field px-3 text-sm font-semibold hover:bg-fill"
+                    className="min-h-11 shrink-0 rounded-lg border border-field px-3 text-sm font-semibold hover:bg-fill"
                   >
                     {khoaLai ? 'Thay đổi' : 'Huỷ'}
                   </button>

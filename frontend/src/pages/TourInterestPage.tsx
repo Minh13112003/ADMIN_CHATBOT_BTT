@@ -42,7 +42,7 @@ function taiCsv(ten: string, dong: (string | number)[][]) {
   URL.revokeObjectURL(url);
 }
 
-const chonClass = 'min-h-11 rounded-[9px] border border-line bg-fill px-3 text-[0.8125rem] font-semibold';
+const chonClass = 'min-h-11 rounded-lg border border-line bg-fill px-3 text-[0.8125rem] font-semibold';
 const BieuDo = <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 20h18M6 20V10M12 20V4M18 20v-8" /></svg>;
 
 function Kpi({ label, value, unit, note, hot }: { label: string; value: string; unit?: string; note?: string; hot?: boolean }) {
@@ -217,8 +217,8 @@ function PlaceStatsModal({ place, ky, kenh, onClose }: { place: PlaceRow; ky: Ky
       footer={
         <>
           <span className="flex-1 text-[0.8125rem] text-muted">{ds ? `Đang hiển thị ${so(loc.length)} / ${so(ds.length)} tin` : ''}</span>
-          <button type="button" onClick={onClose} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
-          <button type="button" disabled={!ds?.length} onClick={xuat} className="inline-flex min-h-11 items-center rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">Xuất file Excel (.csv)</button>
+          <button type="button" onClick={onClose} className="min-h-11 rounded-lg border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
+          <button type="button" disabled={!ds?.length} onClick={xuat} className="inline-flex min-h-11 items-center rounded-lg bg-brand-button px-4 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50">Xuất file Excel (.csv)</button>
         </>
       }
     >
@@ -257,7 +257,7 @@ function PlaceStatsModal({ place, ky, kenh, onClose }: { place: PlaceRow; ky: Ky
           </section>
         )}
         <div className="flex flex-wrap gap-2">
-          <input value={tim} onChange={(e) => { setTim(e.target.value); setTrang(0); }} placeholder="Tìm tên, số điện thoại, nội dung" aria-label="Tìm tin nhắn" className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-field bg-surface px-3 text-sm" />
+          <input value={tim} onChange={(e) => { setTim(e.target.value); setTrang(0); }} placeholder="Tìm tên, số điện thoại, nội dung" aria-label="Tìm tin nhắn" className="min-h-11 min-w-0 flex-1 rounded-lg border border-field bg-surface px-3 text-sm" />
           {kenhCo.length > 0 && (
             <select value={locKenh} onChange={(e) => { setLocKenh(e.target.value); setTrang(0); }} aria-label="Lọc kênh" className={chonClass}>
               <option value="">Mọi kênh</option>
@@ -346,8 +346,8 @@ function TourStatsModal({ tourKey, ky, kenh, onClose }: { tourKey: string; ky: K
       footer={
         <>
           <span className="flex-1 text-[0.8125rem] text-muted">{tab === 'askers' && ds ? `Đang hiển thị ${so(loc.length)} / ${so(ds.length)} khách` : ''}</span>
-          <button type="button" onClick={onClose} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
-          <button type="button" disabled={!ds?.length} onClick={xuat} className="inline-flex min-h-11 items-center gap-2 rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50">
+          <button type="button" onClick={onClose} className="min-h-11 rounded-lg border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Đóng</button>
+          <button type="button" disabled={!ds?.length} onClick={xuat} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-brand-button px-4 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50">
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" /></svg>
             Xuất file Excel (.csv)
           </button>
@@ -447,7 +447,7 @@ function TourStatsModal({ tourKey, ky, kenh, onClose }: { tourKey: string; ky: K
           ) : (
             <div className="flex flex-col gap-3">
               <div className="flex flex-wrap gap-2">
-                <input value={tim} onChange={(e) => setTim(e.target.value)} placeholder="Tìm tên hoặc số điện thoại" aria-label="Tìm khách" className="min-h-11 min-w-0 flex-1 rounded-[10px] border border-field bg-surface px-3 text-sm" />
+                <input value={tim} onChange={(e) => setTim(e.target.value)} placeholder="Tìm tên hoặc số điện thoại" aria-label="Tìm khách" className="min-h-11 min-w-0 flex-1 rounded-lg border border-field bg-surface px-3 text-sm" />
                 <select value={locKenh} onChange={(e) => setLocKenh(e.target.value)} aria-label="Lọc kênh" className={chonClass}>
                   <option value="">Mọi kênh</option>
                   {(['WEB', 'APP', 'ZALO', 'FACEBOOK'] as Channel[]).map((c) => <option key={c} value={c}>{CHANNEL[c].label}</option>)}
@@ -623,8 +623,8 @@ export default function TourInterestPage({ embedded = false }: { embedded?: bool
             </select>
           </label>
         )}
-        {full && <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm tên tour (không cần gõ dấu)" aria-label="Tìm tour" className="min-h-11 min-w-[220px] flex-1 rounded-[10px] border border-field bg-surface px-3 text-sm" />}
-        <button type="button" disabled={!data?.items.length || dangXuat} onClick={() => void xuat()} className="ml-auto inline-flex min-h-11 items-center rounded-[9px] border border-field bg-surface px-4 text-[0.8125rem] font-semibold hover:bg-fill disabled:opacity-40">{dangXuat ? 'Đang xuất…' : 'Xuất file Excel (.csv)'}</button>
+        {full && <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm tên tour (không cần gõ dấu)" aria-label="Tìm tour" className="min-h-11 min-w-[220px] flex-1 rounded-lg border border-field bg-surface px-3 text-sm" />}
+        <button type="button" disabled={!data?.items.length || dangXuat} onClick={() => void xuat()} className="ml-auto inline-flex min-h-11 items-center rounded-lg border border-field bg-surface px-4 text-[0.8125rem] font-semibold hover:bg-fill disabled:opacity-40">{dangXuat ? 'Đang xuất…' : 'Xuất file Excel (.csv)'}</button>
       </div>
 
       {!full && (

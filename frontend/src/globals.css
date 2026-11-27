@@ -275,3 +275,20 @@ textarea {
     border-radius: 0;
   }
 }
+
+/* Logo đầy đủ ở thanh bên: chữ đen trên nền sáng, chữ trắng trên nền tối (2026-11-27). */
+.logo-toi { display: none; }
+:root[data-theme='dark'] .logo-sang { display: none; }
+:root[data-theme='dark'] .logo-toi { display: block; }
+
+/*
+ * Nút (2026-11-27, theo nguyên tắc TasteSkill: một kiểu nút, không đổ bóng, không gradient, góc 8px):
+ * mọi nút đổi màu mượt khi rê chuột và lún nhẹ khi bấm; viền nhấn khi dùng bàn phím.
+ */
+button, a[role='button'] {
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 80ms ease;
+}
+button:not(:disabled):active { transform: translateY(1px) scale(0.985); }
+button:disabled { cursor: not-allowed; }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 2px; }
+:root[data-reduce-motion='true'] button:not(:disabled):active { transform: none; }

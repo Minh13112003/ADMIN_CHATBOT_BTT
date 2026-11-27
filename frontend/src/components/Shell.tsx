@@ -144,20 +144,22 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="workspace fixed inset-0 flex min-w-0 flex-col overflow-hidden md:flex-row">
       <div className="relative z-30 hidden h-full shrink-0 md:block">
-        <aside className={`flex h-full flex-col overflow-y-auto overflow-x-hidden border-r border-line bg-surface transition-[width] duration-200 ${thu ? 'w-[76px]' : 'w-[276px]'}`}>
-          <Link to="/inbox" title="BenThanh Tourist" className={`flex h-[72px] shrink-0 items-center gap-3 border-b border-line-soft ${thu ? 'justify-center px-0' : 'px-4'}`}>
-            <img src="/logo.png" alt="" width="36" height="36" className="size-9 shrink-0 object-contain" />
-            {!thu && (
-              <span className="min-w-0 leading-tight">
-                <strong className="block truncate text-[0.9375rem] font-extrabold tracking-tight text-ink">BENTHANH TOURIST</strong>
-                <small className="block truncate text-[0.6875rem] font-medium text-muted">Quản trị hội thoại &amp; tour</small>
-              </span>
+        <aside className={`flex h-full flex-col overflow-y-auto overflow-x-hidden border-r border-line bg-surface transition-[width] duration-200 ${thu ? 'w-[68px]' : 'w-[232px]'}`}>
+          <Link to="/inbox" title="BenThanh Tourist" className={`flex h-16 shrink-0 items-center border-b border-line-soft ${thu ? 'justify-center px-0' : 'px-5'}`}>
+            {thu ? (
+              <img src="/logo.png" alt="BenThanh Tourist" width="32" height="32" className="size-8 shrink-0 object-contain" />
+            ) : (
+              <>
+                {/* Logo đầy đủ (chữ BenThanh Tourist, journey to your heart): chữ đen cho nền sáng, chữ trắng cho nền tối. */}
+                <img src="/logo-full-light.png" alt="BenThanh Tourist" width="122" height="44" className="logo-sang h-12 w-auto object-contain" />
+                <img src="/logo-full-dark.png" alt="BenThanh Tourist" width="122" height="44" className="logo-toi h-12 w-auto object-contain" />
+              </>
             )}
           </Link>
-          {[{ caption: 'BẢNG ĐIỀU KHIỂN', label: 'Điều hướng', items: dsNav.filter((n) => !n.admin) }, ...(dsNav.some((n) => n.admin) ? [{ caption: me.role === 'ADMIN' ? 'QUẢN TRỊ (ADMIN)' : me.role === 'DEPT_ADMIN' ? 'QUẢN TRỊ PHÒNG' : 'BÁO CÁO', label: 'Quản trị', items: dsNav.filter((n) => n.admin) }] : [])].map((group) => (
-            <div key={group.caption} className="px-3 pt-4">
-              {thu ? <div className="mb-2 h-px bg-line-soft" /> : <p className="px-3 pb-2 text-[0.6875rem] font-bold uppercase tracking-wider text-muted">{group.caption}</p>}
-              <nav aria-label={group.label} className="space-y-1">
+          {[{ caption: 'Làm việc', label: 'Điều hướng', items: dsNav.filter((n) => !n.admin) }, ...(dsNav.some((n) => n.admin) ? [{ caption: me.role === 'ADMIN' ? 'Quản trị' : me.role === 'DEPT_ADMIN' ? 'Quản trị phòng' : 'Báo cáo', label: 'Quản trị', items: dsNav.filter((n) => n.admin) }] : [])].map((group) => (
+            <div key={group.caption} className="px-2.5 pt-3">
+              {thu ? <div className="mb-2 h-px bg-line-soft" /> : <p className="px-3 pb-1.5 text-[0.6875rem] font-semibold text-muted">{group.caption}</p>}
+              <nav aria-label={group.label} className="space-y-0.5">
                 {group.items.map((n) => {
                   const laTk = n.href === '/stats' && !thu;
                   const tkDangMo = laTk && pathname.startsWith('/stats') && tkMo;
@@ -169,9 +171,9 @@ export function Shell({ children }: { children: ReactNode }) {
                     aria-expanded={laTk ? tkDangMo : undefined}
                     title={thu ? n.label : undefined}
                     aria-current={pathname.startsWith(n.href) ? 'page' : undefined}
-                    className={`relative flex h-11 items-center gap-3 whitespace-nowrap rounded-lg border-l-[3px] border-transparent text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:border-brand aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text ${thu ? 'justify-center px-0' : 'px-3'}`}
+                    className={`relative flex h-10 items-center gap-2.5 whitespace-nowrap rounded-md text-[0.8125rem] font-medium text-body transition-colors hover:bg-fill hover:text-ink aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text ${thu ? 'justify-center px-0' : 'px-3'}`}
                   >
-                    <svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" className="shrink-0" {...stroke}>
+                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" className="shrink-0" {...stroke}>
                       {n.icon}
                     </svg>
                     {!thu && <span className="flex-1">{n.label}</span>}
@@ -213,7 +215,7 @@ export function Shell({ children }: { children: ReactNode }) {
           onClick={() => setThu(!thu)}
           aria-label={thu ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
           aria-expanded={!thu}
-          className="absolute -right-3.5 top-1/2 z-10 grid size-7 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface shadow-sm text-body shadow-md hover:bg-fill"
+          className="absolute -right-3 top-1/2 z-10 grid size-6 -translate-y-1/2 place-items-center rounded-full border border-line bg-surface text-muted hover:text-ink"
         >
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" className={thu ? 'rotate-180' : ''}>
             <path d="m15 6-6 6 6 6" />
@@ -222,7 +224,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </div>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <header className="workspace-header min-h-[72px] max-md:min-h-16 relative z-20 flex items-center gap-2 border-b border-line bg-surface px-4 py-2 md:px-6">
+        <header className="workspace-header min-h-16 relative z-20 flex items-center gap-2 border-b border-line bg-surface px-4 py-2 md:px-6">
           <div className="min-w-0 flex-1">
             <div className="text-base font-semibold md:text-xl">{NAV.find((n) => pathname.startsWith(n.href))?.label ?? 'BenThanh Tourist'}</div>
             {!connected && <p className="text-xs text-brand-text">Mất kết nối tức thời, tin mới có thể đến chậm</p>}
@@ -254,7 +256,7 @@ export function Shell({ children }: { children: ReactNode }) {
                     key={c.id}
                     type="button"
                     onClick={() => moHoiThoai(c.id)}
-                    className="block min-h-12 w-full rounded-[10px] px-2 py-1.5 text-left hover:bg-page"
+                    className="block min-h-12 w-full rounded-lg px-2 py-1.5 text-left hover:bg-page"
                   >
                     <div className="text-sm font-semibold">{c.customer.name}</div>
                     <div className="text-xs text-muted">
@@ -349,10 +351,10 @@ export function Shell({ children }: { children: ReactNode }) {
         {ping && (
           <div role="status" className="flex flex-wrap items-center gap-3 bg-brand-button px-4 py-2 text-white">
             <span className="min-w-60 flex-1 font-medium">{noiDungPing(ping)}</span>
-            <button type="button" onClick={() => moHoiThoai(ping.id)} className="min-h-11 rounded-[10px] bg-surface px-4 font-semibold text-brand-text">
+            <button type="button" onClick={() => moHoiThoai(ping.id)} className="min-h-11 rounded-lg bg-surface px-4 font-semibold text-brand-text">
               Mở ngay
             </button>
-            <button type="button" onClick={() => clearPing()} aria-label="Đóng thông báo" className="min-h-11 rounded-[10px] px-2 text-sm underline">
+            <button type="button" onClick={() => clearPing()} aria-label="Đóng thông báo" className="min-h-11 rounded-lg px-2 text-sm underline">
               Đóng
             </button>
           </div>
@@ -362,7 +364,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {children}
         </div>
       </div>
-      <nav aria-label="Điều hướng điện thoại" className="z-25 flex h-[calc(56px+env(safe-area-inset-bottom))] shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden [&>a]:relative [&>a]:flex [&>a]:min-h-14 [&>a]:min-w-0 [&>a]:flex-1 [&>a]:flex-col [&>a]:items-center [&>a]:justify-center [&>a]:gap-px [&>a]:text-[0.6875rem] [&>a]:font-semibold [&>a]:text-muted [&>button]:relative [&>button]:flex [&>button]:min-h-14 [&>button]:min-w-0 [&>button]:flex-1 [&>button]:flex-col [&>button]:items-center [&>button]:justify-center [&>button]:gap-px [&>button]:text-[0.6875rem] [&>button]:font-semibold [&>button]:text-muted [&>a[aria-current=page]]:text-brand-text [&_i]:absolute [&_i]:right-[20%] [&_i]:top-px [&_i]:grid [&_i]:h-[17px] [&_i]:min-w-[17px] [&_i]:place-items-center [&_i]:rounded-[9px] [&_i]:bg-brand-button [&_i]:text-[0.6rem] [&_i]:not-italic [&_i]:text-white md:hidden">{tabDuoi.map((n) => <Link key={n.href} to={n.href} aria-current={pathname.startsWith(n.href) ? 'page' : undefined}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.href === '/deals' ? 'Đơn tour' : n.href === '/reminders' ? 'Hẹn' : n.label}</span>{n.href === '/inbox' && soCho > 0 && <i>{soCho}</i>}</Link>)}<button type="button" aria-expanded={moreOpen} onClick={() => setMoreOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>Thêm</span></button></nav>
+      <nav aria-label="Điều hướng điện thoại" className="z-25 flex h-[calc(56px+env(safe-area-inset-bottom))] shrink-0 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden [&>a]:relative [&>a]:flex [&>a]:min-h-14 [&>a]:min-w-0 [&>a]:flex-1 [&>a]:flex-col [&>a]:items-center [&>a]:justify-center [&>a]:gap-px [&>a]:text-[0.6875rem] [&>a]:font-medium [&>a]:text-muted [&>button]:relative [&>button]:flex [&>button]:min-h-14 [&>button]:min-w-0 [&>button]:flex-1 [&>button]:flex-col [&>button]:items-center [&>button]:justify-center [&>button]:gap-px [&>button]:text-[0.6875rem] [&>button]:font-medium [&>button]:text-muted [&>a[aria-current=page]]:text-brand-text [&_i]:absolute [&_i]:right-[20%] [&_i]:top-px [&_i]:grid [&_i]:h-[17px] [&_i]:min-w-[17px] [&_i]:place-items-center [&_i]:rounded-lg [&_i]:bg-brand-button [&_i]:text-[0.6rem] [&_i]:not-italic [&_i]:text-white md:hidden hover:bg-brand-dark">{tabDuoi.map((n) => <Link key={n.href} to={n.href} aria-current={pathname.startsWith(n.href) ? 'page' : undefined}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.href === '/deals' ? 'Đơn tour' : n.href === '/reminders' ? 'Hẹn' : n.label}</span>{n.href === '/inbox' && soCho > 0 && <i>{soCho}</i>}</Link>)}<button type="button" aria-expanded={moreOpen} onClick={() => setMoreOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg><span>Thêm</span></button></nav>
       {moreOpen && <Dialog title="Thêm" variant="drawer" onClose={() => setMoreOpen(false)}><nav aria-label="Mục khác" className="flex flex-col gap-0.5">{dsNav.filter((n) => !tabDuoi.includes(n)).map((n) => <Link key={n.href} to={n.href} onClick={() => setMoreOpen(false)} aria-current={pathname.startsWith(n.href) ? 'page' : undefined} className="flex min-h-11 items-center gap-3 whitespace-nowrap rounded-lg px-3 py-2 text-[0.8125rem] font-medium text-body hover:bg-fill aria-[current=page]:bg-brand-soft aria-[current=page]:font-semibold aria-[current=page]:text-brand-text aria-[current=page]:shadow-[inset_3px_0_var(--color-brand)] [&_svg]:shrink-0"><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" {...stroke}>{n.icon}</svg><span>{n.label}</span></Link>)}</nav></Dialog>}
       {doiMk && <ChangePasswordDialog onClose={() => setDoiMk(false)} />}
     </div>

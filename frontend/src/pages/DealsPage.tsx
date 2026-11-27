@@ -114,7 +114,7 @@ export default function DealsPage() {
               </h2>
               <div className="flex flex-col gap-3 p-3">
                 {g.rows.length === 0 && (
-                  <p className="grid min-h-[150px] place-items-center rounded-[10px] border border-dashed border-line bg-surface p-4 text-center text-sm text-muted">{query ? "Không có đơn khớp tìm kiếm." : "Chưa có đơn trong kỳ này."}</p>
+                  <p className="grid min-h-[150px] place-items-center rounded-lg border border-dashed border-line bg-surface p-4 text-center text-sm text-muted">{query ? "Không có đơn khớp tìm kiếm." : "Chưa có đơn trong kỳ này."}</p>
                 )}
                 {g.rows.map((d) => (
                   <article key={d.id} className={`min-w-0 rounded-xl border bg-surface p-4 shadow-sm transition-shadow hover:shadow-md ${g.tone === "pending" ? "border-amber-line" : g.tone === "confirmed" ? "border-green-soft" : "border-line"} [&_strong]:[overflow-wrap:anywhere] [&_p]:[overflow-wrap:anywhere]`}>
@@ -156,7 +156,7 @@ export default function DealsPage() {
                         </a>
                       )}
                       {g.tone === "pending" && (
-                        <button className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-brand-button bg-brand-button px-3 text-[0.8125rem] font-semibold text-white shadow-sm hover:bg-brand-dark" onClick={() => setSelected(d)}>
+                        <button className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-brand-button bg-brand-button px-3 text-[0.8125rem] font-medium text-white hover:bg-brand-dark" onClick={() => setSelected(d)}>
                           <Icon name="checkCircle" size={15} /> Xác nhận đơn
                         </button>
                       )}
@@ -212,12 +212,12 @@ export default function DealsPage() {
             </label>
             <ErrorText>{actionError}</ErrorText>
             <div className="mt-4 flex justify-end gap-3">
-              <button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setCancel(null)}>
+              <button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => setCancel(null)}>
                 Không huỷ
               </button>
               <button
                 disabled={saving}
-                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white"
+                className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-[0.8125rem] font-medium border-brand-button bg-brand-button text-white hover:bg-brand-dark"
                 onClick={() => void cancelDeal()}
               >
                 Huỷ đơn

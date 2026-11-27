@@ -69,7 +69,7 @@ export function InfoPanel({
                 type="button"
                 aria-pressed={conv.status === s}
                 onClick={() => doiTrangThai(s)}
-                className={`min-h-11 rounded-[10px] border px-1.5 text-sm font-semibold ${conv.status === s ? `${STATUS[s].className} border-transparent` : 'border-field bg-surface text-neutral-ink hover:bg-fill'}`}
+                className={`min-h-11 rounded-lg border px-1.5 text-sm font-semibold ${conv.status === s ? `${STATUS[s].className} border-transparent` : 'border-field bg-surface text-neutral-ink hover:bg-fill'}`}
               >
                 {STATUS[s].label}
               </button>
@@ -92,7 +92,7 @@ export function InfoPanel({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             onBlur={() => note !== (conv.note ?? '') && chay(() => patch<Conversation>(`/conversations/${conv.id}`, { note }))}
-            className="w-full resize-y rounded-[10px] border border-field px-3 py-2.5 text-sm"
+            className="w-full resize-y rounded-lg border border-field px-3 py-2.5 text-sm"
           />
         </div>
         </>}
@@ -104,11 +104,11 @@ export function InfoPanel({
           {deals && !deals.length && <p className="text-[0.8125rem] text-muted">Khách chưa có đơn nào.</p>}
           <ul className="flex flex-col gap-2">
             {deals?.map((d) => (
-              <li key={d.id} className="rounded-[10px] border border-line p-2.5 text-[0.8125rem]">
+              <li key={d.id} className="rounded-lg border border-line p-2.5 text-[0.8125rem]">
                 <div className="flex items-start gap-2">
                   <span className="min-w-0 flex-1 break-words font-semibold">{d.tourName}</span>
                   <span
-                    className={`shrink-0 whitespace-nowrap rounded-[10px] px-2 py-0.5 text-xs font-semibold ${d.voidedAt ? DEAL_STATUS.CANCELLED.className : DEAL_STATUS[d.status].className}`}
+                    className={`shrink-0 whitespace-nowrap rounded-lg px-2 py-0.5 text-xs font-semibold ${d.voidedAt ? DEAL_STATUS.CANCELLED.className : DEAL_STATUS[d.status].className}`}
                   >
                     {d.voidedAt ? 'Đã mở lại' : DEAL_STATUS[d.status].label}
                   </span>
@@ -238,7 +238,7 @@ function FollowUp({ conv, onChange }: { conv: Conversation; onChange: (c: Conver
         Hẹn nhắc lại
       </h2>
       {f && !mo && (
-        <div className={`rounded-[10px] p-2.5 text-[0.8125rem] ${quaHan ? 'bg-brand-soft text-alert-ink' : 'bg-page'}`}>
+        <div className={`rounded-lg p-2.5 text-[0.8125rem] ${quaHan ? 'bg-brand-soft text-alert-ink' : 'bg-page'}`}>
           <div className="font-semibold">
             {quaHan ? 'Đến hẹn ' : ''}
             {gioTin(f.at)}
@@ -261,7 +261,7 @@ function FollowUp({ conv, onChange }: { conv: Conversation; onChange: (c: Conver
         </button>
       )}
       {mo && (
-        <div className="flex flex-col gap-2 rounded-[10px] bg-page p-2.5">
+        <div className="flex flex-col gap-2 rounded-lg bg-page p-2.5">
           <input
             aria-label="Việc cần làm khi đến hẹn"
             placeholder="Ví dụ: gọi lại báo giá đoàn"
@@ -360,7 +360,7 @@ function PanelFrame({ onClose, children }: { onClose: () => void; children: Reac
     <div className="flex h-full w-[360px] shrink-0 flex-col overflow-y-auto border-l border-line bg-surface p-4">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-base font-semibold">Thông tin khách hàng</h2>
-        <button type="button" onClick={onClose} aria-label="Đóng thông tin khách" className="inline-flex size-11 shrink-0 items-center justify-center rounded-[10px] text-body hover:bg-fill">
+        <button type="button" onClick={onClose} aria-label="Đóng thông tin khách" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-body hover:bg-fill">
           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 6 12 12M6 18 18 6" /></svg>
         </button>
       </div>

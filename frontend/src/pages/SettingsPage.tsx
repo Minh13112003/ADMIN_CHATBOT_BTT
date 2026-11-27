@@ -51,7 +51,7 @@ export default function SettingsPage() {
         </div>
       </header>
       <div className="grid grid-cols-[200px_minmax(0,1fr)] items-start gap-5 max-[1199px]:grid-cols-1">
-        <aside className="sticky top-[18px] flex flex-col gap-[5px] rounded-[14px] border border-line bg-surface shadow-sm p-[15px] max-[1199px]:hidden [&_p]:px-2.5 [&_p]:py-[7px] [&_p]:text-[0.7rem] [&_p]:font-bold [&_p]:tracking-[0.08em] [&_p]:text-muted [&_a]:flex [&_a]:min-h-[42px] [&_a]:items-center [&_a]:rounded-[9px] [&_a]:px-2.5 [&_a]:py-2 [&_a]:text-[0.8rem] [&_a:hover]:bg-brand-soft [&_a:hover]:text-brand-text [&_a:focus-visible]:bg-brand-soft [&_a:focus-visible]:text-brand-text [&_small]:mx-2.5 [&_small]:mb-1 [&_small]:mt-[18px] [&_small]:text-[0.73rem] [&_small]:leading-normal [&_small]:text-muted" aria-label="Mục cài đặt">
+        <aside className="sticky top-[18px] flex flex-col gap-[5px] rounded-[14px] border border-line bg-surface shadow-sm p-[15px] max-[1199px]:hidden [&_p]:px-2.5 [&_p]:py-[7px] [&_p]:text-[0.7rem] [&_p]:font-bold [&_p]:tracking-[0.08em] [&_p]:text-muted [&_a]:flex [&_a]:min-h-[42px] [&_a]:items-center [&_a]:rounded-lg [&_a]:px-2.5 [&_a]:py-2 [&_a]:text-[0.8rem] [&_a:hover]:bg-brand-soft [&_a:hover]:text-brand-text [&_a:focus-visible]:bg-brand-soft [&_a:focus-visible]:text-brand-text [&_small]:mx-2.5 [&_small]:mb-1 [&_small]:mt-[18px] [&_small]:text-[0.73rem] [&_small]:leading-normal [&_small]:text-muted" aria-label="Mục cài đặt">
           <p>MỤC CÀI ĐẶT</p>
           <a href="#settings-mode">Giao diện & hiển thị</a>
           <a href="#settings-accent">Chủ đề màu</a>
@@ -138,7 +138,7 @@ export default function SettingsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <span className="text-sm font-medium">Bật tiếng chuông</span>
           <div className="flex items-center gap-3">
-            <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => playChime(true)}>Nghe thử</button>
+            <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={() => playChime(true)}>Nghe thử</button>
             <Switch label="Bật tiếng chuông" checked={notify.sound} onChange={(sound) => { const v = { sound }; setNotify(v); saveNotify(v); }} />
           </div>
         </div>
@@ -169,7 +169,7 @@ export default function SettingsPage() {
       >
         Khôi phục mặc định
       </button>
-      <section id="settings-account" className="rounded-2xl border border-line bg-surface shadow-sm p-5"><h2 className="mb-3 font-semibold">Tài khoản của tôi</h2>{!me ? <p className="text-sm text-muted">Đang tải...</p> : <><p className="font-medium">{me.fullName}</p><p className="text-sm text-muted">{me.email} · {me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</p>{me.role === 'SALE' && <div className="mt-4 flex items-center justify-between gap-3"><span className="text-sm">Đang trực, nhận khách tự động</span><Switch label="Đang trực" checked={me.onDuty} onChange={async (onDuty) => { await patch('/users/me/duty', { onDuty }); await mutateMe(); }} /></div>}<div className="mt-5 flex flex-wrap gap-2"><Link to="/profile" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface">Trang cá nhân (ảnh, họ tên, mật khẩu)</Link><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post('/auth/logout'); window.location.href = '/login'; }}>Đăng xuất</button></div></>}</section>
+      <section id="settings-account" className="rounded-2xl border border-line bg-surface shadow-sm p-5"><h2 className="mb-3 font-semibold">Tài khoản của tôi</h2>{!me ? <p className="text-sm text-muted">Đang tải...</p> : <><p className="font-medium">{me.fullName}</p><p className="text-sm text-muted">{me.email} · {me.role === 'ADMIN' ? 'Quản trị viên' : 'Nhân viên tư vấn'}</p>{me.role === 'SALE' && <div className="mt-4 flex items-center justify-between gap-3"><span className="text-sm">Đang trực, nhận khách tự động</span><Switch label="Đang trực" checked={me.onDuty} onChange={async (onDuty) => { await patch('/users/me/duty', { onDuty }); await mutateMe(); }} /></div>}<div className="mt-5 flex flex-wrap gap-2"><Link to="/profile" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-[0.8125rem] font-semibold border-field bg-surface">Trang cá nhân (ảnh, họ tên, mật khẩu)</Link><button className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-[0.8125rem] font-semibold border-field bg-surface" onClick={async () => { await post('/auth/logout'); window.location.href = '/login'; }}>Đăng xuất</button></div></>}</section>
         </div>
       </div>
     </main>
@@ -185,10 +185,10 @@ function ThemePreview({ label, dark, accent, active }: { label: string; dark: bo
         <strong>{label}</strong>
         <span className="text-[0.7rem] text-muted">{active ? 'Đang áp dụng' : 'Xem trước'}</span>
       </div>
-      <div className={`mt-3 flex flex-col gap-2 rounded-[9px] border p-2.5 ${vien}`}>
+      <div className={`mt-3 flex flex-col gap-2 rounded-lg border p-2.5 ${vien}`}>
         <div className="font-bold">Khách hàng · 09:18</div>
-        <p className={`max-w-[85%] rounded-[10px] border bg-white/10 p-[9px] ${vien}`}>Chào bạn, tôi muốn tìm hiểu tour Châu Âu.</p>
-        <p className="max-w-[85%] self-end rounded-[10px] p-[9px]" style={{ backgroundColor: color, color: '#fff' }}>BenThanh Tourist sẵn sàng tư vấn cho bạn.</p>
+        <p className={`max-w-[85%] rounded-lg border bg-white/10 p-[9px] ${vien}`}>Chào bạn, tôi muốn tìm hiểu tour Châu Âu.</p>
+        <p className="max-w-[85%] self-end rounded-lg p-[9px]" style={{ backgroundColor: color, color: '#fff' }}>BenThanh Tourist sẵn sàng tư vấn cho bạn.</p>
         <div className={`border-t px-0.5 pt-2 opacity-70 ${vien}`}>Nhập nội dung phản hồi...</div>
       </div>
     </div>

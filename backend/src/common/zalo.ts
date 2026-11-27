@@ -108,6 +108,9 @@ export function truongLa(body: unknown): string[] {
   return Object.keys(m).filter((k) => !['text', 'msg_id', 'attachments'].includes(k));
 }
 
+/** Thay cho tin OA mà API Zalo không trả nội dung (thẻ chào mừng khi khách quan tâm OA). */
+export const LOI_CHAO_OA = 'Chào mừng bạn đến với Official Account BenThanh Tourist trên Zalo';
+
 /** Tin do chính OA gửi (nhân viên trả lời ngay trên ứng dụng Zalo): người nhận là khách. Không phải oa_send_* thì null. */
 export function phanTichOa(body: unknown): TinOa | null {
   if (!body || typeof body !== 'object') return null;
@@ -238,7 +241,10 @@ export function chuanHoaLichSu(raw: unknown, zaloUserId: string): TinLichSu[] {
       loai === 'text' && chu
         ? chu
         : loai === 'nosupport' || loai === 'khac' || (loai === 'text' && !chu)
-          ? `[${ai} gửi tệp, tin thoại hoặc nội dung Zalo không cho xem qua API, xem trên Zalo OA]`
+          ? tuKhach
+            ? `[Khách gửi tệp, tin thoại hoặc nội dung Zalo không cho xem qua API, xem trên Zalo OA]`
+            // Chủ dự án chốt 2026-11-27: tin OA không đọc được qua API thường là thẻ chào mừng Zalo tự gửi khi khách quan tâm OA.
+            : LOI_CHAO_OA
           : `${chu ? `${chu} ` : ''}[${ai} gửi ${loai} qua Zalo, xem trên Zalo OA]`;
     // Ảnh, sticker, tệp: link nằm ở `url`, `thumb` hoặc `links[0].url` (chưa kiểm chứng tài liệu, đọc phòng thủ).
     // Có tin ảnh Zalo trả loại "text" mà không có chữ, nên tin không có chữ cũng tìm link (mọi trường, trừ ảnh đại diện).

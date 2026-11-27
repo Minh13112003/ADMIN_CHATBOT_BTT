@@ -35,7 +35,7 @@ export function Segmented<T extends string>({
           type="button"
           aria-pressed={value === t.key}
           onClick={() => onChange(t.key)}
-          className={`min-h-11 flex-1 whitespace-nowrap rounded-[9px] px-2 text-sm font-medium sm:flex-none sm:px-4 ${value === t.key ? 'bg-surface text-ink shadow-sm' : 'text-body'}`}
+          className={`min-h-11 flex-1 whitespace-nowrap rounded-lg px-2 text-sm font-medium sm:flex-none sm:px-4 ${value === t.key ? 'bg-surface text-ink shadow-sm' : 'text-body'}`}
         >
           {t.label}
         </button>
@@ -113,7 +113,7 @@ export function Dialog({
           <h2 id={titleId} className="text-lg font-semibold">
             {title}
           </h2>
-          <button type="button" onClick={onClose} aria-label="Đóng hộp thoại" className="inline-flex size-11 shrink-0 items-center justify-center rounded-[10px] text-body hover:bg-fill">
+          <button type="button" onClick={onClose} aria-label="Đóng hộp thoại" className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-body hover:bg-fill">
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="m6 6 12 12M6 18 18 6" />
             </svg>
@@ -190,7 +190,7 @@ export function Modal({
             </h2>
             {subtitle && <div className="mt-0.5 text-[0.8125rem] text-muted">{subtitle}</div>}
           </div>
-          <button type="button" onClick={onClose} aria-label="Đóng hộp thoại" className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-[10px] text-body hover:bg-fill">
+          <button type="button" onClick={onClose} aria-label="Đóng hộp thoại" className="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-body hover:bg-fill">
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="m6 6 12 12M6 18 18 6" />
             </svg>
@@ -233,10 +233,13 @@ export function Field({ label, children }: { label: string; children: ReactNode 
   );
 }
 
-export const inputClass = 'transition-[border-color,box-shadow] duration-150 hover:border-muted min-h-11 w-full rounded-[10px] border border-field bg-surface px-3 text-sm font-normal text-ink';
-export const primaryClass = 'text-sm shadow-[0_2px_3px_#0000000d] min-h-11 rounded-[10px] bg-brand-button px-4 font-semibold text-white hover:bg-brand-dark disabled:opacity-60';
-export const secondaryClass = 'min-h-11 rounded-[10px] border border-field bg-surface px-4 font-medium text-ink hover:bg-fill disabled:opacity-60';
-export const chipClass = 'min-h-9 rounded-full border border-field bg-surface px-2.5 text-[0.8125rem] text-neutral-ink hover:bg-fill disabled:opacity-60';
+export const inputClass = 'transition-[border-color,box-shadow] duration-150 hover:border-muted min-h-11 w-full rounded-lg border border-field bg-surface px-3 text-sm font-normal text-ink';
+/** Nút chính: nền đặc một màu, không bóng, chữ đậm vừa. Mỗi màn hình chỉ một nút chính cho việc quan trọng nhất. */
+export const primaryClass = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-transparent bg-brand-button px-4 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50';
+/** Nút phụ: nền như trang, viền mảnh, rê chuột thì nền tối nhẹ. */
+export const secondaryClass = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-field bg-surface px-4 text-sm font-medium text-ink hover:border-muted hover:bg-fill disabled:opacity-50';
+/** Nút nhỏ dạng thẻ (lọc, gợi ý). */
+export const chipClass = 'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-md border border-field bg-surface px-3 text-[0.8125rem] font-medium text-body hover:border-muted hover:text-ink disabled:opacity-50';
 
 /** Nút xoá bấm 2 lần: lần đầu đổi chữ để xác nhận. */
 export function DeleteButton({ onConfirm, label }: { onConfirm: () => void; label: string }) {
@@ -251,7 +254,7 @@ export function DeleteButton({ onConfirm, label }: { onConfirm: () => void; labe
       type="button"
       aria-label={label}
       onClick={() => (hoi ? onConfirm() : setHoi(true))}
-      className={`min-h-9 shrink-0 rounded-lg px-2 text-[0.8125rem] ${hoi ? 'bg-brand-button font-semibold text-white' : 'text-muted underline'}`}
+      className={`min-h-9 shrink-0 rounded-lg px-2 text-[0.8125rem] ${hoi ? 'bg-brand-button font-medium text-white hover:bg-brand-dark' : 'text-muted underline'}`}
     >
       {hoi ? 'Bấm lần nữa để xoá' : 'Xoá'}
     </button>
@@ -355,7 +358,7 @@ export function CopyButton({ text, label = 'Sao chép', className = '' }: { text
     setTimeout(() => setTt(''), 2000);
   };
   return (
-    <button type="button" onClick={() => void chep()} aria-live="polite" className={className || 'inline-flex min-h-10 items-center rounded-[9px] border border-field bg-surface px-3 text-sm font-semibold hover:bg-fill'}>
+    <button type="button" onClick={() => void chep()} aria-live="polite" className={className || 'inline-flex min-h-10 items-center rounded-lg border border-field bg-surface px-3 text-sm font-semibold hover:bg-fill'}>
       {tt === 'ok' ? 'Đã chép' : tt === 'loi' ? 'Không chép được, hãy chọn và chép tay' : label}
     </button>
   );

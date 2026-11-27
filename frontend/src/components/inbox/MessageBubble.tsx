@@ -77,7 +77,7 @@ function DinhKem({ a, tren, tron }: { a: Attachment; tren?: boolean; tron?: bool
       href={href}
       target="_blank"
       rel="noreferrer"
-      className={`flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-[10px] bg-surface px-2.5 py-1.5 text-ink ${tren ? 'mb-1.5' : ''}`}
+      className={`flex min-h-11 min-w-0 max-w-full items-center gap-2 rounded-lg bg-surface px-2.5 py-1.5 text-ink ${tren ? 'mb-1.5' : ''}`}
     >
       <svg
         aria-hidden="true"
@@ -418,7 +418,7 @@ export function MessageBubble({ message: m, onReply, onPin, pinned = false, seen
         {m.tours?.map((t, i) => {
           const the = thongTinThe(t);
           return (
-            <div key={i} className="mt-2 rounded-[10px] bg-surface px-2.5 py-2 text-ink">
+            <div key={i} className="mt-2 rounded-lg bg-surface px-2.5 py-2 text-ink">
               <div className="text-[0.8125rem] font-semibold">{the.ten}</div>
               {the.meta && <div className="mt-0.5 text-xs text-body">{the.meta}</div>}
             </div>

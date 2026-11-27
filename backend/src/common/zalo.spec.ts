@@ -120,9 +120,9 @@ describe('zalo', () => {
       'u1',
     );
     expect(anh).toMatchObject({ url: 'https://z/a.jpg', chu: 'Ảnh hộ chiếu' });
-    expect(ns.text).toContain('Zalo không cho xem qua API');
+    expect(ns.text).toBe('Chào mừng bạn đến với Official Account BenThanh Tourist trên Zalo');
     expect(ns.url).toBeNull();
-    expect(rong.text).toContain('Zalo không cho xem qua API');
+    expect(rong.text).toBe('Chào mừng bạn đến với Official Account BenThanh Tourist trên Zalo');
     expect(rong.url).toBeNull();
   });
   it('lịch sử: tin loại text không có chữ vẫn tìm link lồng nhau, bỏ ảnh đại diện; tin có chữ thì không lấy link', () => {

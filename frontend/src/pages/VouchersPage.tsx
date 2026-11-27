@@ -164,7 +164,7 @@ export default function VouchersPage() {
           footer={
             <>
               <span className="flex-1" />
-              <button type="button" onClick={() => setXoa(null)} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Huỷ</button>
+              <button type="button" onClick={() => setXoa(null)} className="min-h-11 rounded-lg border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Huỷ</button>
               <button
                 type="button"
                 disabled={dangXoa}
@@ -181,7 +181,7 @@ export default function VouchersPage() {
                     setDangXoa(false);
                   }
                 }}
-                className="min-h-11 rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-50"
+                className="min-h-11 rounded-lg bg-brand-button px-4 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-50"
               >
                 {dangXoa ? 'Đang xoá...' : 'Xoá vĩnh viễn'}
               </button>
@@ -269,7 +269,7 @@ function VoucherDrawer({ voucher, onClose, onDone }: { voucher: Voucher | null; 
       footer={
         <>
           <span className="flex-1" />
-          <button type="button" onClick={onClose} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Huỷ</button>
+          <button type="button" onClick={onClose} className="min-h-11 rounded-lg border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Huỷ</button>
           <button type="button" disabled={dang} onClick={() => void luu()} className={`${primaryClass} inline-flex items-center gap-2`}>
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"><path d="m5 12 5 5L20 7" /></svg>
             {dang ? 'Đang lưu...' : 'Lưu voucher'}
@@ -298,7 +298,7 @@ function VoucherDrawer({ voucher, onClose, onDone }: { voucher: Voucher | null; 
           <legend className={nhan}>Kiểu giảm giá</legend>
           <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-fill p-1">
             {([['AMOUNT', 'Theo số tiền'], ['PERCENT', 'Theo phần trăm']] as const).map(([k, ten]) => (
-              <label key={k} className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg text-sm font-semibold ${f.type === k ? 'bg-brand-button text-white' : 'text-body'}`}>
+              <label key={k} className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg text-sm font-medium ${f.type === k ? 'bg-brand-button text-white' : 'text-body hover:bg-fill'}`}>
                 <input type="radio" name="kieu-giam" className="sr-only" checked={f.type === k} onChange={() => { doi('type', k); doi('value', ''); }} />
                 <span aria-hidden="true" className={`size-2 rounded-full ${f.type === k ? 'bg-white' : 'border border-muted'}`} />
                 {ten}
@@ -412,7 +412,7 @@ function VoucherDrawer({ voucher, onClose, onDone }: { voucher: Voucher | null; 
 
         <div>
           <label htmlFor="v-ghi-chu" className={nhan}>Ghi chú nội bộ</label>
-          <textarea id="v-ghi-chu" rows={3} maxLength={500} value={f.note} onChange={(e) => doi('note', e.target.value)} className="w-full resize-y rounded-[10px] border border-field bg-surface px-3 py-2.5 text-sm" />
+          <textarea id="v-ghi-chu" rows={3} maxLength={500} value={f.note} onChange={(e) => doi('note', e.target.value)} className="w-full resize-y rounded-lg border border-field bg-surface px-3 py-2.5 text-sm" />
         </div>
         <ErrorText>{loi}</ErrorText>
       </div>

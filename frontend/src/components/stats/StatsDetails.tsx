@@ -71,7 +71,7 @@ export function OrdersTable({ base, fixed = {}, title = 'Chi tiết đơn đặt
         {!fixed.status && (
           <div role="group" aria-label="Trạng thái đơn" className="flex gap-1 rounded-xl bg-fill p-1">
             {TRANG_THAI.map((t) => (
-              <button key={t.key} type="button" aria-pressed={status === t.key} onClick={() => setStatus(t.key)} className={`min-h-9 rounded-[9px] px-3 text-sm font-semibold ${status === t.key ? 'bg-surface text-ink shadow-sm' : 'text-body'}`}>{t.label}</button>
+              <button key={t.key} type="button" aria-pressed={status === t.key} onClick={() => setStatus(t.key)} className={`min-h-9 rounded-lg px-3 text-sm font-semibold ${status === t.key ? 'bg-surface text-ink shadow-sm' : 'text-body'}`}>{t.label}</button>
             ))}
           </div>
         )}

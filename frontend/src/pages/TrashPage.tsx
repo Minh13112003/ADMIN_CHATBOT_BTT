@@ -33,7 +33,7 @@ type TinXoa = {
 };
 type Trang<T> = { items: T[]; nextBefore: string | null };
 
-const NUT = 'inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill disabled:opacity-60 max-sm:px-2';
+const NUT = 'inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill disabled:opacity-60 max-sm:px-2';
 
 const NGUOI_GUI: Record<Message['senderType'], string> = { CUSTOMER: 'Khách', BOT: 'bttAI', AUTO: 'Tự động', STAFF: 'Nhân viên', SYSTEM: 'Nhật ký' };
 const luc = (iso: string) => new Date(iso).toLocaleString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });

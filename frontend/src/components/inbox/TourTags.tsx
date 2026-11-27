@@ -103,7 +103,7 @@ export function TourTagsTab({ conv, readOnly, onJump }: { conv: Conversation; re
                   Xem trong đoạn chat
                 </button>
                 {!readOnly && (
-                  <button type="button" onClick={() => void go(t)} className={`inline-flex min-h-9 items-center rounded-lg px-2.5 text-xs font-semibold ${hoiGo === t.id ? 'bg-brand-button text-white' : 'border border-line text-body hover:bg-fill'}`}>
+                  <button type="button" onClick={() => void go(t)} className={`inline-flex min-h-9 items-center rounded-lg px-2.5 text-xs font-medium ${hoiGo === t.id ? 'bg-brand-button text-white hover:bg-brand-dark' : 'border border-line text-body hover:bg-fill'}`}>
                     {hoiGo === t.id ? 'Bấm lần nữa để gỡ' : 'Gỡ nhãn'}
                   </button>
                 )}
@@ -229,13 +229,13 @@ export function TagTourDialog({ conv, tags, onClose, onDone, ghimSan }: { conv: 
       footer={
         <>
           {buoc === 2 && (
-            <button type="button" onClick={() => setBuoc(1)} className="inline-flex min-h-11 items-center gap-1.5 rounded-[10px] px-2 text-sm font-semibold text-body hover:bg-fill">
+            <button type="button" onClick={() => setBuoc(1)} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-body hover:bg-fill">
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 12H5m6-6-6 6 6 6" /></svg>
               Quay lại
             </button>
           )}
           <span className="flex-1" />
-          <button type="button" onClick={onClose} className="min-h-11 rounded-[10px] px-4 text-sm font-semibold text-body hover:bg-fill">Huỷ</button>
+          <button type="button" onClick={onClose} className="min-h-11 rounded-lg px-4 text-sm font-semibold text-body hover:bg-fill">Huỷ</button>
           {buoc === 1 && !ghimSan ? (
             <button type="button" disabled={!tour} onClick={() => { setBuoc(2); setTin(null); }} className={primaryClass}>Tiếp tục</button>
           ) : (
@@ -317,7 +317,7 @@ export function TagTourDialog({ conv, tags, onClose, onDone, ghimSan }: { conv: 
               )}
             </div>
             <p className="text-sm text-body">Chọn đúng một tin nhắn trong đoạn chat làm bằng chứng khách quan tâm tour này.</p>
-            <div className="flex items-center gap-2 rounded-[10px] border border-field bg-surface pl-3">
+            <div className="flex items-center gap-2 rounded-lg border border-field bg-surface pl-3">
               <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-muted"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
               <input value={timTin} onChange={(e) => setTimTin(e.target.value)} placeholder="Tìm trong đoạn chat này" aria-label="Tìm trong đoạn chat" className="min-h-11 min-w-0 flex-1 bg-transparent text-sm outline-none" />
               {timTin.trim() && (

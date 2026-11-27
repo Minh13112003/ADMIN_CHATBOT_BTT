@@ -239,7 +239,7 @@ function CloseDealForm({
               <span id={`khach-${l.key}`} className="block text-sm font-semibold">{l.ten}</span>
               <span className="block text-xs text-muted">{l.phu}</span>
             </span>
-            <div role="group" aria-labelledby={`khach-${l.key}`} className="flex shrink-0 items-center rounded-[10px] border border-field bg-surface">
+            <div role="group" aria-labelledby={`khach-${l.key}`} className="flex shrink-0 items-center rounded-lg border border-field bg-surface">
               <button type="button" aria-label={`Bớt một ${l.ten.toLowerCase()}`} disabled={khach[l.key] <= l.min} onClick={() => doiKhach(l.key, khach[l.key] - 1)} className="grid size-11 place-items-center text-lg disabled:opacity-40">−</button>
               <input
                 aria-label={`Số ${l.ten.toLowerCase()}`}
@@ -269,7 +269,7 @@ function CloseDealForm({
           spellCheck={false}
           className={`${inputClass} font-mono ${quote?.voucherError ? 'border-brand' : ''}`}
         />
-        <button type="button" disabled={!voucherGo.trim() || !duThongTin} onClick={() => setVoucher(voucherGo.trim())} className="min-h-11 shrink-0 rounded-[10px] bg-ink px-4 text-sm font-semibold text-surface disabled:opacity-50">
+        <button type="button" disabled={!voucherGo.trim() || !duThongTin} onClick={() => setVoucher(voucherGo.trim())} className="min-h-11 shrink-0 rounded-lg bg-ink px-4 text-sm font-semibold text-surface disabled:opacity-50">
           Áp dụng
         </button>
       </div>
@@ -342,7 +342,7 @@ function CloseDealForm({
       }
       footer={
         <>
-          <button type="button" onClick={onClose} className="min-h-11 rounded-[10px] border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Huỷ</button>
+          <button type="button" onClick={onClose} className="min-h-11 rounded-lg border border-field bg-surface px-4 text-sm font-semibold hover:bg-fill">Huỷ</button>
           <span className="flex-1" />
           <button type="button" disabled={!quote || !!quote.voucherError || dang} onClick={() => void chot()} className={`${primaryClass} inline-flex items-center gap-2`}>
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9" /><path d="m8 12 3 3 5-6" /></svg>
@@ -411,7 +411,7 @@ function CloseDealForm({
                   spellCheck={false}
                   className={`${inputClass} font-mono ${loiDon ? 'border-brand' : ''}`}
                 />
-                <button type="button" disabled={!maDon.trim() || dangTaiDon} onClick={() => void taiDon()} className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-[10px] bg-ink px-4 text-sm font-semibold text-surface disabled:opacity-50">
+                <button type="button" disabled={!maDon.trim() || dangTaiDon} onClick={() => void taiDon()} className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-ink px-4 text-sm font-semibold text-surface disabled:opacity-50">
                   {dangTaiDon ? 'Đang tải...' : 'Tải đơn'}
                 </button>
               </div>

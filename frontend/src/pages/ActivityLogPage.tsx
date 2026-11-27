@@ -163,7 +163,7 @@ export default function ActivityLogPage() {
               <input value={go} onChange={(e) => setGo(e.target.value)} placeholder="Tìm trong nội dung (tên khách, mã voucher...)" aria-label="Tìm trong nhật ký" className={`${inputClass} pl-10`} />
             </div>
             {dangLoc && (
-              <button type="button" onClick={() => { setNhom(''); setNguoi(''); setGo(''); }} className="min-h-11 rounded-[10px] px-3 text-sm font-semibold text-brand-text hover:bg-brand-faint">
+              <button type="button" onClick={() => { setNhom(''); setNguoi(''); setGo(''); }} className="min-h-11 rounded-lg px-3 text-sm font-semibold text-brand-text hover:bg-brand-faint">
                 Bỏ lọc
               </button>
             )}
@@ -230,7 +230,7 @@ export default function ActivityLogPage() {
         )}
         {conNua && (
           <div className="flex flex-col items-center gap-2 border-t border-line p-4">
-            <button type="button" disabled={dangTai} onClick={() => void taiThem()} className="min-h-11 rounded-[10px] border border-field bg-surface px-5 text-sm font-semibold hover:bg-fill disabled:opacity-60">
+            <button type="button" disabled={dangTai} onClick={() => void taiThem()} className="min-h-11 rounded-lg border border-field bg-surface px-5 text-sm font-semibold hover:bg-fill disabled:opacity-60">
               {dangTai ? 'Đang tải...' : 'Xem thêm thao tác cũ hơn trong ngày'}
             </button>
             {loiThem && <p role="alert" className="text-sm text-brand-text">{loiThem}</p>}

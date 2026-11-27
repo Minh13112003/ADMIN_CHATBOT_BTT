@@ -70,7 +70,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
             type="button"
             onClick={onBack}
             aria-label="Quay lại danh sách"
-            className="flex size-11 items-center justify-center rounded-[10px] hover:bg-fill lg:hidden"
+            className="flex size-11 items-center justify-center rounded-lg hover:bg-fill lg:hidden"
           >
             <svg
               aria-hidden="true"
@@ -96,19 +96,22 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
             <div className="truncate text-[0.8125rem] text-muted">{dinhDangSo(conv.customer.phone)} · {CHANNEL[conv.channel].label}</div>
           </div>
           {!chiXem && (
-            <button type="button" onClick={() => setTimTin(!timTin)} aria-label="Tìm tin nhắn trong hội thoại" aria-pressed={timTin} title="Tìm tin nhắn" className={`grid size-11 shrink-0 place-items-center rounded-lg border border-line hover:bg-fill ${timTin ? 'bg-fill' : ''}`}>
+            <button type="button" onClick={() => setTimTin(!timTin)} aria-label="Tìm tin nhắn trong hội thoại" aria-pressed={timTin} title="Tìm tin nhắn" className={`grid size-10 shrink-0 place-items-center rounded-lg border border-field text-body hover:border-muted hover:bg-fill hover:text-ink ${timTin ? 'bg-fill text-ink' : ''}`}>
               <svg aria-hidden="true" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
             </button>
           )}
-          <button className="hidden min-h-11 rounded-lg bg-brand-button px-4 text-sm font-semibold text-white sm:block" onClick={() => setCloseNew(true)}>Chốt tour</button>
-          <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-11 place-items-center rounded-lg border border-line text-xl">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-xl border border-line bg-surface shadow-sm p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button>{me?.role === 'ADMIN' && conv.channel === 'ZALO' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setDongBoZalo(true); setChatMenu(false); }}>Đồng bộ tin cũ từ Zalo</button>}{!chiXem && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setCapSdt(true); setChatMenu(false); }}>{conv.customer.phone ? 'Sửa số điện thoại khách' : 'Cập nhật số điện thoại khách'}</button>}{!chiXem && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setTaiKhoanApp(true); setChatMenu(false); }}>Tài khoản app của khách</button>}{me?.role === 'ADMIN' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold text-brand-text hover:bg-brand-soft" onClick={() => { setXoaHoiThoai(true); setChatMenu(false); }}>Xoá hội thoại</button>}</div>}</div>
+          <button type="button" className="hidden min-h-10 items-center gap-1.5 rounded-lg bg-brand-button px-3.5 text-sm font-medium text-white hover:bg-brand-dark sm:inline-flex" onClick={() => setCloseNew(true)}>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+            Chốt tour
+          </button>
+          <div className="relative"><button type="button" aria-label="Thêm thao tác hội thoại" aria-expanded={chatMenu} onClick={() => setChatMenu(!chatMenu)} className="grid size-10 place-items-center rounded-lg border border-field text-lg leading-none text-body hover:border-muted hover:bg-fill hover:text-ink">⋯</button>{chatMenu && <div className="absolute right-0 top-12 z-20 w-56 rounded-lg border border-line bg-surface p-1 shadow-lg"><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setPanelOpen(true); setChatMenu(false); }}>Xem hồ sơ khách</button><button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setHeaderHandover(true); setChatMenu(false); }}>Chuyển cho đồng nghiệp</button>{conv.role === 'OWNER' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { void post<Conversation>(`/conversations/${id}/give-back`).then(refresh); setChatMenu(false); }}>Trả lại cho bot</button>}<button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill sm:hidden" onClick={() => { setCloseNew(true); setChatMenu(false); }}>Chốt tour</button>{me?.role === 'ADMIN' && conv.channel === 'ZALO' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setDongBoZalo(true); setChatMenu(false); }}>Đồng bộ tin cũ từ Zalo</button>}{!chiXem && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setCapSdt(true); setChatMenu(false); }}>{conv.customer.phone ? 'Sửa số điện thoại khách' : 'Cập nhật số điện thoại khách'}</button>}{!chiXem && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm hover:bg-fill" onClick={() => { setTaiKhoanApp(true); setChatMenu(false); }}>Tài khoản app của khách</button>}{me?.role === 'ADMIN' && <button className="block min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold text-brand-text hover:bg-brand-soft" onClick={() => { setXoaHoiThoai(true); setChatMenu(false); }}>Xoá hội thoại</button>}</div>}</div>
           <button
             type="button"
             onClick={() => setPanelOpen(!panelOpen)}
             aria-label={panelOpen ? 'Đóng thông tin khách' : 'Mở thông tin khách'}
             aria-expanded={panelOpen}
             aria-controls="thong-tin-khach"
-            className={`hidden size-11 items-center justify-center rounded-[10px] hover:bg-fill sm:flex ${panelOpen ? 'bg-fill' : ''}`}
+            className={`hidden size-11 items-center justify-center rounded-lg hover:bg-fill sm:flex ${panelOpen ? 'bg-fill' : ''}`}
           >
             <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M4 6h16" />
@@ -120,7 +123,7 @@ export function ChatPane({ id, onBack }: { id: string; onBack: () => void }) {
 
         {conv.channel === 'ZALO' && <KhungZalo lan={conv.lastCustomerMessageAt ?? null} />}
         {conv.channel === 'FACEBOOK' && <KhungZalo fb lan={conv.lastCustomerMessageAt ?? null} />}
-        {(choNhanVien || donCho) && <div className="flex min-h-12 items-center gap-2 border-b border-amber-line bg-auto-soft px-3 py-1.5 text-sm text-amber-ink"><strong className="shrink-0">Cần làm:</strong><span className="min-w-0 flex-1 truncate">{donCho ? `Gọi khách xác nhận đơn ${donCho.tourName} (${trieu(donCho.amount)})` : conv.assignee ? `Khách chờ nhân viên ${conv.assignee.fullName}` : 'Khách đang chờ nhân viên'}</span>{conv.customer.phone && <a className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-field bg-surface" href={`tel:${conv.customer.phone}`}>Gọi khách</a>}{donCho && <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-[9px] border px-3 text-[0.8125rem] font-semibold border-brand-button bg-brand-button text-white" onClick={() => setXacNhan(donCho)}>Xác nhận đơn</button>}</div>}
+        {(choNhanVien || donCho) && <div className="flex min-h-12 items-center gap-2 border-b border-amber-line bg-auto-soft px-3 py-1.5 text-sm text-amber-ink"><strong className="shrink-0">Cần làm:</strong><span className="min-w-0 flex-1 truncate">{donCho ? `Gọi khách xác nhận đơn ${donCho.tourName} (${trieu(donCho.amount)})` : conv.assignee ? `Khách chờ nhân viên ${conv.assignee.fullName}` : 'Khách đang chờ nhân viên'}</span>{conv.customer.phone && <a className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-[0.8125rem] font-semibold border-field bg-surface" href={`tel:${conv.customer.phone}`}>Gọi khách</a>}{donCho && <button type="button" className="inline-flex min-h-11 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-[0.8125rem] font-medium border-brand-button bg-brand-button text-white hover:bg-brand-dark" onClick={() => setXacNhan(donCho)}>Xác nhận đơn</button>}</div>}
 
         {timTin && <TimTinTrongChat id={id} onClose={() => setTimTin(false)} />}
         <MessageList id={id} kenh={conv.channel} seenAt={conv.customerSeenAt} onReply={setReplyTo} onPin={chiXem ? undefined : setGhimTin} focusId={focusId} meId={chiXem ? undefined : me?.id} />
@@ -633,7 +636,7 @@ function Composer({
       )}
 
       {replyTo && (
-        <div className="flex items-center gap-2 rounded-[10px] border-l-4 border-brand bg-page py-1 pl-2.5 pr-1 text-[0.8125rem]">
+        <div className="flex items-center gap-2 rounded-lg border-l-4 border-brand bg-page py-1 pl-2.5 pr-1 text-[0.8125rem]">
           <span className="min-w-0 flex-1 truncate">
             Trả lời: <span className="text-body">“{replyTo.text}”</span>
           </span>
@@ -657,7 +660,7 @@ function Composer({
       </div>}
       {stickerOpen && <StickerPicker anchor={stickerButton} userId={me?.id ?? ''} onClose={closeStickers} onSelect={(s) => { setSticker(s); setTep(null); setStickerOpen(false); stickerButton.current?.focus(); }} />}
       {tep && (
-        <div className="flex items-center gap-2 rounded-[10px] border border-line bg-page py-1 pl-1.5 pr-1 text-[0.8125rem]">
+        <div className="flex items-center gap-2 rounded-lg border border-line bg-page py-1 pl-1.5 pr-1 text-[0.8125rem]">
           {xemTruoc ? (
             <img src={xemTruoc} alt="" className="size-11 shrink-0 rounded-lg object-cover" />
           ) : (
@@ -684,7 +687,7 @@ function Composer({
       )}
       {goiPhimTat.length > 0 && <ul aria-label="Gợi ý phím tắt" className="mb-2 overflow-hidden rounded-xl border border-line bg-surface shadow-sm">{goiPhimTat.map((t) => <li key={t.id}><button type="button" onClick={() => chonGoiY(t)} className="flex min-h-11 w-full items-center gap-3 px-3 text-left text-sm hover:bg-brand-soft"><code className="rounded bg-fill px-1.5 font-mono text-xs">/{t.shortcut}</code><strong className="truncate">{t.title}</strong></button></li>)}</ul>}
       <form onSubmit={gui} className="composer-input flex items-end gap-1.5 rounded-xl border border-field bg-surface p-1.5 focus-within:border-brand">
-        <button ref={stickerButton} type="button" disabled={dangGui} aria-label="Chọn sticker" aria-expanded={stickerOpen} aria-controls="chat-sticker-picker" title="Sticker" onClick={() => setStickerOpen((v) => !v)} className={`grid size-11 shrink-0 place-items-center rounded-[10px] border border-field hover:bg-fill ${stickerOpen ? 'bg-brand-soft text-brand-text' : ''}`}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><path d="M8 14s1 3 4 3 4-3 4-3M8 8h1M15 8h1" /></svg></button>
+        <button ref={stickerButton} type="button" disabled={dangGui} aria-label="Chọn sticker" aria-expanded={stickerOpen} aria-controls="chat-sticker-picker" title="Sticker" onClick={() => setStickerOpen((v) => !v)} className={`grid size-11 shrink-0 place-items-center rounded-lg border border-field hover:bg-fill ${stickerOpen ? 'bg-brand-soft text-brand-text' : ''}`}><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><path d="M8 14s1 3 4 3 4-3 4-3M8 8h1M15 8h1" /></svg></button>
         <input
           ref={chonTep}
           type="file"
@@ -700,7 +703,7 @@ function Composer({
           onClick={() => chonTep.current?.click()}
           aria-label={conv.channel === 'ZALO' ? 'Đính kèm ảnh JPG/PNG (tối đa 1 MB) hoặc PDF (tối đa 5 MB) gửi qua Zalo' : 'Đính kèm ảnh hoặc PDF'}
           title={conv.channel === 'ZALO' ? 'Zalo: ảnh JPG/PNG tối đa 1 MB, PDF tối đa 5 MB' : undefined}
-          className="flex min-h-11 w-11 shrink-0 items-center justify-center rounded-[10px] border border-field bg-surface hover:bg-fill"
+          className="flex min-h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-field bg-surface hover:bg-fill"
         >
           <svg
             aria-hidden="true"
@@ -740,7 +743,7 @@ function Composer({
           maxLength={4000}
           className="max-h-40 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2.5 text-sm leading-normal"
         />
-        <button type="button" title="Câu trả lời nhanh" aria-label="Câu trả lời nhanh" className="grid size-11 shrink-0 place-items-center rounded-[10px] border border-line bg-surface shadow-sm text-brand-text hover:bg-brand-soft" onClick={() => setQuickOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></button>
+        <button type="button" title="Câu trả lời nhanh" aria-label="Câu trả lời nhanh" className="grid size-11 shrink-0 place-items-center rounded-lg border border-line bg-surface shadow-sm text-brand-text hover:bg-brand-soft" onClick={() => setQuickOpen(true)}><svg aria-hidden="true" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z" /></svg></button>
         <button type="submit" disabled={dangGui || (!draft.trim() && !tep && !sticker)} className={primaryClass}>
           {dangGui ? 'Đang gửi…' : 'Gửi'}
         </button>
@@ -811,7 +814,7 @@ function HandoverDialog({ conv, onClose, onDone }: { conv: Conversation; onClose
             maxLength={500}
             onChange={(e) => setNote(e.target.value)}
             placeholder="Ví dụ: khách hỏi đoàn 20 người, đã báo giá sơ bộ"
-            className="w-full resize-y rounded-[10px] border border-field px-3 py-2.5 text-sm"
+            className="w-full resize-y rounded-lg border border-field px-3 py-2.5 text-sm"
           />
         </Field>
         <p className="text-xs text-muted">Ghi chú nằm trong log nội bộ, khách không thấy.</p>

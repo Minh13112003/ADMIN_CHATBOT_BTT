@@ -65,7 +65,7 @@ export default function CustomersPage() {
                   <div className="break-words text-sm font-semibold">{k.name}</div>
                   <div className="text-[0.8125rem] text-muted">{dinhDangSo(k.phone)}</div>
                 </div>
-                <span className={`shrink-0 whitespace-nowrap rounded-[10px] px-2.5 py-[3px] text-xs font-semibold ${STATUS[c.status].className}`}>
+                <span className={`shrink-0 whitespace-nowrap rounded-lg px-2.5 py-[3px] text-xs font-semibold ${STATUS[c.status].className}`}>
                   {STATUS[c.status].label}
                 </span>
               </div>
@@ -79,7 +79,7 @@ export default function CustomersPage() {
               </dl>
               <Link
                 to={`/inbox?c=${c.id}`}
-                className="flex min-h-11 items-center justify-center rounded-[10px] border border-field text-[0.8125rem] hover:bg-fill"
+                className="flex min-h-11 items-center justify-center rounded-lg border border-field text-[0.8125rem] hover:bg-fill"
               >
                 Mở hội thoại
               </Link>
@@ -107,13 +107,13 @@ export default function CustomersPage() {
                 <td className="border-b border-line-soft px-3.5 py-2.5">{CHANNEL[c.channel].label}</td>
                 <td className="border-b border-line-soft px-3.5 py-2.5">{c.interest ?? 'Chưa rõ'}</td>
                 <td className="border-b border-line-soft px-3.5 py-2.5">
-                  <span className={`rounded-[10px] px-2.5 py-[3px] text-xs font-semibold ${STATUS[c.status].className}`}>{STATUS[c.status].label}</span>
+                  <span className={`rounded-lg px-2.5 py-[3px] text-xs font-semibold ${STATUS[c.status].className}`}>{STATUS[c.status].label}</span>
                 </td>
                 <td className="border-b border-line-soft px-3.5 py-2.5">{c.assignee?.fullName ?? 'Chưa có'}</td>
                 <td className="border-b border-line-soft px-3.5 py-1.5 text-right">
                   <Link
                     to={`/inbox?c=${c.id}`}
-                    className="inline-flex min-h-10 items-center rounded-[10px] border border-field px-3 text-[0.8125rem] hover:bg-fill"
+                    className="inline-flex min-h-10 items-center rounded-lg border border-field px-3 text-[0.8125rem] hover:bg-fill"
                   >
                     Mở hội thoại
                   </Link>

@@ -24,7 +24,7 @@ const BIEN = [
   "{số hotline}",
 ];
 const inputBox =
-  "transition-[border-color,box-shadow] duration-150 hover:border-muted min-h-11 w-full rounded-[10px] border border-field bg-surface px-3 text-sm text-ink";
+  "transition-[border-color,box-shadow] duration-150 hover:border-muted min-h-11 w-full rounded-lg border border-field bg-surface px-3 text-sm text-ink";
 
 export default function QuickLibrary() {
   const { data, error, mutate } = useSWR<Template[]>("/templates", fetcher);
@@ -140,7 +140,7 @@ export default function QuickLibrary() {
       <section className={`min-w-0 border-r border-line max-md:border-r-0 ${mobileEditor ? "hidden md:block" : ""}`}>
         <div className="flex items-center justify-between gap-2 p-4">
           <h2 className="text-sm font-semibold">Danh sách mẫu câu</h2>
-          <button className="inline-flex min-h-11 items-center rounded-[10px] bg-brand-button px-4 text-sm font-semibold text-white hover:bg-brand-dark" onClick={create}>
+          <button className="inline-flex min-h-11 items-center rounded-lg bg-brand-button px-4 text-sm font-medium text-white hover:bg-brand-dark" onClick={create}>
             + Thêm mẫu
           </button>
         </div>
@@ -203,11 +203,11 @@ export default function QuickLibrary() {
               </div>
               <div className="flex flex-wrap gap-2">
                 {!creating && (
-                  <button type="button" disabled={busy} onClick={() => void remove()} className="min-h-11 rounded-[10px] border border-alert-line bg-brand-faint px-4 text-sm font-semibold text-brand-text">
+                  <button type="button" disabled={busy} onClick={() => void remove()} className="min-h-11 rounded-lg border border-alert-line bg-brand-faint px-4 text-sm font-semibold text-brand-text">
                     {confirmDelete ? "Bấm lần nữa để xoá" : "Xoá mẫu (Nhấn 2 lần)"}
                   </button>
                 )}
-                <button type="submit" disabled={busy} className="min-h-11 rounded-[10px] bg-brand-button px-5 text-sm font-semibold text-white hover:bg-brand-dark disabled:opacity-60">Lưu mẫu</button>
+                <button type="submit" disabled={busy} className="min-h-11 rounded-lg bg-brand-button px-5 text-sm font-medium text-white hover:bg-brand-dark disabled:opacity-60">Lưu mẫu</button>
               </div>
             </div>
 

@@ -54,7 +54,7 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
           </h1>
           <button
             type="button"
-            className="flex min-h-11 items-center gap-[5px] rounded-[9px] border border-line px-2 text-xs text-body"
+            className="flex min-h-11 items-center gap-[5px] rounded-lg border border-line px-2 text-xs text-body"
             aria-expanded={filtersOpen}
             aria-controls="inbox-advanced-filters"
             onClick={() => setFiltersOpen(!filtersOpen)}
@@ -65,7 +65,7 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
             Bộ lọc{(tag || coHen || timTin || status) && <span className="size-2 rounded-full bg-brand" />}
           </button>
         </div>
-        <label className="flex min-h-11 items-center gap-2 rounded-[10px] bg-fill px-3">
+        <label className="flex min-h-11 items-center gap-2 rounded-lg bg-fill px-3">
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B6472" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="7" />
             <path d="m20 20-3.5-3.5" />
@@ -123,7 +123,7 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
 
         {!timTin && (
           <>
-            <div role="group" aria-label="Lọc theo nguồn" className="flex flex-wrap gap-1 rounded-[10px] bg-fill p-[3px]">
+            <div role="group" aria-label="Lọc theo nguồn" className="flex gap-0.5 rounded-lg bg-fill p-0.5">
               <NutNguon active={!channel} onClick={() => setChannel(null)} label="Tất cả" />
               {CHANNEL_LIST.map((k) => (
                 <NutNguon
@@ -180,12 +180,12 @@ export function ConversationList({ selected, onSelect }: { selected: string | nu
                     {c.lastMessagePreview}
                   </span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-[5px]">
-                    <span className={`rounded-[10px] px-2 py-0.5 text-xs font-semibold ${STATUS[c.status].className}`}>{STATUS[c.status].label}</span>
-                    <span className={`rounded-[10px] px-2 py-0.5 text-xs font-medium ${CHANNEL[c.channel].className}`}>{CHANNEL[c.channel].label}</span>
+                    <span className={`rounded-lg px-2 py-0.5 text-xs font-semibold ${STATUS[c.status].className}`}>{STATUS[c.status].label}</span>
+                    <span className={`rounded-lg px-2 py-0.5 text-xs font-medium ${CHANNEL[c.channel].className}`}>{CHANNEL[c.channel].label}</span>
                     {c.assignee && <span className="text-xs text-muted">{c.assignee.fullName}</span>}
                     {c.followUp && (
                       <span
-                        className={`rounded-[10px] px-2 py-0.5 text-xs font-medium ${new Date(c.followUp.at) <= new Date() ? 'bg-brand-soft text-alert-ink' : 'bg-auto text-auto-ink'}`}
+                        className={`rounded-lg px-2 py-0.5 text-xs font-medium ${new Date(c.followUp.at) <= new Date() ? 'bg-brand-soft text-alert-ink' : 'bg-auto text-auto-ink'}`}
                       >
                         Hẹn {gioTin(c.followUp.at)}
                       </span>
@@ -223,7 +223,7 @@ function NutNguon({ active, label, onClick, disabled, title }: { active: boolean
       disabled={disabled}
       title={title}
       onClick={onClick}
-      className={`min-h-11 flex-auto rounded-lg px-1.5 text-[0.8125rem] font-medium disabled:text-off ${active ? 'bg-surface text-ink shadow-sm' : 'text-body'}`}
+      className={`min-h-9 flex-auto rounded-md px-2 text-[0.8125rem] font-medium transition-colors disabled:text-off ${active ? 'bg-surface text-ink ring-1 ring-line' : 'text-muted hover:text-ink'}`}
     >
       {label}
     </button>

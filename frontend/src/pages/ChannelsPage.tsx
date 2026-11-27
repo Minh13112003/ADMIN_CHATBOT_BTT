@@ -36,7 +36,7 @@ const DETAILS = {
 type TrangThaiFacebook = { ketNoi: { luc: string; trang: string } | null; guiLoiHomNay: number; loiGuiGanNhat: string | null; loiHoSoGanNhat: { luc: string; lyDo: string } | null };
 
 function ChiTietFacebook({ f }: { f: TrangThaiFacebook }) {
-  const dong = "flex items-center justify-between gap-3 rounded-[10px] border border-line px-3.5 py-2.5 text-[0.8125rem]";
+  const dong = "flex items-center justify-between gap-3 rounded-lg border border-line px-3.5 py-2.5 text-[0.8125rem]";
   return (
     <div className="mt-3 flex flex-col gap-2">
       {f.ketNoi && (
@@ -64,7 +64,7 @@ type TrangThaiZalo = { coToken: boolean; accessTokenHetLuc: string | null; refre
 /** Chi tiết kết nối Zalo cho admin (Stitch: "Kênh kết nối - Quản trị kênh hội thoại đa nguồn"). */
 function ChiTietZalo({ z }: { z: TrangThaiZalo }) {
   const conNgay = z.refreshTokenHetLuc ? Math.max(0, Math.round((new Date(z.refreshTokenHetLuc).getTime() - Date.now()) / 86_400_000)) : null;
-  const dong = "flex items-center justify-between gap-3 rounded-[10px] border border-line px-3.5 py-2.5 text-[0.8125rem]";
+  const dong = "flex items-center justify-between gap-3 rounded-lg border border-line px-3.5 py-2.5 text-[0.8125rem]";
   return (
     <div className="mt-3 flex flex-col gap-2">
       <div className={dong}>
@@ -155,7 +155,7 @@ export default function ChannelsPage() {
               </span>
             </div>
             {c.connected ? (
-              <dl className="mt-[22px] grid grid-cols-2 gap-3 rounded-[10px] bg-fill p-4 text-[0.8rem] [&_dd]:mt-2 [&_dd]:text-[1.3rem] [&_dd]:font-bold">
+              <dl className="mt-[22px] grid grid-cols-2 gap-3 rounded-lg bg-fill p-4 text-[0.8rem] [&_dd]:mt-2 [&_dd]:text-[1.3rem] [&_dd]:font-bold">
                 <div>
                   <dt className="text-muted">Khách nhắn hôm nay</dt>
                   <dd className="mt-1 text-xl font-bold">
@@ -182,7 +182,7 @@ export default function ChannelsPage() {
                   </dd>
                 </div>
               </dl>
-            ) : <div className="mt-[22px] flex flex-col gap-1 rounded-[10px] border border-dashed border-line bg-fill p-4 text-[0.8rem] [&_span]:text-muted"><strong>Điều kiện kết nối</strong><span>{c.channel === "ZALO" ? "Zalo OA cần được xác thực, dùng gói Tăng trưởng trở lên và cấu hình webhook." : "Cần quyền quản trị Trang Facebook và quyền truy cập tin nhắn Messenger."}</span></div>}
+            ) : <div className="mt-[22px] flex flex-col gap-1 rounded-lg border border-dashed border-line bg-fill p-4 text-[0.8rem] [&_span]:text-muted"><strong>Điều kiện kết nối</strong><span>{c.channel === "ZALO" ? "Zalo OA cần được xác thực, dùng gói Tăng trưởng trở lên và cấu hình webhook." : "Cần quyền quản trị Trang Facebook và quyền truy cập tin nhắn Messenger."}</span></div>}
             {c.channel === "ZALO" && zalo && (zalo.coToken || c.connected) && <ChiTietZalo z={zalo} />}
             {c.channel === "FACEBOOK" && fb && c.connected && <ChiTietFacebook f={fb} />}
             {(c.channel === "ZALO" || c.channel === "FACEBOOK") && me?.role === "ADMIN" && (
